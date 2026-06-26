@@ -46,6 +46,24 @@ npm run lint
 
 Result: PASS.
 
+Agent Bridge shared protocol evidence:
+
+```bash
+npm run test -- tests/unit/agentBridgeProtocol.test.ts
+```
+
+Result: PASS. 6 tests. This proves the shared request validation contract for HTML asset registration, web service registration, generic inbox requests, tag normalization, dedupe keys, and basic invalid input rejection. It does not yet prove MCP, HTTP, CLI, file watching, or desktop intake behavior.
+
+Latest full non-Rust validation:
+
+```bash
+npm run typecheck
+npm run test
+npm run lint
+```
+
+Result: PASS. Full test run: 8 files, 31 tests.
+
 Current desktop blocker:
 
 ```bash
