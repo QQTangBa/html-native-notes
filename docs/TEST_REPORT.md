@@ -60,16 +60,20 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 3 files, 13 tests. This proves the shared protocol, local HTTP fallback server, and scriptable CLI fallback support:
+Result: PASS. 4 files, 17 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, and offline inbox JSONL support:
 
 - `GET /health`
 - `POST /api/agent/register-html`
 - `POST /api/agent/register-service`
 - `htmlvault register` equivalent through `tsx bridge/cli/index.ts register`
 - `htmlvault service register` equivalent through `tsx bridge/cli/index.ts service register`
+- `--offline-inbox <path>` JSONL append for software-not-running fallback
+- inbox read with duplicate dedupe-key skipping
+- inbox invalid-line isolation
+- inbox acknowledge/rewrite of pending requests
 - stable validation errors for invalid registrations
 
-This still does not prove MCP, offline inbox, file watching, Vault insertion, thumbnail generation, or 10-second desktop acceptance.
+This still does not prove MCP, file watching, Vault insertion, thumbnail generation, or 10-second desktop acceptance.
 
 Latest full non-Rust validation:
 
@@ -79,7 +83,7 @@ npm run test
 npm run lint
 ```
 
-Result: PASS. Full test run: 10 files, 38 tests.
+Result: PASS. Full test run: 11 files, 42 tests.
 
 Current desktop blocker:
 

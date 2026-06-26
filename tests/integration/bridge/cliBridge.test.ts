@@ -1,6 +1,8 @@
 // @vitest-environment node
 
 import { execFile } from 'node:child_process';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
@@ -91,5 +93,39 @@ describe('agent bridge CLI fallback', () => {
     ).rejects.toMatchObject({
       code: 1,
     });
+  });
+
+  it('writes an offline inbox JSONL request when requested', async () => {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'html-native-cli-inbox-'));
+    const inboxPath = path.join(tempDir, 'requests.jsonl');
+
+    try {
+      const result = await runCli([
+        'register',
+        '--file',
+        '/Users/example/work/offline.html',
+        '--request-id',
+        'cli-inbox-001',
+        '--source-hash',
+        'sha256:cliinbox1',
+        '--offline-inbox',
+        inboxPath,
+      ]);
+
+      expect(result).toMatchObject({
+        ok: true,
+        inboxPath,
+        requestId: 'cli-inbox-001',
+        dedupeKey: 'registerHtmlAsset:sha256:cliinbox1',
+      });
+
+      const raw = await readFile(inboxPath, 'utf8');
+      expect(JSON.parse(raw)).toMatchObject({
+        requestId: 'cli-inbox-001',
+        dedupeKey: 'registerHtmlAsset:sha256:cliinbox1',
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 });

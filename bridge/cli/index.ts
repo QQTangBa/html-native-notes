@@ -5,6 +5,7 @@ import {
   normalizeBridgeRequest,
   webServiceRegistrationSchema,
 } from '../shared/protocol';
+import { appendInboxRequest } from '../inbox/jsonlInbox';
 
 type CliFlags = Record<string, string | string[]>;
 
@@ -73,7 +74,7 @@ function acceptedResponse(type: 'registerHtmlAsset' | 'registerWebService', requ
   };
 }
 
-function runRegister(flags: CliFlags): void {
+async function runRegister(flags: CliFlags): Promise<void> {
   const parsed = htmlAssetRegistrationSchema.parse({
     requestId: getFlag(flags, 'request-id'),
     filePath: getFlag(flags, 'file'),
@@ -98,10 +99,19 @@ function runRegister(flags: CliFlags): void {
     },
   });
 
-  printJson(acceptedResponse('registerHtmlAsset', parsed.requestId, normalized));
+  const inboxPath = getFlag(flags, 'offline-inbox');
+
+  if (inboxPath) {
+    await appendInboxRequest(inboxPath, normalized);
+  }
+
+  printJson({
+    ...acceptedResponse('registerHtmlAsset', parsed.requestId, normalized),
+    ...(inboxPath ? { inboxPath } : {}),
+  });
 }
 
-function runServiceRegister(flags: CliFlags): void {
+async function runServiceRegister(flags: CliFlags): Promise<void> {
   const port = getFlag(flags, 'port');
   const parsed = webServiceRegistrationSchema.parse({
     requestId: getFlag(flags, 'request-id'),
@@ -128,19 +138,28 @@ function runServiceRegister(flags: CliFlags): void {
     },
   });
 
-  printJson(acceptedResponse('registerWebService', parsed.requestId, normalized));
+  const inboxPath = getFlag(flags, 'offline-inbox');
+
+  if (inboxPath) {
+    await appendInboxRequest(inboxPath, normalized);
+  }
+
+  printJson({
+    ...acceptedResponse('registerWebService', parsed.requestId, normalized),
+    ...(inboxPath ? { inboxPath } : {}),
+  });
 }
 
-function main(args: string[]): void {
+async function main(args: string[]): Promise<void> {
   const [command, subcommand, ...rest] = args;
 
   if (command === 'register') {
-    runRegister(parseFlags([subcommand, ...rest].filter(Boolean)));
+    await runRegister(parseFlags([subcommand, ...rest].filter(Boolean)));
     return;
   }
 
   if (command === 'service' && subcommand === 'register') {
-    runServiceRegister(parseFlags(rest));
+    await runServiceRegister(parseFlags(rest));
     return;
   }
 
@@ -148,7 +167,7 @@ function main(args: string[]): void {
 }
 
 try {
-  main(process.argv.slice(2));
+  await main(process.argv.slice(2));
 } catch (error) {
   const message = error instanceof Error ? error.message : 'Unexpected CLI error';
   process.stderr.write(`${JSON.stringify({ error: { code: 'CLI_ERROR', message } }, null, 2)}\n`);

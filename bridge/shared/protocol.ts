@@ -90,6 +90,7 @@ export const agentInboxRequestSchema = z.object({
 export type HtmlAssetRegistration = z.infer<typeof htmlAssetRegistrationSchema>;
 export type WebServiceRegistrationRequest = z.infer<typeof webServiceRegistrationSchema>;
 export type AgentInboxRequest = z.infer<typeof agentInboxRequestSchema>;
+export type AgentInboxRequestInput = z.input<typeof agentInboxRequestSchema>;
 
 export interface NormalizedBridgeRequest extends AgentInboxRequest {
   dedupeKey: string;
