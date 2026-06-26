@@ -1,8 +1,30 @@
 # HTML Native Notes
 
-Local-first HTML-native note editor with user-configured AI actions.
+Status: PRD desktop reset in progress.
 
-HTML Native Notes treats HTML as the primary note format. It gives you a local workspace for creating, editing, previewing, saving, and AI-transforming portable HTML notes.
+HTML Native Notes is being rebuilt as the PRD-defined macOS desktop AI HTML Vault app. The existing React/Fastify web app in this repository is a prototype slice only; it is not the complete product and must not be treated as PRD-complete.
+
+Current authoritative planning docs:
+
+- `docs/TECHNICAL_DESIGN.md`
+- `docs/PRD_REQUIREMENTS_MATRIX.md`
+- `docs/PRD_GAP_AUDIT.md`
+- `docs/superpowers/plans/2026-06-26-prd-desktop-app.md`
+
+The target product is a local-first macOS desktop workbench for AI-generated HTML documents, Markdown notes, and local service assets, with Source Guard, Agent Bridge, versioning, Markdown-style editing, service start/stop, asset checks, export, and publish workflows.
+
+## Current Gate
+
+The PRD recommends Tauri. This machine currently has Node/npm but does not have `rustc` or `cargo` in PATH, so desktop implementation cannot be built and self-tested until one of these is chosen:
+
+- install Rust toolchain for this user account, then proceed with Tauri
+- explicitly switch to the Electron fallback
+
+No real API key should be committed. Use ignored local config only.
+
+## Prototype Features
+
+The current prototype includes the following web-only capabilities. They are useful reference material, not final scope.
 
 ## Features
 

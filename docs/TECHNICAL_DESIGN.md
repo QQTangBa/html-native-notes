@@ -1,419 +1,695 @@
-# HTML Native Notes Technical Design
+# HTML Native Notes Desktop Technical Design
 
 Date: 2026-06-26
-Status: Draft for review before implementation
+Status: Corrected PRD-aligned desktop plan
 Scope root: `/Users/siter/Documents/HTML原生笔记编辑器/html-native-notes`
+Authoritative PRD: `/Users/siter/Documents/需求池项目/research/ai-html-notes-prd.html`
 
-## 1. PRD Reconstruction
+## 0. Correction
 
-### 1.1 Current Evidence
+The current codebase is a local React/Fastify web prototype. It is not the PRD-complete product.
 
-The project root currently contains only `.git`; no PRD, README, source code, or Markdown requirement document was found during the initial scan. This document therefore reconstructs PRD v0 from:
+The PRD requires a macOS desktop app for an AI HTML Vault: local-first, source-guarded, agent-addressable, versioned, Markdown-editable, service-aware, exportable, and publishable. This document replaces the previous web-v0 design with the desktop architecture needed to implement the PRD.
 
-- The user objective in this thread.
-- The prior product thesis that AI-era documents are moving from Markdown files toward richer HTML-native documents, while a next-generation HTML note engine / killer app is still missing.
-- The explicit delivery requirements: local runnable open-source software, user-configured AI access, clear README, self-tests, and a future independent GitHub repository.
+All code, docs, config, tests, generated fixtures, and build outputs stay inside this folder unless explicitly noted as runtime user data under macOS Application Support or a user-selected Vault.
 
-If a separate PRD exists outside this directory, it should be copied into `html-native-notes/docs/` before implementation and this document should be updated.
+## 1. Product And PRD Summary
 
-### 1.2 Product Positioning
+### 1.1 Positioning
 
-HTML Native Notes is a local-first note editor for AI-era knowledge work. It treats HTML as the primary editable document format instead of a publish-only export target. The product should let users create, edit, preview, organize, and AI-transform self-contained HTML notes while keeping files portable and inspectable.
+HTML Native Notes is a macOS desktop app for AI-generated HTML documents, local dashboards, Markdown notes, and web project assets. It is not a generic file manager and not a web-only editor. The product turns scattered AI-created HTML and local service pages into a managed Vault with search, preview, service start/stop, version history, Markdown-style editing, backlinks, asset checks, and export/publish workflows.
 
-### 1.3 Target Users
+### 1.2 V1 North Star
 
-- AI-heavy knowledge workers who increasingly receive generated HTML reports, dashboards, cards, and documents.
-- Developers, researchers, and operators who want notes to preserve layout, semantic structure, media, code, tables, and interactive blocks.
-- Open-source users who prefer local control and bring their own model/API provider.
+Within 7 days, 20 AI-agent generated pages and 3 local dashboards should enter one Vault automatically and become searchable, startable, versioned, rollback-capable, Markdown-editable, sync/export-ready, and shareable.
 
-### 1.4 Version 0 Goals
+### 1.3 Non-Negotiable Red Line
 
-- Deliver a local web application that runs from a project-local dev command.
-- Provide a two-pane HTML note workspace: file/library panel, editor panel, and live preview panel.
-- Store notes in a local data directory controlled by the app, with import/export as `.html`.
-- Support AI actions through user-provided configuration: base URL, API key, model name, temperature, max tokens.
-- Avoid hardcoded secrets and avoid touching global system configuration.
-- Include documentation, tests, and a basic security review checklist.
+Intake, indexing, preview, thumbnailing, asset scanning, and version initialization must not modify original HTML, Markdown, or project files. Only explicit user actions can write:
 
-### 1.5 Version 0 Non-Goals
+- edit
+- organize
+- write back
+- save as
+- export
+- publish after confirmation
 
-- No private commercial packaging.
-- No cloud sync, auth, team collaboration, billing, or hosted backend.
-- No browser extension.
-- No WYSIWYG engine that attempts to match full Notion/Word behavior.
-- No arbitrary script execution inside previews by default.
+Every write-back path must show a diff and allow write back, save as, or cancel.
 
-### 1.6 Core User Stories
+### 1.4 V1 Feature Scope
 
-- As a user, I can create a new HTML note from a template and see it in the library immediately.
-- As a user, I can edit HTML source with formatting assistance and see a live sanitized preview.
-- As a user, I can rename, duplicate, delete, restore, import, and export HTML notes.
-- As a user, I can configure an OpenAI-compatible AI provider without changing source code.
-- As a user, I can select text or a whole note and ask AI to summarize, rewrite, outline, translate, or generate an HTML section.
-- As a developer, I can run unit, integration, and browser tests locally without requiring real API keys for most tests.
+The V1 desktop app must include:
 
-## 2. Technical Choice
+- Vault home with folder-like navigation, cards/list modes, thumbnails, titles, tags, update time, source, search, filters.
+- Agent Bridge through MCP server, CLI, HTTP API, offline inbox, and file watching.
+- Service Registry with cwd, start command, URL, port, health check, stop command, env hints, and log path.
+- Runtime Manager that can health-check, start, stop, and show failure logs for app-started local services.
+- Source Guard for immutable intake and explicit write gates.
+- Version Engine with Git-like snapshots, external edit detection, source diff, content diff, DOM summary, rollback, branch/recover.
+- Markdown-first editor with shortcuts, slash command, wikilinks, backlinks, tags, quick open, and HTML persistence.
+- Markdown and existing asset import preserving frontmatter, images, wikilinks, tags, folder structure, code blocks, and source hashes.
+- HTML Profile stored in `.ainote.html` documents and sidecar manifests.
+- Page-in-place preview editing with text-node edits, diff on exit, write/save-as/cancel.
+- Diary organization flow using user-configured AI, preserving the original input.
+- BYOK AI configuration for OpenAI-compatible providers. No hardcoded secrets.
+- Asset management for missing images, external CSS/JS, dangerous scripts, broken links, and safe static packaging.
+- Export/publish paths for single file, folder package, Markdown, PDF, and static hosting adapter.
+- macOS desktop first, Intel + Apple Silicon target, older macOS considered where dependencies allow.
 
-### 2.1 Recommended Approach
+## 2. Product Design Brief
 
-Use a TypeScript full-stack local web app:
+Product Design context is explicit enough to proceed to architecture, but UI implementation still needs design review before final coding.
 
-- Runtime: Node.js LTS.
-- Frontend: React + Vite + TypeScript.
-- Editor: CodeMirror 6 for HTML source editing.
-- Preview: sanitized iframe preview.
-- Backend: Fastify + TypeScript for local file APIs and AI proxy.
-- Storage: filesystem JSON metadata plus `.html` note files.
-- Tests: Vitest for unit/integration, Playwright for browser smoke tests.
-- Lint/format: ESLint + Prettier.
+- Product: a macOS desktop knowledge workbench for HTML-native AI notes and local web assets.
+- Visual source: Obsidian is the reference for information density, sidebar/workspace mental model, command palette, Markdown friendliness, and restrained editor feel. It is a reference, not a clone.
+- Interaction level: full interactivity. Controls, menus, dialogs, service states, import states, diff states, edit states, and error states must work.
+- Visual direction: polished native-adjacent desktop app, dense but calm, dark/light themes, clear panels, low visual noise, readable typography, reliable keyboard workflows.
+- UI rule: all page interaction and visual changes must be treated as Product Design work and checked for layout quality, spacing, states, accessibility, and desktop ergonomics.
 
-This is the best fit for a complex local app because it keeps the first version open-source friendly, cross-platform, testable, and easy to run without Electron/private packaging.
+## 3. Technical Choice
 
-### 2.2 Alternatives Considered
+### 3.1 Primary Stack
 
-#### Option A: Pure Static Browser App
+- Desktop shell: Tauri v2.
+- Native core: Rust in `src-tauri/`.
+- UI: React + TypeScript + Vite.
+- Editor: Tiptap/ProseMirror for Markdown-first rich editing plus Markdown shortcuts.
+- Source/code diff: Rust/TypeScript diff utilities with unified source diff and readable content diff.
+- Persistence: user-selected Vault folder plus `.htmlvault/` management directory.
+- Agent bridge: Node/TypeScript MCP server plus CLI and local HTTP bridge as sidecar processes managed by Tauri.
+- Tests: Rust unit/integration, Vitest, Playwright browser tests, and Tauri desktop smoke/flow tests.
 
-Pros: simplest deployment, no server process.
-Cons: weak local filesystem support, awkward AI secret handling, import/export friction, limited persistent library behavior.
+Official references to verify during implementation:
 
-#### Option B: Electron/Tauri Desktop App
+- Tauri macOS bundle and minimum system version: https://v2.tauri.app/distribute/macos-application-bundle/
+- Tauri config reference: https://v2.tauri.app/reference/config/
+- Tauri shell/sidecar plugin: https://v2.tauri.app/plugin/shell/
+- Tauri filesystem plugin: https://v2.tauri.app/plugin/file-system/
+- MCP TypeScript SDK: https://github.com/modelcontextprotocol/typescript-sdk
 
-Pros: strongest local desktop experience.
-Cons: packaging complexity, larger security surface, conflicts with current requirement to start open-source mode without private packaging.
+### 3.2 Why Tauri
 
-#### Option C: Local Web App With Node Backend
+Tauri matches the PRD because this app needs a small desktop runtime, native file access, process management, service start/stop, local sidecars, and a secure boundary between UI and system operations.
 
-Pros: strong file persistence, user-owned config, easy testing, no global system changes, later desktop packaging remains possible.
-Cons: requires Node/npm and a local server command.
+Rust owns the high-risk operations:
 
-Chosen: Option C.
+- filesystem scanning and hash verification
+- no-write Source Guard enforcement
+- snapshot and rollback
+- service process lifecycle
+- path canonicalization
+- Application Support paths
+- asset packaging
 
-## 3. Architecture
+TypeScript owns product interaction:
 
-### 3.1 High-Level Shape
+- workspace layout
+- editor state
+- command palette
+- import wizard
+- diff review screens
+- AI prompt flows
+- MCP/HTTP/CLI bridge implementation where ecosystem support is stronger
+
+### 3.3 Fallback Decision
+
+Electron is only a fallback if Tauri blocks PRD-critical capabilities on the target macOS range. Missing local Rust tooling is not a product reason to choose Electron; it is an environment setup decision. Installing Rust modifies user-level toolchain directories, so it requires explicit user confirmation before implementation can build and run the Tauri app on this machine.
+
+## 4. Architecture
 
 ```mermaid
-flowchart LR
-  User["User Browser"] --> UI["React App"]
-  UI --> Editor["CodeMirror HTML Editor"]
-  UI --> Preview["Sanitized Preview iframe"]
-  UI --> ApiClient["Typed API Client"]
-  ApiClient --> Server["Fastify Local Server"]
-  Server --> NoteStore["Filesystem Note Store"]
-  Server --> Config["Runtime Config Loader"]
-  Server --> AI["OpenAI-Compatible AI Client"]
-  NoteStore --> Files["data/notes/*.html + metadata.json"]
-  Config --> Env[".env.local or process env"]
+flowchart TB
+  User["macOS User"] --> App["Tauri Desktop App"]
+  App --> UI["React Workbench"]
+  UI --> Cmd["Tauri Commands"]
+  Cmd --> Core["Rust Core"]
+  Core --> Vault["User Vault Folder"]
+  Core --> Mgmt[".htmlvault Management Dir"]
+  Core --> AppSupport["~/Library/Application Support/HtmlVault"]
+  Core --> Services["Local Service Processes"]
+  Core --> Assets["Asset Scanner/Packager"]
+  Core --> Versions["Version Store"]
+  UI --> Editor["Markdown-first Editor"]
+  UI --> Preview["Sandboxed Preview/Edit Layer"]
+  UI --> Diff["Diff Review"]
+  Bridge["Agent Bridge"] --> Core
+  MCP["MCP Server Sidecar"] --> Bridge
+  CLI["htmlvault CLI"] --> Bridge
+  HTTP["Local HTTP API"] --> Bridge
+  Inbox["Offline Inbox JSONL"] --> Bridge
+  Watcher["File Watcher"] --> Core
+  AI["BYOK AI Provider"] --> UI
 ```
 
-### 3.2 Runtime Boundary
+### 4.1 Runtime Processes
 
-The browser never receives the raw AI API key. The frontend sends AI requests to the local backend, and the backend reads secrets from environment/config files.
+- `html-native-notes.app`: main Tauri desktop app.
+- `htmlvault-mcp`: MCP sidecar for agent tools/resources.
+- `htmlvault-http`: local HTTP bridge sidecar for agent registration and health checks.
+- `htmlvault`: CLI binary or Node sidecar for scripts and fallback registration.
+- app-started service children: user-registered dashboards started from configured cwd/commands.
 
-In development mode, Fastify hosts the API and mounts Vite middleware for non-API routes only. Requests beginning with `/api/` bypass Vite so health checks and API calls always resolve through Fastify.
+### 4.2 Storage Locations
 
-### 3.3 Security Boundary
+User-visible Vault:
 
-- Preview HTML is sanitized before rendering.
-- Preview runs in an iframe with a restrictive sandbox.
-- Imported HTML scripts are removed or disabled in v0.
-- File APIs are scoped to the app data directory.
-- AI provider configuration is explicit and never committed.
-- Vite file watching ignores `data/`, `test-results/`, and `playwright-report/` so note writes do not trigger development-page reloads.
+```text
+<vault>/
+  notes/
+  imports/
+  services/
+  exports/
+  .htmlvault/
+    manifest.json
+    index.sqlite
+    inbox/
+      requests.jsonl
+    profiles/
+    thumbnails/
+    versions/
+    assets/
+    logs/
+```
 
-## 4. Directory Structure
+macOS Application Support:
 
-All files must live under `html-native-notes/`.
+```text
+~/Library/Application Support/HtmlVault/
+  config.json
+  agent-inbox/
+    requests.jsonl
+  bridge/
+    http-port.json
+    mcp-status.json
+  logs/
+```
+
+Application Support is runtime state, not repository source. The app must never store API keys in committed files. Local test keys may live only in ignored `.env.local` or OS-secure user config during testing.
+
+## 5. Directory Structure
+
+Planned source tree:
 
 ```text
 html-native-notes/
   README.md
   package.json
-  tsconfig.json
-  vite.config.ts
-  vitest.config.ts
-  playwright.config.ts
-  .env.example
-  .env.local              # local only, gitignored
-  .gitignore
-  docs/
-    TECHNICAL_DESIGN.md
-    TEST_REPORT.md
-    SECURITY_REVIEW.md
-    superpowers/
-      specs/
-      plans/
+  src-tauri/
+    Cargo.toml
+    tauri.conf.json
+    capabilities/
+      default.json
+    src/
+      main.rs
+      commands/
+        vault.rs
+        import.rs
+        version.rs
+        service.rs
+        source_guard.rs
+        asset.rs
+        publish.rs
+        config.rs
+      core/
+        vault.rs
+        profile.rs
+        scanner.rs
+        source_guard.rs
+        version_store.rs
+        service_registry.rs
+        runtime_manager.rs
+        asset_scan.rs
+        exporter.rs
+        errors.rs
+      tests/
+        fixtures.rs
   src/
     main.tsx
     app/
       App.tsx
       routes.ts
+      shell/
       state/
     features/
-      notes/
+      vault/
+      import/
       editor/
       preview/
-      ai/
+      diff/
+      agent-bridge/
+      services/
+      versions/
+      assets/
+      publish/
+      diary/
       settings/
     shared/
       api/
       ui/
-      utils/
       types/
-    server/
+      shortcuts/
+  bridge/
+    mcp/
+      server.ts
+      tools.ts
+      resources.ts
+    http/
+      server.ts
+      routes.ts
+    cli/
       index.ts
-      config.ts
-      routes/
-      services/
-      storage/
-      ai/
-      security/
+      commands/
+    shared/
+      protocol.ts
   tests/
     unit/
     integration/
     e2e/
     fixtures/
-  data/
-    notes/
-    trash/
-    metadata.json
+      mixed-100/
+      markdown-30/
+      services/
+      dangerous-assets/
+  docs/
+    TECHNICAL_DESIGN.md
+    PRD_GAP_AUDIT.md
+    PRD_REQUIREMENTS_MATRIX.md
+    TEST_REPORT.md
+    SECURITY_REVIEW.md
+    superpowers/
+      plans/
 ```
 
-## 5. Module Split
+## 6. Module Boundaries
 
-### 5.1 Frontend Modules
+### 6.1 Rust Core
 
-- `features/notes`: library list, note CRUD actions, import/export UI.
-- `features/editor`: CodeMirror editor, dirty state, keyboard commands, save flow.
-- `features/preview`: HTML sanitization contract display, iframe rendering, preview error state.
-- `features/ai`: prompt actions, selected-text context, streaming/non-streaming result handling.
-- `features/settings`: AI provider config form and validation result display.
-- `shared/api`: typed client wrapping backend endpoints.
-- `shared/ui`: reusable buttons, dialogs, tabs, forms, toasts.
+- `vault`: create/open Vault, maintain manifest, normalize asset IDs.
+- `profile`: read/write `.ainote.html` profile metadata and sidecar manifests.
+- `scanner`: read-only directory scanner for HTML, Markdown, package.json, static assets, and service candidates.
+- `source_guard`: canonical path checks, content hashing, write intent validation, and no-write proofs.
+- `version_store`: snapshots, external change detection, source diff, content diff, DOM summary, rollback, branch/recover.
+- `service_registry`: service asset schema, cwd/command/url/port/log/env hints.
+- `runtime_manager`: health check, start, stop, log capture, process tracking.
+- `asset_scan`: missing files, external links, dangerous scripts, unpublishable resources, safe package plan.
+- `exporter`: single-file export, folder package, Markdown export, PDF export handoff.
+- `publish`: static hosting adapter boundary; V1 supports local package and provider hooks without hardcoded credentials.
 
-### 5.2 Backend Modules
+### 6.2 React UI
 
-- `server/config.ts`: loads env and runtime config, validates required values when AI is used.
-- `server/storage/noteStore.ts`: scoped filesystem operations for notes and metadata.
-- `server/routes/notes.ts`: note CRUD/import/export endpoints.
-- `server/routes/ai.ts`: AI action endpoints.
-- `server/routes/config.ts`: safe config status endpoint without exposing secrets.
-- `server/ai/openAiCompatibleClient.ts`: provider-agnostic chat completion client.
-- `server/security/htmlSanitizer.ts`: server-side sanitization for preview/export where needed.
+- `vault`: workspace home, tree/list/cards, search, filters, thumbnails.
+- `import`: read-only import wizard, hash confirmation, Markdown template choice.
+- `editor`: Markdown-first editing, shortcuts, slash commands, wikilinks, backlinks, tags, quick open.
+- `preview`: sandboxed preview, page-in-place text edit overlay, safe mode indicators.
+- `diff`: write gate, source diff, content diff, DOM summary, screenshot hint.
+- `agent-bridge`: bridge status, inbox queue, registration logs.
+- `services`: registered dashboards, health, start/stop, cwd/log display.
+- `versions`: timeline, external change markers, rollback/recover.
+- `assets`: asset integrity report and safe packaging.
+- `publish`: export and publish flows.
+- `diary`: AI diary organization with preserved original.
+- `settings`: Vault path, AI provider, bridge ports, theme, security policy.
 
-`FileNoteStore` serializes metadata-changing operations through an instance-level write queue. This prevents concurrent browser sessions from losing notes through overlapping read-modify-write cycles on `metadata.json`.
+### 6.3 Bridge Modules
 
-## 6. Data Model
+- MCP tools: `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, `importExisting`.
+- MCP resources: Vault manifest, note profiles, asset summaries, service states.
+- HTTP API: local-only agent registration and search endpoints.
+- CLI: scriptable fallback matching the HTTP/MCP registration model.
+- Offline inbox: JSONL requests read at app startup and on file watch.
 
-### 6.1 Note Metadata
+## 7. Data Models
+
+### 7.1 Vault Manifest
 
 ```ts
-export interface NoteMeta {
-  id: string;
-  title: string;
-  slug: string;
-  fileName: string;
+interface VaultManifest {
+  schemaVersion: 1;
+  vaultId: string;
   createdAt: string;
   updatedAt: string;
-  tags: string[];
-  archived: boolean;
-}
-```
-
-### 6.2 Note Content
-
-Each note is stored as a standalone `.html` file. Metadata lives in `data/metadata.json`.
-
-### 6.3 AI Config
-
-```ts
-export interface AiRuntimeConfig {
-  baseUrl: string;
-  model: string;
-  apiKey?: string;
-  temperature: number;
-  maxTokens: number;
-}
-```
-
-The API key is optional at startup but required before real AI calls.
-
-## 7. Data Flow
-
-### 7.1 Create Note
-
-1. User clicks create.
-2. Frontend posts title/template to `POST /api/notes`.
-3. Backend creates metadata and an HTML file under `data/notes/`.
-4. Frontend refreshes library and opens the new note.
-
-### 7.2 Edit and Save
-
-1. Frontend loads note with `GET /api/notes/:id`.
-2. User edits HTML in CodeMirror.
-3. Preview updates locally using sanitizer.
-4. Save sends content to `PUT /api/notes/:id/content`.
-5. Backend writes file atomically and updates `updatedAt`.
-
-### 7.3 AI Action
-
-1. User selects action and optional text.
-2. Frontend posts action, note context, and selection to `POST /api/ai/actions`.
-3. Backend validates AI config and constructs an OpenAI-compatible request.
-4. Backend returns generated text/HTML.
-5. Frontend shows result in a review panel; user can insert or discard.
-
-## 8. Interface Design
-
-### 8.1 Notes API
-
-- `GET /api/health` returns app status.
-- `GET /api/notes` returns note metadata list.
-- `POST /api/notes` creates a note.
-- `GET /api/notes/:id` returns metadata and content.
-- `PATCH /api/notes/:id` renames/tags/archives a note.
-- `PUT /api/notes/:id/content` saves HTML content.
-- `POST /api/notes/:id/duplicate` duplicates a note.
-- `DELETE /api/notes/:id` moves a note to trash.
-- `POST /api/import/html` imports an `.html` file.
-- `GET /api/notes/:id/export` downloads an `.html` file.
-
-### 8.2 AI API
-
-- `GET /api/config/ai/status` returns `{ configured: boolean, baseUrlSet: boolean, model?: string }`.
-- `POST /api/ai/actions` runs a supported action.
-- `POST /api/ai/test` performs a small provider connectivity test.
-
-Supported v0 AI actions:
-
-- `summarize`
-- `rewrite`
-- `outline`
-- `translate`
-- `generate-section`
-- `clean-html`
-
-### 8.3 Error Contract
-
-```ts
-export interface ApiErrorBody {
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
+  assets: VaultAssetSummary[];
+  settings: {
+    defaultTemplateId: string;
+    sourceGuardMode: "strict";
   };
 }
 ```
 
-## 9. Configuration Plan
+### 7.2 Vault Asset
 
-### 9.1 Files
+```ts
+interface VaultAssetSummary {
+  id: string;
+  kind: "html-note" | "markdown-note" | "service" | "project" | "diary";
+  title: string;
+  sourcePath?: string;
+  vaultPath: string;
+  sourceHash?: string;
+  profilePath: string;
+  thumbnailPath?: string;
+  tags: string[];
+  source: "manual" | "mcp" | "cli" | "http" | "inbox" | "watcher" | "import";
+  createdAt: string;
+  updatedAt: string;
+  lastSnapshotId?: string;
+}
+```
 
-- `.env.example`: committed template.
-- `.env.local`: local-only test configuration, gitignored.
-- Runtime environment variables override defaults.
+### 7.3 HTML Profile
 
-### 9.2 Variables
+```ts
+interface HtmlProfile {
+  schemaVersion: 1;
+  assetId: string;
+  title: string;
+  source: VaultAssetSummary["source"];
+  sourcePath?: string;
+  sourceHash?: string;
+  blockIds: Record<string, string>;
+  assetManifest: AssetManifestItem[];
+  aiContext: {
+    summary?: string;
+    tags: string[];
+    sourceAgent?: string;
+  };
+  themeVars: Record<string, string>;
+  version: {
+    currentSnapshotId: string;
+    baselineSnapshotId: string;
+  };
+}
+```
 
-- `AI_BASE_URL`: OpenAI-compatible API base URL.
-- `AI_MODEL`: model name.
-- `AI_API_KEY`: provider API key.
-- `AI_TEMPERATURE`: numeric generation setting.
-- `AI_MAX_TOKENS`: numeric output cap.
-- `APP_HOST`: default `127.0.0.1`.
-- `APP_PORT`: default `5178`.
-- `DATA_DIR`: default `./data`.
+### 7.4 Service Registration
 
-### 9.3 Secret Handling
+```ts
+interface WebServiceRegistration {
+  id: string;
+  title: string;
+  cwd: string;
+  startCommand: string;
+  stopCommand?: string;
+  url: string;
+  port?: number;
+  healthCheckUrl?: string;
+  envHints: string[];
+  logPath: string;
+  startedByApp: boolean;
+}
+```
 
-- No key appears in source, README, tests, committed fixtures, screenshots, or logs.
-- Config status endpoints never return the key.
-- Tests that need AI use `.env.local` only and are separated from default offline tests.
+### 7.5 Agent Inbox Request
 
-## 10. UI Design Principles
+```ts
+interface AgentInboxRequest {
+  requestId: string;
+  type: "registerHtmlAsset" | "registerWebService" | "snapshot" | "importExisting";
+  createdAt: string;
+  sourceAgent?: string;
+  sourcePath?: string;
+  sourceHash?: string;
+  title?: string;
+  tags?: string[];
+  service?: Partial<WebServiceRegistration>;
+  metadata?: Record<string, unknown>;
+}
+```
 
-- First screen is the editor workspace, not a landing page.
-- Dense but readable application layout: left library, center editor, right preview/AI/settings side panel.
-- Stable panel dimensions and responsive collapse for narrow screens.
-- Controls use recognizable icons and concise labels.
-- No decorative marketing hero.
-- Product Design rule: all page interaction, UI, visual polish, and experience changes should be treated as product-design work, not only functional code. The default visual direction is a polished professional editor: restrained, readable, dense enough for repeated work, and visibly intentional rather than plain scaffolding.
+## 8. Data Flows
 
-## 11. Testing Plan
+### 8.1 Agent HTML Enters Vault
 
-### 11.1 Unit Tests
+1. Agent creates an HTML file in any working directory.
+2. Agent skill calls MCP `registerHtmlAsset`.
+3. If MCP is unavailable, skill calls local HTTP API.
+4. If HTTP is unavailable, skill calls `htmlvault register`.
+5. If CLI is unavailable, skill appends JSONL request to offline inbox.
+6. App validates request, canonicalizes path, reads content hash, creates baseline snapshot, writes Vault metadata only, generates thumbnail/profile, and shows the asset in the Vault.
+7. Original source hash is rechecked after intake to prove no mutation.
 
-- Config loader validates defaults and rejects invalid numeric values.
-- Note store creates unique IDs and safe filenames.
-- Note store blocks path traversal outside `DATA_DIR`.
-- HTML sanitizer strips scripts and dangerous attributes.
-- AI request builder maps actions to provider messages.
+### 8.2 Existing Folder Import
 
-### 11.2 Integration Tests
+1. User selects folder in desktop import wizard.
+2. Rust scanner walks files read-only and detects HTML, Markdown, package.json, assets, and services.
+3. UI shows candidates, warnings, hashes, templates, and import plan.
+4. User confirms selected assets.
+5. App writes only Vault metadata, profiles, thumbnails, version baselines, and copied generated Vault notes where the user explicitly chose conversion.
+6. Tests compare original hashes before/after.
 
-- Notes CRUD API: create, read, update content, rename, duplicate, delete.
-- Import/export round trip for `.html`.
-- AI config status hides secrets.
-- AI test endpoint handles missing key, invalid provider response, and successful mock response.
+### 8.3 Markdown Editing Saved As HTML
 
-### 11.3 E2E Tests
+1. User opens an asset in editor.
+2. Editor loads HTML profile and editable document state.
+3. Markdown shortcuts, slash commands, `[[wikilinks]]`, tags, and backlinks update an internal document model.
+4. Save creates a new snapshot and updates the managed `.ainote.html` document.
+5. If the asset has an original source path, write-back requires diff review and explicit action.
 
-- App starts and health endpoint passes.
-- User creates a note, edits HTML, sees preview update, saves, reloads, and content persists.
-- User opens settings and sees AI configured status.
-- User attempts an AI action with missing/invalid config and receives a clear error.
+### 8.4 Page-In-Place Edit
 
-### 11.4 Manual Tests
+1. User clicks Edit in preview.
+2. Preview enters a sandboxed edit overlay for text nodes.
+3. User edits visible text.
+4. Exit computes patch and snapshot.
+5. Diff screen offers write back, save as, or cancel.
+6. No edit helpers are permanently injected into original HTML.
 
-- Start command from clean install.
-- `.env.example` copy flow.
-- DeepSeek live test using local `.env.local`.
-- Browser test on desktop and one mobile/narrow viewport.
-- Basic security check: imported script tag does not execute in preview.
+### 8.5 Service Launch
 
-## 12. Development and Verification Plan
+1. User opens service asset.
+2. Runtime manager health-checks URL/port.
+3. If down, app asks to start or auto-starts based on user preference.
+4. Rust starts process in configured cwd with env hints and captures logs.
+5. UI shows running/down/failed states, command, cwd, log path, and stop button.
+6. Stop only targets app-started processes unless user explicitly configured a stop command.
 
-Implementation should proceed in reversible slices:
+### 8.6 Version And External Edit
 
-1. Project scaffolding and scripts.
-2. Config loader and secret-safe status API.
-3. Filesystem note store with tests.
-4. Notes API with integration tests.
-5. Frontend shell and note library.
-6. Editor and sanitized preview.
-7. AI client and AI action review flow.
-8. Import/export/trash polish.
-9. README, security review, full self-test.
-10. GitHub repository creation and push after user approval.
+1. File watcher sees source path changed.
+2. Source Guard reads new hash and compares with last snapshot.
+3. Version Engine creates an external-change snapshot.
+4. UI shows timeline entry and diff.
+5. Rollback restores the managed Vault copy or prepares explicit source write-back through diff gate.
 
-Each code behavior change should update this document or the implementation plan when the module contract changes.
+## 9. Interface Design
 
-## 13. Sub-Agent Boundary Plan
+### 9.1 Tauri Commands
 
-If parallel development is used, split work by bounded interfaces:
+Rust command boundary:
 
-- Agent A: backend config, note store, and notes API.
-- Agent B: frontend workspace, editor, preview, and UI state.
-- Agent C: AI client, AI actions, settings, and config tests.
-- Agent D: documentation, E2E tests, security checklist, and release readiness.
+```ts
+type TauriCommand =
+  | "vault_create"
+  | "vault_open"
+  | "vault_search"
+  | "import_scan"
+  | "import_commit"
+  | "asset_open"
+  | "asset_save_snapshot"
+  | "asset_prepare_writeback"
+  | "asset_writeback"
+  | "asset_save_as"
+  | "version_list"
+  | "version_diff"
+  | "version_rollback"
+  | "service_register"
+  | "service_health"
+  | "service_start"
+  | "service_stop"
+  | "asset_scan_integrity"
+  | "export_asset"
+  | "publish_asset"
+  | "config_get_safe"
+  | "config_save_ai";
+```
 
-Shared contracts must be frozen before dispatch:
+### 9.2 HTTP API
 
-- `NoteMeta`
-- Notes API endpoints
-- AI config shape
-- Error response shape
+Local-only, bound to `127.0.0.1`:
 
-## 14. Open Questions
+- `GET /health`
+- `POST /api/agent/register-html`
+- `POST /api/agent/register-service`
+- `POST /api/agent/snapshot`
+- `POST /api/agent/import-existing`
+- `GET /api/vault/search?q=...`
+- `GET /api/vault/resources`
 
-1. Should v0 use source-first editing only, or should it include a minimal visual editing mode?
-2. Should notes be stored as full standalone HTML documents or HTML fragments wrapped at export time?
-3. Should imported CSS be preserved inline, stripped, or sandboxed per note?
-4. Should the default app language be Chinese, English, or bilingual?
+Every mutating endpoint validates path, source hash, request ID, and Vault scope. It does not modify original source files.
 
-Recommended defaults for v0:
+### 9.3 CLI
 
-- Source-first editing.
-- Store standalone HTML documents.
-- Preserve safe inline CSS, strip scripts.
-- Chinese UI with English code/docs acceptable for open-source developer ergonomics.
+Commands:
+
+```bash
+htmlvault register --file ./report.html --title "Report" --tag ai --source-agent codex
+htmlvault service register --cwd ./dashboard --start "npm run dev" --url http://127.0.0.1:5173
+htmlvault snapshot --file ./report.html --reason external-agent-edit
+htmlvault publish --asset <asset-id> --target local-package
+htmlvault import --path ./old-notes
+```
+
+### 9.4 MCP Tools
+
+Tool contracts:
+
+- `registerHtmlAsset({ filePath, title, tags, sourceAgent, summary })`
+- `registerWebService({ cwd, startCommand, url, port, healthCheckUrl, envHints, title })`
+- `searchVault({ query, tags, kind })`
+- `createNote({ title, markdown, templateId, tags })`
+- `snapshot({ assetIdOrPath, reason })`
+- `publish({ assetId, target, options })`
+- `importExisting({ path, mode })`
+
+## 10. Configuration
+
+### 10.1 Repo Config
+
+Committed:
+
+- `.env.example` with placeholder provider fields.
+- `tauri.conf.json` without secrets.
+- bridge defaults without credentials.
+- test fixture config only.
+
+Ignored:
+
+- `.env.local`
+- `dist/`
+- `target/`
+- generated fixtures/output
+- Playwright/Tauri reports
+
+### 10.2 User Runtime Config
+
+Safe config lives in:
+
+```text
+~/Library/Application Support/HtmlVault/config.json
+```
+
+Sensitive config rules:
+
+- API keys are never written to committed files.
+- The app may read `.env.local` during development tests.
+- Production desktop storage should use a secure OS-backed secret store where practical; until then, store only provider presence/status and ask user to re-enter keys for sensitive flows.
+- AI provider fields: base URL, model name, API key, temperature, max tokens, optional headers.
+
+### 10.3 Current Environment Blocker
+
+This machine currently has Node/npm but no `rustc` or `cargo` in PATH. Tauri implementation and desktop self-test require Rust. Installing Rust modifies user-level toolchain directories such as `~/.cargo`, so it needs explicit user confirmation before implementation can build locally.
+
+## 11. Test Plan
+
+### 11.1 Test Layers
+
+- Rust unit tests: path safety, hashing, Source Guard, scanner, profiles, version store, service registry, asset scanner.
+- Rust integration tests: import folders, snapshots, rollback, service lifecycle with fixture servers.
+- TypeScript unit tests: editor commands, UI state reducers, bridge protocol validation, settings validation.
+- React component tests: Vault views, import wizard, diff modal, service panel, asset report, diary panel.
+- Bridge integration tests: MCP tool calls, HTTP API, CLI commands, offline inbox JSONL.
+- Desktop smoke tests: launch Tauri app, open Vault, import fixtures, edit, diff, export.
+- Scale acceptance tests: 100 mixed HTML/Markdown fixtures and 30 Markdown migration fixtures.
+- Security tests: dangerous scripts, path traversal, external links, original hash unchanged, no secret exposure.
+
+### 11.2 Acceptance Mapping
+
+Detailed acceptance coverage lives in `docs/PRD_REQUIREMENTS_MATRIX.md`.
+
+Minimum completion evidence:
+
+- command output from all test suites
+- generated test reports
+- before/after source hashes for Source Guard tests
+- screenshots for desktop launch, Vault home, import wizard, diff gate, service start/stop, asset report, publish/export
+- AI test using a user-configured provider without committing the API key
+
+### 11.3 Manual Desktop Self-Test
+
+The final release candidate must be opened as a macOS desktop app. A browser-only run does not count.
+
+Manual flow:
+
+1. Launch app.
+2. Create/open test Vault.
+3. Generate an HTML file from the current AI working directory.
+4. Register it through MCP/HTTP/CLI/inbox paths.
+5. Confirm it appears in Vault within 10 seconds with source, summary, and thumbnail.
+6. Import 100 mixed fixtures.
+7. Import 30 Markdown fixtures.
+8. Start and stop a fixture service.
+9. Trigger external edit and verify snapshot/diff/rollback.
+10. Use Markdown shortcut and `[[wikilink]]`.
+11. Use page-in-place edit and cancel/write/save-as.
+12. Run asset integrity check.
+13. Export single file, folder package, Markdown, PDF path if supported.
+14. Run publish/static package adapter and verify reachable target for configured provider.
+
+## 12. Development Phases
+
+### Phase 0: Reset And Environment Decision
+
+- Keep existing web prototype only as reference.
+- Commit gap audit and desktop design docs.
+- Confirm Rust installation permission or choose Electron fallback.
+- Create `src-tauri/` only after environment decision.
+
+### Phase 1: Desktop Shell And Vault Core
+
+- Tauri shell opens on macOS.
+- Vault create/open/search works.
+- Source Guard hashing and read-only import scan works.
+- App launches in desktop self-test.
+
+### Phase 2: Import, Profile, Version Engine
+
+- HTML/Markdown/project scanner.
+- `.ainote.html` profile.
+- baseline snapshots.
+- diff and rollback.
+- 100 mixed fixture test.
+
+### Phase 3: Agent Bridge
+
+- MCP server tools/resources.
+- HTTP API.
+- CLI.
+- offline inbox.
+- file watcher.
+- 10-second registration acceptance test.
+
+### Phase 4: Editor And Preview
+
+- Markdown-first editor.
+- wikilinks/backlinks/tags/quick open.
+- page-in-place edit.
+- write-back diff gate.
+- Markdown 30 fixture test.
+
+### Phase 5: Services, Assets, Export, Publish
+
+- service registry and runtime manager.
+- asset integrity scanner.
+- export package paths.
+- publish/static hosting adapter.
+- service start/stop acceptance tests.
+
+### Phase 6: AI, Diary, Polish, Release Readiness
+
+- BYOK AI flows.
+- diary organization.
+- Product Design UI polish.
+- security review.
+- full test report.
+- GitHub repository update.
+
+## 13. Completion Bar
+
+This project is complete only when:
+
+- The macOS desktop app launches.
+- Every V1 PRD feature has implementation evidence.
+- Every acceptance indicator in `docs/PRD_REQUIREMENTS_MATRIX.md` is verified or explicitly documented with an approved scope decision.
+- The README describes desktop install/run/config/use/dev/test.
+- No secrets are committed.
+- The GitHub repository contains the corrected desktop implementation and test evidence.

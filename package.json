@@ -7,9 +7,13 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx src/server/index.ts",
+    "dev:client": "vite --host 127.0.0.1",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "APP_ENV=production tsx src/server/index.ts",
     "test": "vitest run",
+    "test:desktop:contract": "vitest run tests/unit/desktopScaffold.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",

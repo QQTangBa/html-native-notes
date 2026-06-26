@@ -1,5 +1,9 @@
 # HTML Native Notes Implementation Plan
 
+Status: Superseded by `docs/superpowers/plans/2026-06-26-prd-desktop-app.md`.
+
+This earlier plan targeted a local web prototype. It does not satisfy the authoritative PRD, which requires a macOS desktop app.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a local runnable open-source HTML-native note editor with local note storage, source editing, sanitized preview, user-configured AI actions, documentation, and verification.

@@ -2,6 +2,12 @@
 
 Date: 2026-06-26
 
+## Status Correction
+
+This review covers the earlier React/Fastify web prototype. It does not cover the PRD-required macOS desktop app, Tauri command boundary, Rust filesystem/process code, Agent Bridge, service start/stop, Source Guard, version rollback, publish adapters, or desktop secret storage.
+
+The final desktop security review must be rewritten after implementation and must include the acceptance/security evidence listed in `docs/PRD_REQUIREMENTS_MATRIX.md`.
+
 ## Scope
 
 Reviewed the local web app security posture for v0: filesystem note storage, HTML preview, AI configuration, local server behavior, and dependency status.

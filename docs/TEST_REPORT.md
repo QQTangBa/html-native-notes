@@ -2,6 +2,61 @@
 
 Date: 2026-06-26
 
+## Status Correction
+
+This report describes the earlier local web prototype only. It is not evidence that the PRD-defined macOS desktop app is complete.
+
+Desktop PRD evidence must be collected against `docs/PRD_REQUIREMENTS_MATRIX.md` after the Tauri/Electron environment decision and desktop implementation.
+
+## Desktop Reset Evidence
+
+Date: 2026-06-26
+
+The repository now contains a minimal Tauri desktop scaffold:
+
+- `src-tauri/tauri.conf.json`
+- `src-tauri/Cargo.toml`
+- `src-tauri/src/main.rs`
+- `src-tauri/capabilities/default.json`
+- `tests/unit/desktopScaffold.test.ts`
+
+Validated commands that do not require Rust:
+
+```bash
+npm run test -- tests/unit/desktopScaffold.test.ts
+```
+
+Result: PASS. 4 tests. This proves the desktop scaffold contract exists; it does not prove the desktop app builds or launches.
+
+```bash
+npm run typecheck
+```
+
+Result: PASS.
+
+```bash
+npm run test
+```
+
+Result: PASS. 7 files, 25 tests.
+
+```bash
+npm run lint
+```
+
+Result: PASS.
+
+Current desktop blocker:
+
+```bash
+which rustc || true
+which cargo || true
+```
+
+Result: `rustc not found`, `cargo not found`.
+
+The Tauri app has not been built or opened yet because Rust is not installed in PATH and user confirmation is required before installing the Rust toolchain.
+
 ## Summary
 
 The current local application passed unit tests, integration tests, browser E2E tests, production build, dependency audit, and a live DeepSeek connectivity check.

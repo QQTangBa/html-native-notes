@@ -1,7 +1,9 @@
 # HTML Native Notes Design
 
 Date: 2026-06-26
-Status: Draft, awaiting user review
+Status: Superseded by `docs/TECHNICAL_DESIGN.md` and `docs/PRD_REQUIREMENTS_MATRIX.md`
+
+This earlier design targeted a local web prototype. It does not satisfy the authoritative PRD, which requires a macOS desktop app.
 
 ## Scope
 

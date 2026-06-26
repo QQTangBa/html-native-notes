@@ -1,0 +1,38 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "HTML Native Notes",
+  "version": "0.1.0",
+  "identifier": "com.htmlvault.html-native-notes",
+  "build": {
+    "beforeDevCommand": "npm run dev:client",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://127.0.0.1:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "HTML Native Notes",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 980,
+        "minHeight": 680,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "category": "Productivity",
+    "shortDescription": "AI HTML Vault desktop workspace",
+    "longDescription": "A local-first macOS desktop workbench for AI-generated HTML documents, Markdown notes, and local service assets.",
+    "macOS": {
+      "minimumSystemVersion": "10.13"
+    }
+  }
+}
