@@ -108,6 +108,16 @@ npm run test -- tests/integration/bridge/markdownImport.test.ts
 
 Result: PASS. 3 tests. This proves the initial Markdown import contract can list three templates, recursively scan Markdown folders while preserving relative paths, and convert a Markdown file into readable HTML while preserving frontmatter, images, wikilinks, and fenced code block language classes. It does not yet prove the desktop import wizard, 30-file fixture acceptance, Obsidian-scale compatibility, or Rust/native import pipeline.
 
+HTML Profile contract evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/htmlProfile.test.ts
+```
+
+Result: PASS. 3 tests. This proves the initial HTML Profile contract can extract metadata, assets, AI context, theme variables, and block IDs from HTML; embed and extract profile JSON without rewriting body content; and migrate legacy profile metadata into the current schema. It does not yet prove Rust profile parsing, sidecar manifest synchronization, or full `.ainote.html` migration fixtures.
+
 Latest full non-Rust validation:
 
 ```bash
@@ -117,7 +127,7 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 17 files, 60 tests. Bridge test run: 10 files, 35 tests.
+Result: PASS. Full test run: 18 files, 63 tests. Bridge test run: 10 files, 35 tests.
 
 During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 
