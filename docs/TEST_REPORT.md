@@ -60,7 +60,7 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 7 files, 27 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, and a minimal Version Engine contract:
+Result: PASS. 8 files, 30 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, and a minimal Service Registry/Runtime Manager contract:
 
 - `GET /health`
 - `POST /api/agent/register-html`
@@ -82,9 +82,13 @@ Result: PASS. 7 files, 27 tests. This proves the shared protocol, local HTTP fal
 - version store creates and lists snapshots
 - version store returns source diff, readable content diff, and DOM summary
 - version store can roll back a managed HTML copy to a prior snapshot
+- service registry persists cwd, start command, URL, port, health check, stop command, env hints, and log path
+- runtime manager starts an app-managed fixture service
+- runtime manager verifies health, stops the service, and restarts it
+- runtime manager returns cwd, command, and log path when startup fails
 - stable validation errors for invalid registrations
 
-This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, visual diff, full external-edit workflow, or 10-second desktop acceptance.
+This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
 
 Latest full non-Rust validation:
 
@@ -94,7 +98,7 @@ npm run test
 npm run lint
 ```
 
-Result: PASS. Full test run: 14 files, 52 tests.
+Result: PASS. Full test run: 15 files, 55 tests.
 
 Current desktop blocker:
 
