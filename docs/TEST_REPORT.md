@@ -54,6 +54,21 @@ npm run test -- tests/unit/agentBridgeProtocol.test.ts
 
 Result: PASS. 6 tests. This proves the shared request validation contract for HTML asset registration, web service registration, generic inbox requests, tag normalization, dedupe keys, and basic invalid input rejection. It does not yet prove MCP, HTTP, CLI, file watching, or desktop intake behavior.
 
+Agent Bridge HTTP fallback evidence:
+
+```bash
+npm run test:bridge
+```
+
+Result: PASS. 2 files, 10 tests. This proves the shared protocol and local HTTP fallback server support:
+
+- `GET /health`
+- `POST /api/agent/register-html`
+- `POST /api/agent/register-service`
+- stable validation errors for invalid registrations
+
+This still does not prove MCP, CLI, offline inbox, file watching, Vault insertion, thumbnail generation, or 10-second desktop acceptance.
+
 Latest full non-Rust validation:
 
 ```bash
@@ -62,7 +77,7 @@ npm run test
 npm run lint
 ```
 
-Result: PASS. Full test run: 8 files, 31 tests.
+Result: PASS. Full test run: 9 files, 35 tests.
 
 Current desktop blocker:
 
