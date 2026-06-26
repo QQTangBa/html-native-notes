@@ -161,9 +161,18 @@ export function createServiceRuntimeManager(registryPath: string) {
         env: process.env,
       });
       runningProcesses.set(service.id, child);
+      const pendingLogWrites: Promise<void>[] = [];
+      const queueLog = (chunk: Buffer): void => {
+        const write = appendLog(service.logPath, String(chunk));
+        pendingLogWrites.push(write);
+        void write.catch(() => undefined);
+      };
+      const flushLogs = async (): Promise<void> => {
+        await Promise.allSettled(pendingLogWrites);
+      };
 
-      child.stdout.on('data', (chunk) => void appendLog(service.logPath, String(chunk)));
-      child.stderr.on('data', (chunk) => void appendLog(service.logPath, String(chunk)));
+      child.stdout.on('data', queueLog);
+      child.stderr.on('data', queueLog);
       child.on('exit', () => {
         runningProcesses.delete(service.id);
       });
@@ -177,6 +186,7 @@ export function createServiceRuntimeManager(registryPath: string) {
         }
 
         if (child.exitCode !== null) {
+          await flushLogs();
           return resultFor(service, 'failed');
         }
 
@@ -184,6 +194,7 @@ export function createServiceRuntimeManager(registryPath: string) {
       }
 
       if (child.exitCode !== null) {
+        await flushLogs();
         return resultFor(service, 'failed');
       }
 

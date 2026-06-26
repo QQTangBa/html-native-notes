@@ -60,7 +60,7 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 10 files, 35 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, and the initial Markdown import contract:
+Result: PASS. 11 files, 40 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, and the initial Source Guard write-gate contract:
 
 - `GET /health`
 - `POST /api/agent/register-html`
@@ -94,6 +94,9 @@ Result: PASS. 10 files, 35 tests. This proves the shared protocol, local HTTP fa
 - Markdown import lists three templates
 - Markdown import scans folders while preserving relative paths
 - Markdown import converts frontmatter, images, wikilinks, and code blocks into readable HTML
+- Source Guard write gate reviews readable diffs without changing source files
+- Source Guard write gate supports cancel, save-as, and hash-checked write-back
+- Source Guard write gate rejects stale write-back when the source changed after review
 - stable validation errors for invalid registrations
 
 This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, asset localization/package UI, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
@@ -118,6 +121,16 @@ npm run test -- tests/unit/htmlProfile.test.ts
 
 Result: PASS. 3 tests. This proves the initial HTML Profile contract can extract metadata, assets, AI context, theme variables, and block IDs from HTML; embed and extract profile JSON without rewriting body content; and migrate legacy profile metadata into the current schema. It does not yet prove Rust profile parsing, sidecar manifest synchronization, or full `.ainote.html` migration fixtures.
 
+Source Guard write-gate contract evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/bridge/sourceGuardWriteGate.test.ts
+```
+
+Result: PASS. 5 tests. This proves the initial write-gate contract can produce readable diffs without changing source files, cancel without writing, save edited HTML as a new file while preserving the source hash, write back only after source-hash verification, and reject stale write-back after external source changes. It does not yet prove the Rust Source Guard boundary, desktop diff UI, or page-in-place editing flow.
+
 Latest full non-Rust validation:
 
 ```bash
@@ -127,7 +140,7 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 18 files, 63 tests. Bridge test run: 10 files, 35 tests.
+Result: PASS. Full test run: 19 files, 68 tests. Bridge test run: 11 files, 40 tests.
 
 During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 
