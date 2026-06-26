@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -50,6 +51,25 @@ async function createFixtureServer(port: number): Promise<{ cwd: string; logPath
   return { cwd, logPath };
 }
 
+async function getAvailablePort(): Promise<number> {
+  const server = createServer();
+
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      server.close(() => {
+        if (address && typeof address === 'object') {
+          resolve(address.port);
+          return;
+        }
+
+        reject(new Error('Unable to reserve test port'));
+      });
+    });
+  });
+}
+
 describe('Service Registry and Runtime Manager', () => {
   it('registers service metadata with cwd, command, URL, health check, env hints, and log path', async () => {
     const service = await registerWebService(registryPath, {
@@ -79,7 +99,7 @@ describe('Service Registry and Runtime Manager', () => {
   });
 
   it('starts an app-managed service, passes health check, stops it, and restarts it', async () => {
-    const port = 19631;
+    const port = await getAvailablePort();
     const fixture = await createFixtureServer(port);
     await registerWebService(registryPath, {
       id: 'svc_fixture',

@@ -1,6 +1,6 @@
 # Test Report
 
-Date: 2026-06-26
+Date: 2026-06-27
 
 ## Status Correction
 
@@ -60,7 +60,7 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 9 files, 32 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, and a minimal asset integrity scanner:
+Result: PASS. 10 files, 35 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, and the initial Markdown import contract:
 
 - `GET /health`
 - `POST /api/agent/register-html`
@@ -91,9 +91,22 @@ Result: PASS. 9 files, 32 tests. This proves the shared protocol, local HTTP fal
 - asset scanner reports dangerous inline scripts
 - asset scanner reports unpublishable `file://` resources
 - asset scanner preserves original HTML source hash during scan
+- Markdown import lists three templates
+- Markdown import scans folders while preserving relative paths
+- Markdown import converts frontmatter, images, wikilinks, and code blocks into readable HTML
 - stable validation errors for invalid registrations
 
 This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, asset localization/package UI, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
+
+Markdown import contract evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/bridge/markdownImport.test.ts
+```
+
+Result: PASS. 3 tests. This proves the initial Markdown import contract can list three templates, recursively scan Markdown folders while preserving relative paths, and convert a Markdown file into readable HTML while preserving frontmatter, images, wikilinks, and fenced code block language classes. It does not yet prove the desktop import wizard, 30-file fixture acceptance, Obsidian-scale compatibility, or Rust/native import pipeline.
 
 Latest full non-Rust validation:
 
@@ -101,9 +114,12 @@ Latest full non-Rust validation:
 npm run typecheck
 npm run test
 npm run lint
+npm run test:bridge
 ```
 
-Result: PASS. Full test run: 16 files, 57 tests.
+Result: PASS. Full test run: 17 files, 60 tests. Bridge test run: 10 files, 35 tests.
+
+During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 
 Current desktop blocker:
 

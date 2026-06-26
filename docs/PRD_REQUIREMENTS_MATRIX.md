@@ -1,6 +1,6 @@
 # PRD Requirements And Acceptance Matrix
 
-Date: 2026-06-26
+Date: 2026-06-27
 PRD: `/Users/siter/Documents/需求池项目/research/ai-html-notes-prd.html`
 Project root: `/Users/siter/Documents/HTML原生笔记编辑器/html-native-notes`
 
@@ -17,7 +17,7 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | F5 | Source Guard read-only intake and diff-gated writes | Rust `source_guard`, React `features/diff` | hash unchanged tests, path traversal tests, write gate UI test | Minimal bridge intake hash guard started; Rust Source Guard and diff-gated writes missing | `npm run test:bridge` PASS for bridge intake hash check and source hash preservation |
 | F6 | Version Engine snapshots, external changes, diff, rollback, branch/recover | Rust `version_store`, React `features/versions` | snapshot unit tests, external edit integration, rollback test | Minimal TS version store started; Rust core, UI timeline, branch/recover missing | `npm run test:bridge` PASS for baseline snapshots, source diff, content diff, DOM summary, and rollback of managed copy |
 | F7 | Markdown-first editor with shortcuts, slash command, wikilinks, backlinks, tags, quick open | React `features/editor` | editor command tests, backlink index tests, desktop edit flow | Not implemented | Pending |
-| F8 | Markdown and existing import preserving frontmatter/images/wikilinks/tags/folders/code blocks/templates | Rust `scanner`, React `features/import` | 30 Markdown fixture test, 100 mixed fixture test, hash unchanged test | Not implemented | Pending |
+| F8 | Markdown and existing import preserving frontmatter/images/wikilinks/tags/folders/code blocks/templates | Rust `scanner`, React `features/import` | 30 Markdown fixture test, 100 mixed fixture test, hash unchanged test | Minimal TS Markdown import contract started; Rust scanner, desktop import UI, 30-file fixture, and existing-project import missing | `npm run test:bridge` PASS for three templates, recursive Markdown folder scan with relative paths, frontmatter, images, wikilinks, and fenced code block conversion |
 | F9 | HTML Profile with metadata, block IDs, asset list, AI context, theme vars, version | Rust `profile` | profile parse/write tests, migration tests | Not implemented | Pending |
 | F10 | Page-in-place editing from preview with snapshot + diff | React `features/preview`, Rust version/write gate | edit overlay test, diff gate desktop flow | Not implemented | Pending |
 | F11 | Diary organization with at least two styles, preserves original | React `features/diary`, AI adapter | mocked AI test, live BYOK smoke test, original preservation test | Not implemented | Pending |
@@ -43,7 +43,7 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | A11 | 300-1000 word diary generates two organization styles within 30 seconds and preserves original | mocked AI timing test + BYOK smoke | Missing | Pending |
 | A12 | Preview edit button allows direct text edit, then diff/write/save-as/cancel | desktop preview edit flow | Missing | Pending |
 | A13 | Local HTML upload generates public link reachable outside local network | publish adapter test with configured target | Missing | Pending provider decision |
-| A14 | Import 30 Markdown notes preserving wikilinks/images/frontmatter/folders/code blocks and 3 templates | `npm run test:fixtures:markdown30` | Missing | Pending |
+| A14 | Import 30 Markdown notes preserving wikilinks/images/frontmatter/folders/code blocks and 3 templates | `npm run test:fixtures:markdown30` | Partial | Initial TS contract covers 3 templates plus one-file preservation of wikilinks/images/frontmatter/folders/code blocks; 30-note fixture and desktop import flow pending |
 | A15 | User can create/edit HTML notes with Markdown syntax and `[[page]]` backlinks | editor and backlink tests | Missing | Pending |
 | A16 | Asset integrity reports missing images, external scripts, unpublishable resources | asset scanner dangerous fixture test | Partial | TS asset scanner reports missing image, external script/style/link, dangerous inline script, unpublishable file URL; desktop asset panel pending |
 | A17 | 3-minute flow: AI page enters Vault, diff visible, Markdown-style edit, export | end-to-end timed desktop script | Missing | Pending |
