@@ -9,6 +9,7 @@ interface WatcherOptions {
   rootDir: string;
   sourceAgent: string;
   settleMs?: number;
+  pollMs?: number;
   onRequest: (request: NormalizedBridgeRequest) => void | Promise<void>;
 }
 
@@ -80,9 +81,11 @@ export async function scanExistingHtmlAssets(options: ScanOptions): Promise<Norm
 
 export function createHtmlAssetWatcher(options: WatcherOptions): HtmlAssetWatcher {
   const settleMs = options.settleMs ?? 100;
+  const pollMs = options.pollMs ?? 250;
   const seen = new Set<string>();
   const timers = new Map<string, NodeJS.Timeout>();
   let watcher: FSWatcher | undefined;
+  let poller: NodeJS.Timeout | undefined;
 
   async function emitIfHtml(filePath: string): Promise<void> {
     if (!isHtmlAsset(filePath) || !existsSync(filePath)) {
@@ -118,6 +121,19 @@ export function createHtmlAssetWatcher(options: WatcherOptions): HtmlAssetWatche
     timers.set(filePath, timer);
   }
 
+  async function scanForNewRequests(): Promise<void> {
+    const requests = await scanExistingHtmlAssets(options);
+
+    for (const request of requests) {
+      if (seen.has(request.dedupeKey)) {
+        continue;
+      }
+
+      seen.add(request.dedupeKey);
+      await options.onRequest(request);
+    }
+  }
+
   return {
     async start() {
       const existing = await scanExistingHtmlAssets(options);
@@ -132,12 +148,19 @@ export function createHtmlAssetWatcher(options: WatcherOptions): HtmlAssetWatche
 
         schedule(path.join(options.rootDir, filename.toString()));
       });
+      poller = setInterval(() => {
+        void scanForNewRequests();
+      }, pollMs);
     },
     async stop() {
       for (const timer of timers.values()) {
         clearTimeout(timer);
       }
       timers.clear();
+      if (poller) {
+        clearInterval(poller);
+      }
+      poller = undefined;
       watcher?.close();
       watcher = undefined;
     },

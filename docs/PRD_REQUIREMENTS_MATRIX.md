@@ -15,7 +15,7 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | F3 | Service Registry with cwd/start/url/port/health/stop/env/log | Rust `service_registry`, React `features/services` | schema unit tests, UI tests, fixture service registration | Not implemented | Pending |
 | F4 | Runtime Manager health-check, start if down, show state, stop | Rust `runtime_manager`, Tauri commands | fixture service start/stop, failed command log test | Not implemented | Pending |
 | F5 | Source Guard read-only intake and diff-gated writes | Rust `source_guard`, React `features/diff` | hash unchanged tests, path traversal tests, write gate UI test | Minimal bridge intake hash guard started; Rust Source Guard and diff-gated writes missing | `npm run test:bridge` PASS for bridge intake hash check and source hash preservation |
-| F6 | Version Engine snapshots, external changes, diff, rollback, branch/recover | Rust `version_store`, React `features/versions` | snapshot unit tests, external edit integration, rollback test | Not implemented | Pending |
+| F6 | Version Engine snapshots, external changes, diff, rollback, branch/recover | Rust `version_store`, React `features/versions` | snapshot unit tests, external edit integration, rollback test | Minimal TS version store started; Rust core, UI timeline, branch/recover missing | `npm run test:bridge` PASS for baseline snapshots, source diff, content diff, DOM summary, and rollback of managed copy |
 | F7 | Markdown-first editor with shortcuts, slash command, wikilinks, backlinks, tags, quick open | React `features/editor` | editor command tests, backlink index tests, desktop edit flow | Not implemented | Pending |
 | F8 | Markdown and existing import preserving frontmatter/images/wikilinks/tags/folders/code blocks/templates | Rust `scanner`, React `features/import` | 30 Markdown fixture test, 100 mixed fixture test, hash unchanged test | Not implemented | Pending |
 | F9 | HTML Profile with metadata, block IDs, asset list, AI context, theme vars, version | Rust `profile` | profile parse/write tests, migration tests | Not implemented | Pending |
@@ -38,8 +38,8 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | A6 | Intake original HTML preserves content hash | source hash before/after test | Partial | bridge intake test preserves source hash; Rust Source Guard and desktop import evidence still pending |
 | A7 | Any write back shows diff and supports write back/save-as/cancel | diff gate component + desktop flow | Missing | Pending |
 | A8 | Import 100 old web/project dirs without modifying originals | project fixture hash test | Missing | Pending |
-| A9 | External agent edits create snapshots; user can diff and roll back | watcher + version integration test | Missing | Pending |
-| A10 | Two HTML versions show source diff, content diff, DOM summary, screenshot hint | version diff UI flow | Missing | Pending |
+| A9 | External agent edits create snapshots; user can diff and roll back | watcher + version integration test | Partial | version store can snapshot/diff/rollback managed copy; external watcher-to-version UI flow pending |
+| A10 | Two HTML versions show source diff, content diff, DOM summary, screenshot hint | version diff UI flow | Partial | source diff, content diff, and DOM summary exist in TS tests; screenshot hint/UI pending |
 | A11 | 300-1000 word diary generates two organization styles within 30 seconds and preserves original | mocked AI timing test + BYOK smoke | Missing | Pending |
 | A12 | Preview edit button allows direct text edit, then diff/write/save-as/cancel | desktop preview edit flow | Missing | Pending |
 | A13 | Local HTML upload generates public link reachable outside local network | publish adapter test with configured target | Missing | Pending provider decision |

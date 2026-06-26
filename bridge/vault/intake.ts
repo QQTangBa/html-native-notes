@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { normalizeBridgeRequest, type AgentInboxRequestInput, type NormalizedBridgeRequest } from '../shared/protocol';
+import { createVersionSnapshot } from './versionStore';
 
 export interface BridgeVaultAsset {
   id: string;
@@ -142,6 +143,15 @@ export async function intakeBridgeRequestToVault(options: IntakeOptions): Promis
   };
 
   const manifestPath = await writeVaultManifest(options.vaultDir, nextManifest);
+
+  if (asset.kind === 'html-note' && asset.sourcePath) {
+    await createVersionSnapshot({
+      vaultDir: options.vaultDir,
+      assetId: asset.id,
+      sourcePath: asset.sourcePath,
+      reason: 'baseline',
+    });
+  }
 
   return {
     created: true,

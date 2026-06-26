@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { intakeBridgeRequestToVault, readVaultManifest } from '../../../bridge/vault/intake';
+import { listVersionSnapshots } from '../../../bridge/vault/versionStore';
 
 let tempDir: string;
 let vaultDir: string;
@@ -62,6 +63,14 @@ describe('bridge vault intake', () => {
       id: intake.asset.id,
       sourcePath,
       sourceHash: beforeHash,
+    });
+
+    const snapshots = await listVersionSnapshots(vaultDir, intake.asset.id);
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0]).toMatchObject({
+      assetId: intake.asset.id,
+      reason: 'baseline',
+      contentHash: beforeHash,
     });
   });
 
