@@ -4,6 +4,11 @@ import {
   normalizeBridgeRequest,
   webServiceRegistrationSchema,
 } from '../shared/protocol';
+import { intakeBridgeRequestToVault } from '../vault/intake';
+
+export interface AgentBridgeHttpRouteOptions {
+  vaultDir?: string;
+}
 
 interface AcceptedBridgeRequest {
   ok: true;
@@ -12,6 +17,9 @@ interface AcceptedBridgeRequest {
   dedupeKey: string;
   acceptedAt: string;
   normalized: unknown;
+  created?: boolean;
+  manifestPath?: string;
+  vaultAssetId?: string;
 }
 
 function acceptedResponse(
@@ -30,7 +38,10 @@ function acceptedResponse(
   };
 }
 
-export async function registerAgentBridgeHttpRoutes(app: FastifyInstance): Promise<void> {
+export async function registerAgentBridgeHttpRoutes(
+  app: FastifyInstance,
+  options: AgentBridgeHttpRouteOptions = {},
+): Promise<void> {
   app.get('/health', async () => ({
     ok: true,
     name: 'html-native-notes-agent-bridge',
@@ -53,9 +64,20 @@ export async function registerAgentBridgeHttpRoutes(app: FastifyInstance): Promi
       },
     });
 
-    return reply
-      .code(202)
-      .send(acceptedResponse('registerHtmlAsset', parsed.requestId, normalized, normalized.dedupeKey));
+    const response = acceptedResponse('registerHtmlAsset', parsed.requestId, normalized, normalized.dedupeKey);
+
+    if (options.vaultDir) {
+      const intake = await intakeBridgeRequestToVault({
+        vaultDir: options.vaultDir,
+        request: normalized,
+      });
+
+      response.created = intake.created;
+      response.manifestPath = intake.manifestPath;
+      response.vaultAssetId = intake.asset.id;
+    }
+
+    return reply.code(202).send(response);
   });
 
   app.post('/api/agent/register-service', async (request, reply) => {
@@ -72,8 +94,19 @@ export async function registerAgentBridgeHttpRoutes(app: FastifyInstance): Promi
       },
     });
 
-    return reply
-      .code(202)
-      .send(acceptedResponse('registerWebService', parsed.requestId, normalized, normalized.dedupeKey));
+    const response = acceptedResponse('registerWebService', parsed.requestId, normalized, normalized.dedupeKey);
+
+    if (options.vaultDir) {
+      const intake = await intakeBridgeRequestToVault({
+        vaultDir: options.vaultDir,
+        request: normalized,
+      });
+
+      response.created = intake.created;
+      response.manifestPath = intake.manifestPath;
+      response.vaultAssetId = intake.asset.id;
+    }
+
+    return reply.code(202).send(response);
   });
 }

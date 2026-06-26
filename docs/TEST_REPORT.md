@@ -60,7 +60,7 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 5 files, 20 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, and file watcher request generation:
+Result: PASS. 6 files, 24 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, and minimal bridge-to-Vault manifest intake:
 
 - `GET /health`
 - `POST /api/agent/register-html`
@@ -74,9 +74,13 @@ Result: PASS. 5 files, 20 tests. This proves the shared protocol, local HTTP fal
 - watcher scan of existing HTML files
 - watcher event emission for newly created HTML files
 - watcher ignoring non-HTML files and duplicate content events
+- HTTP registration can write `.htmlvault/manifest.json` when a Vault path is configured
+- bridge intake verifies source hash before registering
+- bridge intake preserves the original source file hash
+- repeat bridge intake deduplicates by dedupe key
 - stable validation errors for invalid registrations
 
-This still does not prove MCP, Vault insertion, thumbnail generation, or 10-second desktop acceptance.
+This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, or 10-second desktop acceptance.
 
 Latest full non-Rust validation:
 
@@ -86,7 +90,7 @@ npm run test
 npm run lint
 ```
 
-Result: PASS. Full test run: 12 files, 45 tests.
+Result: PASS. Full test run: 13 files, 49 tests.
 
 Current desktop blocker:
 

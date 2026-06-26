@@ -1,8 +1,10 @@
 import fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
-import { registerAgentBridgeHttpRoutes } from './routes';
+import { registerAgentBridgeHttpRoutes, type AgentBridgeHttpRouteOptions } from './routes';
 
-export async function createAgentBridgeHttpServer(): Promise<FastifyInstance> {
+export async function createAgentBridgeHttpServer(
+  options: AgentBridgeHttpRouteOptions = {},
+): Promise<FastifyInstance> {
   const app = fastify({ logger: false });
 
   app.setErrorHandler((error, _request, reply) => {
@@ -25,7 +27,7 @@ export async function createAgentBridgeHttpServer(): Promise<FastifyInstance> {
     });
   });
 
-  await registerAgentBridgeHttpRoutes(app);
+  await registerAgentBridgeHttpRoutes(app, options);
 
   return app;
 }

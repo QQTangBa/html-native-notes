@@ -1,19 +1,32 @@
 // @vitest-environment node
 
+import { createHash } from 'node:crypto';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createAgentBridgeHttpServer } from '../../../bridge/http/server';
+import { readVaultManifest } from '../../../bridge/vault/intake';
 
 let app: Awaited<ReturnType<typeof createAgentBridgeHttpServer>>;
+let tempDir: string;
 
 beforeEach(async () => {
+  tempDir = await mkdtemp(path.join(tmpdir(), 'html-native-http-bridge-'));
   app = await createAgentBridgeHttpServer();
   await app.ready();
 });
 
 afterEach(async () => {
   await app.close();
+  await rm(tempDir, { recursive: true, force: true });
 });
+
+async function sha256(filePath: string): Promise<string> {
+  const content = await readFile(filePath);
+  return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
 
 describe('agent bridge HTTP API', () => {
   it('reports bridge health', async () => {
@@ -86,5 +99,43 @@ describe('agent bridge HTTP API', () => {
 
     expect(response.body.error.code).toBe('VALIDATION_ERROR');
     expect(response.body.error.message).toBe('Agent bridge request validation failed');
+  });
+
+  it('can intake HTTP HTML registrations directly into a Vault manifest when configured', async () => {
+    await app.close();
+
+    const vaultDir = path.join(tempDir, 'Vault');
+    const sourcePath = path.join(tempDir, 'http-output.html');
+    await writeFile(sourcePath, '<!doctype html><title>HTTP Output</title>', 'utf8');
+
+    const sourceHash = await sha256(sourcePath);
+    app = await createAgentBridgeHttpServer({ vaultDir });
+    await app.ready();
+
+    const response = await request(app.server)
+      .post('/api/agent/register-html')
+      .send({
+        requestId: 'http-vault-001',
+        filePath: sourcePath,
+        sourceHash,
+        title: 'HTTP Output',
+        tags: ['bridge'],
+      })
+      .expect(202);
+
+    expect(response.body).toMatchObject({
+      ok: true,
+      created: true,
+      vaultAssetId: expect.stringMatching(/^asset_/),
+      manifestPath: path.join(vaultDir, '.htmlvault', 'manifest.json'),
+    });
+
+    const manifest = await readVaultManifest(vaultDir);
+    expect(manifest.assets).toHaveLength(1);
+    expect(manifest.assets[0]).toMatchObject({
+      id: response.body.vaultAssetId,
+      sourcePath,
+      sourceHash,
+    });
   });
 });

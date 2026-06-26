@@ -11,10 +11,10 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | ID | PRD requirement | Implementation owner | Required tests | Current status | Evidence |
 | --- | --- | --- | --- | --- | --- |
 | F1 | Vault home with folder-like library, cards/list, thumbnails, title, tags, updated time, source, search, filters | React `features/vault`, Rust `core/vault` | component tests, desktop flow, 100-fixture search test | Not implemented | Pending |
-| F2 | Agent Bridge through MCP, CLI, HTTP API, offline inbox, file watching | `bridge/*`, Rust inbox/watcher commands | MCP integration, HTTP integration, CLI integration, inbox startup, watcher test | Protocol schema, HTTP fallback, CLI fallback, offline inbox, and watcher request generation started; MCP/Vault intake missing | `npm run test:bridge` PASS for shared request schemas, HTTP health, `register-html`, `register-service`, CLI `register`, CLI `service register`, CLI `--offline-inbox`, JSONL read/dedupe/ack, watcher scan/new-file/dedupe, and validation errors |
+| F2 | Agent Bridge through MCP, CLI, HTTP API, offline inbox, file watching | `bridge/*`, Rust inbox/watcher commands | MCP integration, HTTP integration, CLI integration, inbox startup, watcher test | Protocol schema, HTTP fallback, CLI fallback, offline inbox, watcher request generation, and minimal manifest intake started; MCP/desktop UI/thumbnail missing | `npm run test:bridge` PASS for shared request schemas, HTTP health, `register-html`, `register-service`, CLI `register`, CLI `service register`, CLI `--offline-inbox`, JSONL read/dedupe/ack, watcher scan/new-file/dedupe, HTTP-to-manifest intake, source hash preservation, and validation errors |
 | F3 | Service Registry with cwd/start/url/port/health/stop/env/log | Rust `service_registry`, React `features/services` | schema unit tests, UI tests, fixture service registration | Not implemented | Pending |
 | F4 | Runtime Manager health-check, start if down, show state, stop | Rust `runtime_manager`, Tauri commands | fixture service start/stop, failed command log test | Not implemented | Pending |
-| F5 | Source Guard read-only intake and diff-gated writes | Rust `source_guard`, React `features/diff` | hash unchanged tests, path traversal tests, write gate UI test | Not implemented | Pending |
+| F5 | Source Guard read-only intake and diff-gated writes | Rust `source_guard`, React `features/diff` | hash unchanged tests, path traversal tests, write gate UI test | Minimal bridge intake hash guard started; Rust Source Guard and diff-gated writes missing | `npm run test:bridge` PASS for bridge intake hash check and source hash preservation |
 | F6 | Version Engine snapshots, external changes, diff, rollback, branch/recover | Rust `version_store`, React `features/versions` | snapshot unit tests, external edit integration, rollback test | Not implemented | Pending |
 | F7 | Markdown-first editor with shortcuts, slash command, wikilinks, backlinks, tags, quick open | React `features/editor` | editor command tests, backlink index tests, desktop edit flow | Not implemented | Pending |
 | F8 | Markdown and existing import preserving frontmatter/images/wikilinks/tags/folders/code blocks/templates | Rust `scanner`, React `features/import` | 30 Markdown fixture test, 100 mixed fixture test, hash unchanged test | Not implemented | Pending |
@@ -31,11 +31,11 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | ID | PRD acceptance indicator | Verification command or flow | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | A1 | Import 100 mixed HTML/Markdown files; 95% open/search/preview | `npm run test:fixtures:mixed100` plus desktop import screenshot | Missing | Pending |
-| A2 | MCP/CLI/HTTP/file-watch generated HTML enters Vault within 10 seconds with source, summary, thumbnail | `npm run test:bridge` and desktop bridge flow | Missing | Pending |
+| A2 | MCP/CLI/HTTP/file-watch generated HTML enters Vault within 10 seconds with source, summary, thumbnail | `npm run test:bridge` and desktop bridge flow | Partial | HTTP-to-manifest intake exists; MCP, desktop UI, thumbnail, summary, and 10-second desktop flow still pending |
 | A3 | Offline inbox fallback works when MCP/HTTP/CLI unavailable and app later prompts registration | inbox JSONL integration test and desktop startup flow | Missing | Pending |
 | A4 | Registered local dashboard health-checks, starts, and shows command/cwd/log on failure | fixture service desktop flow | Missing | Pending |
 | A5 | User can stop app-started service and restart it | service lifecycle integration test | Missing | Pending |
-| A6 | Intake original HTML preserves content hash | source hash before/after test | Missing | Pending |
+| A6 | Intake original HTML preserves content hash | source hash before/after test | Partial | bridge intake test preserves source hash; Rust Source Guard and desktop import evidence still pending |
 | A7 | Any write back shows diff and supports write back/save-as/cancel | diff gate component + desktop flow | Missing | Pending |
 | A8 | Import 100 old web/project dirs without modifying originals | project fixture hash test | Missing | Pending |
 | A9 | External agent edits create snapshots; user can diff and roll back | watcher + version integration test | Missing | Pending |
