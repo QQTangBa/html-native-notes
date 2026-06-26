@@ -22,7 +22,7 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | F10 | Page-in-place editing from preview with snapshot + diff | React `features/preview`, Rust version/write gate | edit overlay test, diff gate desktop flow | Not implemented | Pending |
 | F11 | Diary organization with at least two styles, preserves original | React `features/diary`, AI adapter | mocked AI test, live BYOK smoke test, original preservation test | Not implemented | Pending |
 | F12 | Open-source BYOK AI config, no hardcoded secrets | React `features/settings`, config command | config validation test, secret exposure test, live provider smoke | Partially prototyped only | Pending desktop implementation |
-| F13 | Asset management for missing images/CSS/JS, dangerous scripts, broken externals, safe mode | Rust `asset_scan`, React `features/assets` | dangerous fixture test, missing asset test, report UI test | Not implemented | Pending |
+| F13 | Asset management for missing images/CSS/JS, dangerous scripts, broken externals, safe mode | Rust `asset_scan`, React `features/assets` | dangerous fixture test, missing asset test, report UI test | Minimal TS asset scanner started; Rust core, localization/package flow, and UI missing | `npm run test:bridge` PASS for missing local images, external scripts/styles/links, dangerous inline scripts, unpublishable file URLs, safe mode flag, and source hash preservation |
 | F14 | Export single file/folder package/Markdown/PDF and publish/static hosting adapter | Rust `exporter/publish`, React `features/publish` | export tests, package inspection, publish adapter test | Not implemented | Pending |
 | F15 | macOS desktop app, Intel + Apple Silicon target, older macOS considered | Tauri `src-tauri` | desktop launch, bundle config check, build report | Scaffold started; not built | `npm run test -- tests/unit/desktopScaffold.test.ts` PASS; Rust toolchain still missing, so no desktop launch evidence yet |
 
@@ -45,7 +45,7 @@ This matrix is the completion ledger. Rows cannot be marked complete without dir
 | A13 | Local HTML upload generates public link reachable outside local network | publish adapter test with configured target | Missing | Pending provider decision |
 | A14 | Import 30 Markdown notes preserving wikilinks/images/frontmatter/folders/code blocks and 3 templates | `npm run test:fixtures:markdown30` | Missing | Pending |
 | A15 | User can create/edit HTML notes with Markdown syntax and `[[page]]` backlinks | editor and backlink tests | Missing | Pending |
-| A16 | Asset integrity reports missing images, external scripts, unpublishable resources | asset scanner dangerous fixture test | Missing | Pending |
+| A16 | Asset integrity reports missing images, external scripts, unpublishable resources | asset scanner dangerous fixture test | Partial | TS asset scanner reports missing image, external script/style/link, dangerous inline script, unpublishable file URL; desktop asset panel pending |
 | A17 | 3-minute flow: AI page enters Vault, diff visible, Markdown-style edit, export | end-to-end timed desktop script | Missing | Pending |
 
 ## Required Evidence Naming

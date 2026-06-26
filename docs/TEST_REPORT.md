@@ -60,7 +60,7 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 8 files, 30 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, and a minimal Service Registry/Runtime Manager contract:
+Result: PASS. 9 files, 32 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, and a minimal asset integrity scanner:
 
 - `GET /health`
 - `POST /api/agent/register-html`
@@ -86,9 +86,14 @@ Result: PASS. 8 files, 30 tests. This proves the shared protocol, local HTTP fal
 - runtime manager starts an app-managed fixture service
 - runtime manager verifies health, stops the service, and restarts it
 - runtime manager returns cwd, command, and log path when startup fails
+- asset scanner reports missing local images
+- asset scanner reports external scripts, stylesheets, and links
+- asset scanner reports dangerous inline scripts
+- asset scanner reports unpublishable `file://` resources
+- asset scanner preserves original HTML source hash during scan
 - stable validation errors for invalid registrations
 
-This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
+This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, asset localization/package UI, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
 
 Latest full non-Rust validation:
 
@@ -98,7 +103,7 @@ npm run test
 npm run lint
 ```
 
-Result: PASS. Full test run: 15 files, 55 tests.
+Result: PASS. Full test run: 16 files, 57 tests.
 
 Current desktop blocker:
 
