@@ -243,6 +243,8 @@ git commit -m "feat: add fixture-scale import workflow"
 
 ## Task 6: Markdown-First Editor
 
+Checkpoint evidence before editor work: Rust source now includes `src-tauri/src/core/notes.rs` and `src-tauri/src/commands/notes.rs` for native `note_list`, `note_create`, `note_get`, `note_save_content`, `note_duplicate`, and `note_delete` command boundaries. The source covers local `.htmlvault/notes-store` metadata/notes/trash storage, safe note id checks, default HTML note generation, and wikilink/tag/backlink metadata hooks. `npm run test:desktop:contract` covers this source/registration contract; Markdown-first rich editing, slash commands, quick open, Cargo verification, and launched Tauri flow remain pending.
+
 **Files:**
 - Create: `src/features/editor/MarkdownHtmlEditor.tsx`
 - Create: `src/features/editor/markdownCommands.ts`

@@ -470,13 +470,26 @@ npm run test:desktop:contract
 
 Result: PASS. `tests/unit/desktopNativeExporter.test.ts` passed 3 tests covering Rust exporter source for static package and Markdown export, `export_static_package` and `export_markdown` command registration, managed `.htmlvault/exports/<assetId>/latest` output boundary, `manifest.json`, local asset copy helper, skipped external resources, Markdown conversion helper, and source hash reporting. `npm run test:desktop:contract` passed 8 files and 23 tests, now including the exporter native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
 
+Native desktop note command source evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run test -- tests/unit/desktopNativeNotes.test.ts
+npm run test:desktop:contract
+```
+
+Result: PASS. `tests/unit/desktopNativeNotes.test.ts` passed 3 tests covering Rust note store source for HTML note CRUD, `note_list`, `note_create`, `note_get`, `note_save_content`, `note_duplicate`, and `note_delete` command registration, local `.htmlvault/notes-store` metadata/notes/trash storage, safe note id checks, and wikilink/tag/backlink metadata hooks. `npm run test:desktop:contract` passed 9 files and 26 tests, now including the notes native command source contract. This is source/contract evidence only; Cargo build, Markdown-first rich editor behavior, and launched Tauri flow remain pending because Rust is not installed in PATH.
+
 Latest full non-Rust validation:
 
 ```bash
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 38 test files and 155 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 39 test files and 158 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Additional security check:
 
