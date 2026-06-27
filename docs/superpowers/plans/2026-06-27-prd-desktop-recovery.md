@@ -310,6 +310,8 @@ git commit -m "feat: add page-in-place edit overlay"
 
 ## Task 8: External Edit Watcher + Version Recovery
 
+Checkpoint evidence before native watcher work: Rust source now includes `src-tauri/src/core/version_store.rs` and `src-tauri/src/commands/version_store.rs` for native list/create/diff/rollback command boundaries. The source covers safe `asset_*` IDs, snapshot content realpath containment under `.htmlvault/versions/<assetId>/`, source path Vault containment before snapshot/rollback, source/content diff, DOM summary, and rollback hash response. `npm run test:desktop:contract` covers this source/registration contract; Cargo verification and launched Tauri flow remain pending until Rust is available.
+
 **Files:**
 - Create: `src-tauri/src/core/watcher.rs`
 - Modify: `bridge/watch/fileWatcher.ts`

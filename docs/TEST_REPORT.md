@@ -418,13 +418,26 @@ npm run test:desktop:contract
 
 Result: PASS. `tests/unit/desktopNativeSourceGuard.test.ts` passed 3 tests covering the Rust Source Guard core source, `source_guard_review_write` and `source_guard_apply_write_decision` command registration, readable diff/write decision markers, source hash write-back checks, and canonical Vault boundary checks for source/save-as paths. `npm run test:desktop:contract` passed 4 files and 11 tests, now including the Source Guard native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
 
+Native desktop Version Engine command source evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run test -- tests/unit/desktopNativeVersionStore.test.ts
+npm run test:desktop:contract
+```
+
+Result: PASS. `tests/unit/desktopNativeVersionStore.test.ts` passed 3 tests covering Rust Version Engine core source for list/create/diff/rollback, `vault_list_versions`, `vault_create_version_snapshot`, `vault_diff_versions`, and `vault_rollback_version` command registration, safe `asset_*` ID checks, snapshot content realpath boundary checks, source path Vault boundary checks, readable source/content diff markers, DOM summary, and rollback response shape. `npm run test:desktop:contract` passed 5 files and 14 tests, now including the Version Engine native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
+
 Latest full non-Rust validation:
 
 ```bash
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 34 test files and 143 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 35 test files and 146 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Additional security check:
 
