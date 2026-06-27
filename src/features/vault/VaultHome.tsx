@@ -18,10 +18,11 @@ import {
   Activity,
   Download,
 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { InvalidInboxLine } from '../../../bridge/inbox/jsonlInbox';
 import type { NormalizedBridgeRequest } from '../../../bridge/shared/protocol';
 import { InboxPanel } from '../bridge/InboxPanel';
+import { appCopy, type AppCopy } from '../../shared/i18n';
 import type {
   VaultAssetIntegrityReport,
   VaultExportResponse,
@@ -73,6 +74,7 @@ export interface VaultHomeProps {
   inboxInvalidLines?: InvalidInboxLine[];
   inboxSkippedDuplicates?: string[];
   inboxBusyRequestIds?: string[];
+  copy?: AppCopy['vault'];
   onOpenItem?: (itemId: string) => void;
   onGenerateThumbnails?: () => void;
   onServiceHealth?: (itemId: string) => void;
@@ -93,6 +95,23 @@ export interface VaultHomeProps {
 
 type ViewMode = 'card' | 'list';
 
+type VaultTreeRow =
+  | {
+      type: 'folder';
+      id: string;
+      label: string;
+      path: string;
+      depth: number;
+      itemCount: number;
+    }
+  | {
+      type: 'item';
+      id: string;
+      label: string;
+      item: VaultHomeItem;
+      depth: number;
+    };
+
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }
@@ -111,16 +130,108 @@ function matchesQuery(item: VaultHomeItem, query: string): boolean {
 }
 
 function formatTime(value: string): string {
+  const unixMatch = value.match(/^unix:(\d+)$/);
+  const date = unixMatch ? new Date(Number(unixMatch[1]) * 1000) : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
   return new Intl.DateTimeFormat('zh-CN', {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function pendingThumbnailLabel(count: number): string {
   return `${count} pending thumbnail${count === 1 ? '' : 's'}`;
+}
+
+function pathSegments(path: string | undefined): string[] {
+  return (path ?? 'root')
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+}
+
+function sourceFolderPath(item: VaultHomeItem): string {
+  const relativePath = item.relativeSourcePath?.trim();
+
+  if (relativePath) {
+    const segments = pathSegments(relativePath);
+    if (segments.length > 1) {
+      return segments.slice(0, -1).join('/');
+    }
+  }
+
+  return item.folderPath || 'root';
+}
+
+function displayFolderPath(item: VaultHomeItem): string {
+  const segments = pathSegments(sourceFolderPath(item));
+
+  if (segments.length === 0) {
+    return 'root';
+  }
+
+  const knownVaultRoots = ['imports', 'services', 'agent-output', 'notes', 'projects'];
+  const vaultRootIndex = segments.findIndex((segment) => knownVaultRoots.includes(segment));
+  if (vaultRootIndex >= 0) {
+    return segments.slice(vaultRootIndex).join('/');
+  }
+
+  const scratchRootIndex = segments.findIndex((segment) => segment === 'test-results');
+  if (scratchRootIndex >= 0 && scratchRootIndex + 1 < segments.length) {
+    return segments.slice(scratchRootIndex + 1).join('/');
+  }
+
+  if (segments[0] === 'Users' || segments[0] === 'Volumes') {
+    return segments.slice(-2).join('/');
+  }
+
+  return segments.join('/');
+}
+
+function buildVaultTreeRows(items: VaultHomeItem[]): VaultTreeRow[] {
+  const folderRows = new Map<string, Extract<VaultTreeRow, { type: 'folder' }>>();
+
+  for (const item of items) {
+    const segments = pathSegments(displayFolderPath(item));
+    for (let index = 0; index < segments.length; index += 1) {
+      const path = segments.slice(0, index + 1).join('/');
+      const existing = folderRows.get(path);
+      if (existing) {
+        existing.itemCount += index === segments.length - 1 ? 1 : 0;
+      } else {
+        folderRows.set(path, {
+          type: 'folder',
+          id: `folder:${path}`,
+          label: segments[index],
+          path,
+          depth: index,
+          itemCount: index === segments.length - 1 ? 1 : 0,
+        });
+      }
+    }
+  }
+
+  const rows: VaultTreeRow[] = Array.from(folderRows.values()).sort((a, b) => a.path.localeCompare(b.path));
+  const itemRows: VaultTreeRow[] = items
+    .map((item) => ({
+      type: 'item' as const,
+      id: `item:${item.id}`,
+      label: item.title,
+      item,
+      depth: pathSegments(displayFolderPath(item)).length,
+    }))
+    .sort((a, b) => {
+      const folderCompare = displayFolderPath(a.item).localeCompare(displayFolderPath(b.item));
+      return folderCompare || a.label.localeCompare(b.label);
+    });
+
+  return [...rows, ...itemRows];
 }
 
 export function VaultHome({
@@ -148,6 +259,7 @@ export function VaultHome({
   inboxInvalidLines = [],
   inboxSkippedDuplicates = [],
   inboxBusyRequestIds = [],
+  copy = appCopy.en.vault,
   onOpenItem,
   onGenerateThumbnails,
   onServiceHealth,
@@ -187,7 +299,7 @@ export function VaultHome({
 
   const tags = useMemo(() => uniqueSorted(items.flatMap((item) => item.tags)), [items]);
   const sourceAgents = useMemo(() => uniqueSorted(items.flatMap((item) => (item.sourceAgent ? [item.sourceAgent] : []))), [items]);
-  const folders = useMemo(() => uniqueSorted(items.map((item) => item.folderPath)), [items]);
+  const treeRows = useMemo(() => buildVaultTreeRows(items), [items]);
   const pendingThumbnailCount = useMemo(() => items.filter((item) => item.thumbnail.status === 'pending').length, [items]);
   const visibleItems = useMemo(
     () =>
@@ -195,7 +307,7 @@ export function VaultHome({
         .filter((item) => matchesQuery(item, query))
         .filter((item) => !tag || item.tags.includes(tag))
         .filter((item) => !sourceAgent || item.sourceAgent === sourceAgent)
-        .filter((item) => !folder || item.folderPath === folder)
+        .filter((item) => !folder || displayFolderPath(item) === folder)
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
     [folder, items, query, sourceAgent, tag],
   );
@@ -213,54 +325,74 @@ export function VaultHome({
   }
 
   const canGenerateThumbnails = Boolean(onGenerateThumbnails && pendingThumbnailCount > 0);
-  const thumbnailButtonLabel = thumbnailBusy ? 'Rendering thumbnails' : `Generate ${pendingThumbnailLabel(pendingThumbnailCount)}`;
+  const thumbnailButtonLabel = thumbnailBusy ? `${copy.rendering} thumbnails` : `${copy.generate} ${pendingThumbnailLabel(pendingThumbnailCount)}`;
   const thumbnailStatusText = thumbnailMessage ?? (pendingThumbnailCount > 0 ? pendingThumbnailLabel(pendingThumbnailCount) : 'Thumbnails ready');
   const diffLines = writeReview?.diff ? writeReview.diff.split('\n') : [];
   const hasVersionTimeline = Boolean(versionSnapshots || versionMessage || versionBusy);
   const canCompareVersions = Boolean(onCompareLatestVersions && versionSnapshots && versionSnapshots.length >= 2 && !versionBusy);
 
   return (
-    <section className="vault-home" aria-label="Vault home">
-      <aside className="vault-sidebar" aria-label="Vault folders and filters">
+    <section className="vault-home" aria-label={copy.ariaLabel}>
+      <aside className="vault-sidebar" aria-label={copy.sidebarLabel}>
         <div className="vault-brand">
           <span className="vault-mark">HV</span>
           <div>
-            <p className="eyebrow">HTML Vault</p>
-            <h1>Vault</h1>
+            <p className="eyebrow">{copy.eyebrow}</p>
+            <h1>{copy.title}</h1>
           </div>
         </div>
 
         <div className="vault-search">
           <Search aria-hidden="true" size={16} />
           <input
-            aria-label="Search Vault"
+            aria-label={copy.search}
             role="searchbox"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search title, tag, source..."
+            placeholder={copy.searchPlaceholder}
           />
         </div>
 
-        <nav className="vault-folder-list" aria-label="Folders">
-          {folders.map((folderPath) => (
-            <button
-              key={folderPath}
-              type="button"
-              className={folder === folderPath ? 'vault-folder active' : 'vault-folder'}
-              aria-label={`Open folder ${folderPath}`}
-              onClick={() => setFolder(folder === folderPath ? '' : folderPath)}
-            >
-              <Folder size={15} aria-hidden="true" />
-              <span>{folderPath}</span>
-              <small>{items.filter((item) => item.folderPath === folderPath).length}</small>
-            </button>
-          ))}
+        <nav className="vault-tree" aria-label={copy.tree} role="tree">
+          {treeRows.map((row) =>
+            row.type === 'folder' ? (
+              <button
+                key={row.id}
+                type="button"
+                role="treeitem"
+                aria-level={row.depth + 1}
+                aria-label={copy.openFolder(row.path)}
+                className={folder === row.path ? 'vault-tree-row folder active' : 'vault-tree-row folder'}
+                style={{ '--depth': row.depth } as CSSProperties}
+                onClick={() => setFolder(folder === row.path ? '' : row.path)}
+              >
+                <Folder size={15} aria-hidden="true" />
+                <span>{row.label}</span>
+                <small>{row.itemCount}</small>
+              </button>
+            ) : (
+              <button
+                key={row.id}
+                type="button"
+                role="treeitem"
+                aria-level={row.depth + 1}
+                aria-label={row.label}
+                aria-selected={activeItemId === row.item.id}
+                className={activeItemId === row.item.id ? 'vault-tree-row item active' : 'vault-tree-row item'}
+                style={{ '--depth': row.depth } as CSSProperties}
+                onClick={() => onOpenItem?.(row.item.id)}
+              >
+                <FileText size={14} aria-hidden="true" />
+                <span>{row.label}</span>
+              </button>
+            ),
+          )}
         </nav>
 
         <div className="vault-filter-block">
           <div className="vault-filter-title">
             <SlidersHorizontal size={14} aria-hidden="true" />
-            <span>Tags</span>
+            <span>{copy.tags}</span>
           </div>
           <div className="vault-token-grid">
             {tags.map((itemTag) => (
@@ -278,7 +410,7 @@ export function VaultHome({
         </div>
 
         <div className="vault-filter-block">
-          <div className="vault-filter-title">Sources</div>
+          <div className="vault-filter-title">{copy.sources}</div>
           <div className="vault-token-grid">
             {sourceAgents.map((agent) => (
               <button
@@ -309,8 +441,8 @@ export function VaultHome({
       <div className="vault-main">
         <header className="vault-toolbar">
           <div>
-            <p className="eyebrow">Library</p>
-            <h2>{visibleItems.length} assets</h2>
+            <p className="eyebrow">{copy.library}</p>
+            <h2>{visibleItems.length} {copy.assets}</h2>
           </div>
           <div className="vault-toolbar-actions">
             {canGenerateThumbnails ? (
@@ -322,18 +454,18 @@ export function VaultHome({
                 onClick={onGenerateThumbnails}
               >
                 <RefreshCw size={15} aria-hidden="true" />
-                <span>{thumbnailBusy ? 'Rendering' : 'Generate'}</span>
+                <span>{thumbnailBusy ? copy.rendering : copy.generate}</span>
               </button>
             ) : null}
             {onGenerateThumbnails ? <span className="vault-toolbar-status">{thumbnailStatusText}</span> : null}
-            <button type="button" className="icon-button" aria-label="Card view" aria-pressed={viewMode === 'card'} onClick={() => setViewMode('card')}>
+            <button type="button" className="icon-button" aria-label={copy.cardView} aria-pressed={viewMode === 'card'} onClick={() => setViewMode('card')}>
               <Grid2X2 size={16} aria-hidden="true" />
             </button>
-            <button type="button" className="icon-button" aria-label="List view" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}>
+            <button type="button" className="icon-button" aria-label={copy.listView} aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}>
               <List size={16} aria-hidden="true" />
             </button>
-            <button type="button" onClick={clearFilters} aria-label="Clear filters">
-              Clear
+            <button type="button" onClick={clearFilters} aria-label={copy.clearFilters}>
+              {copy.clear}
             </button>
           </div>
         </header>
@@ -362,7 +494,7 @@ export function VaultHome({
                   <div className="vault-meta-row">
                     <span>{item.kind}</span>
                     {item.sourceAgent ? <span>{item.sourceAgent}</span> : null}
-                    <span>{item.folderPath}</span>
+                    <span>{displayFolderPath(item)}</span>
                   </div>
                   <div className="vault-tags">
                     {item.tags.map((itemTag) => (
@@ -485,13 +617,13 @@ export function VaultHome({
             <aside className="vault-preview-panel" aria-label="HTML preview">
               <header className="vault-preview-header">
                 <div>
-                  <p className="eyebrow">{isEditingPreview ? 'Editable draft' : 'Read-only preview'}</p>
+                  <p className="eyebrow">{isEditingPreview ? copy.editableDraft : copy.readOnlyPreview}</p>
                   <h3>{previewTitle}</h3>
                 </div>
                 {onReviewEdit ? (
-                  <button type="button" className="vault-preview-tool" aria-label="Edit preview HTML" onClick={startPreviewEdit}>
+                  <button type="button" className="vault-preview-tool" aria-label={copy.editPreview} onClick={startPreviewEdit}>
                     <Pencil size={14} aria-hidden="true" />
-                    <span>Edit</span>
+                    <span>{copy.edit}</span>
                   </button>
                 ) : null}
               </header>

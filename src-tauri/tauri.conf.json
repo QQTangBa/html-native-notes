@@ -6,10 +6,11 @@
   "build": {
     "beforeDevCommand": "npm run dev:client",
     "beforeBuildCommand": "npm run build",
-    "devUrl": "http://127.0.0.1:5173",
+    "devUrl": "http://127.0.0.1:5178",
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "HTML Native Notes",

@@ -47,9 +47,9 @@ describe('native desktop service runtime command contract', () => {
     expect(commandSource).toContain('pub async fn service_stop');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('commands::service_runtime::service_check_health');
-    expect(mainSource).toContain('commands::service_runtime::service_start');
-    expect(mainSource).toContain('commands::service_runtime::service_stop');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('commands::service_runtime::service_check_health');
+    expect(libSource).toContain('commands::service_runtime::service_start');
+    expect(libSource).toContain('commands::service_runtime::service_stop');
   });
 });

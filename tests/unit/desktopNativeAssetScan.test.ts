@@ -38,7 +38,7 @@ describe('native desktop asset integrity command contract', () => {
     expect(commandSource).toContain('pub async fn asset_scan_integrity');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('commands::asset_scan::asset_scan_integrity');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('commands::asset_scan::asset_scan_integrity');
   });
 });

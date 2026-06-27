@@ -46,10 +46,10 @@ describe('native desktop Version Engine command contract', () => {
     expect(commandSource).toContain('pub async fn vault_rollback_version');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('commands::version_store::vault_list_versions');
-    expect(mainSource).toContain('commands::version_store::vault_create_version_snapshot');
-    expect(mainSource).toContain('commands::version_store::vault_diff_versions');
-    expect(mainSource).toContain('commands::version_store::vault_rollback_version');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('commands::version_store::vault_list_versions');
+    expect(libSource).toContain('commands::version_store::vault_create_version_snapshot');
+    expect(libSource).toContain('commands::version_store::vault_diff_versions');
+    expect(libSource).toContain('commands::version_store::vault_rollback_version');
   });
 });

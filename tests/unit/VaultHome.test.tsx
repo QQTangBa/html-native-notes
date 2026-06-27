@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { VaultHome, type VaultHomeItem } from '../../src/features/vault/VaultHome';
 import type { NormalizedBridgeRequest } from '../../bridge/shared/protocol';
+import { appCopy } from '../../src/shared/i18n';
 
 const items: VaultHomeItem[] = [
   {
@@ -57,9 +58,11 @@ describe('VaultHome', () => {
     expect(screen.getByRole('heading', { name: 'Vault' })).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Search Vault' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Card view' })).toHaveAttribute('aria-pressed', 'true');
-    const folders = screen.getByRole('navigation', { name: 'Folders' });
-    expect(within(folders).getByText('imports/ai-agent')).toBeInTheDocument();
-    expect(within(folders).getByText('services')).toBeInTheDocument();
+    const tree = screen.getByRole('tree', { name: 'Vault tree' });
+    expect(within(tree).getByText('imports')).toBeInTheDocument();
+    expect(within(tree).getByText('ai-agent')).toBeInTheDocument();
+    expect(within(tree).getByRole('treeitem', { name: 'Gut Market Research' })).toBeInTheDocument();
+    expect(within(tree).getByRole('treeitem', { name: 'Revenue Dashboard' })).toBeInTheDocument();
 
     const gutCard = screen.getByTestId('vault-item-asset_gut');
     expect(within(gutCard).getByText('Gut Market Research')).toBeInTheDocument();
@@ -72,27 +75,87 @@ describe('VaultHome', () => {
     expect(within(dashboardCard).getByText('Thumbnail ready')).toBeInTheDocument();
   });
 
+  it('renders the core Vault reading surface in Chinese when localized', () => {
+    render(<VaultHome items={items} copy={appCopy.zh.vault} />);
+
+    expect(screen.getByRole('heading', { name: '笔记库' })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: '搜索笔记库' })).toBeInTheDocument();
+    expect(screen.getByText('标签')).toBeInTheDocument();
+    expect(screen.getByText('来源')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '2 资产' })).toBeInTheDocument();
+  });
+
+  it('renders native manifest unix timestamps without crashing the Vault list', () => {
+    render(
+      <VaultHome
+        items={[
+          {
+            ...items[0],
+            id: 'asset_native_unix',
+            title: 'Native Unix Timestamp Report',
+            updatedAt: 'unix:1782544234',
+          },
+        ]}
+      />,
+    );
+
+    const card = screen.getByTestId('vault-item-asset_native_unix');
+    expect(within(card).getByText('Native Unix Timestamp Report')).toBeInTheDocument();
+    expect(within(card).getByRole('time')).toHaveTextContent(/\d{2}\/\d{2}/);
+  });
+
+  it('hides local absolute paths from the Obsidian-style Vault tree', () => {
+    render(
+      <VaultHome
+        items={[
+          {
+            id: 'asset_smoke',
+            kind: 'html-note',
+            title: 'Codex Smoke Report',
+            sourceAgent: 'codex',
+            sourcePath:
+              '/Users/siter/Documents/HTML原生笔记编辑器/html-native-notes/test-results/desktop-smoke/ai-fixtures/codex-ai-smoke.html',
+            relativeSourcePath:
+              'Users/siter/Documents/HTML原生笔记编辑器/html-native-notes/test-results/desktop-smoke/ai-fixtures/codex-ai-smoke.html',
+            folderPath:
+              'Users/siter/Documents/HTML原生笔记编辑器/html-native-notes/test-results/desktop-smoke/ai-fixtures',
+            tags: ['desktop-smoke'],
+            summary: 'Registered Vault asset',
+            updatedAt: 'unix:1782544234',
+            thumbnail: { status: 'pending', path: '/vault/.htmlvault/thumbnails/asset_smoke.png' },
+          },
+        ]}
+      />,
+    );
+
+    const tree = screen.getByRole('tree', { name: 'Vault tree' });
+    expect(within(tree).queryByText('Users')).not.toBeInTheDocument();
+    expect(within(tree).getByText('desktop-smoke')).toBeInTheDocument();
+    expect(within(tree).getByText('ai-fixtures')).toBeInTheDocument();
+    expect(within(tree).getByRole('treeitem', { name: 'Codex Smoke Report' })).toBeInTheDocument();
+  });
+
   it('filters by query, tag, source agent, and folder while supporting list view', () => {
     render(<VaultHome items={items} />);
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search Vault' }), { target: { value: 'revenue' } });
-    expect(screen.queryByText('Gut Market Research')).not.toBeInTheDocument();
-    expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    expect(within(screen.getByTestId('vault-items')).queryByText('Gut Market Research')).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('vault-items')).getByText('Revenue Dashboard')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     fireEvent.click(screen.getByRole('button', { name: 'Filter tag finance' }));
-    expect(screen.queryByText('Gut Market Research')).not.toBeInTheDocument();
-    expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    expect(within(screen.getByTestId('vault-items')).queryByText('Gut Market Research')).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('vault-items')).getByText('Revenue Dashboard')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     fireEvent.click(screen.getByRole('button', { name: 'Filter source codex' }));
-    expect(screen.getByText('Gut Market Research')).toBeInTheDocument();
-    expect(screen.queryByText('Revenue Dashboard')).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('vault-items')).getByText('Gut Market Research')).toBeInTheDocument();
+    expect(within(screen.getByTestId('vault-items')).queryByText('Revenue Dashboard')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Open folder services' }));
-    expect(screen.queryByText('Gut Market Research')).not.toBeInTheDocument();
-    expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Open folder services' }));
+    expect(within(screen.getByTestId('vault-items')).queryByText('Gut Market Research')).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('vault-items')).getByText('Revenue Dashboard')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'List view' }));
     expect(screen.getByRole('button', { name: 'List view' })).toHaveAttribute('aria-pressed', 'true');

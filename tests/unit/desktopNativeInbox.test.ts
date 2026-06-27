@@ -34,11 +34,11 @@ describe('native desktop inbox command contract', () => {
     expect(commandSource).toContain('AppHandle');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('mod commands');
-    expect(mainSource).toContain('mod core');
-    expect(mainSource).toContain('commands::inbox::inbox_list_requests');
-    expect(mainSource).toContain('commands::inbox::inbox_confirm_request');
-    expect(mainSource).toContain('commands::inbox::inbox_dismiss_request');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('mod commands');
+    expect(libSource).toContain('mod core');
+    expect(libSource).toContain('commands::inbox::inbox_list_requests');
+    expect(libSource).toContain('commands::inbox::inbox_confirm_request');
+    expect(libSource).toContain('commands::inbox::inbox_dismiss_request');
   });
 });

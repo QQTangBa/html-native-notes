@@ -1,47 +1,27 @@
 # HTML Native Notes
 
-Status: PRD desktop reset in progress.
+Local-first macOS desktop app for AI-generated HTML notes, rendered HTML reading, Obsidian-style Vault navigation, Source Guard review, Agent Bridge intake, version snapshots, local export, and user-configured AI.
 
-HTML Native Notes is being rebuilt as the PRD-defined macOS desktop AI HTML Vault app. The existing React/Fastify web app in this repository is a prototype slice only; it is not the complete product and must not be treated as PRD-complete.
+中文说明见下方「中文」部分。
 
-Current authoritative planning docs:
+## Highlights
 
-- `docs/TECHNICAL_DESIGN.md`
-- `docs/PRD_REQUIREMENTS_MATRIX.md`
-- `docs/PRD_GAP_AUDIT.md`
-- `docs/superpowers/plans/2026-06-26-prd-desktop-app.md`
-
-The target product is a local-first macOS desktop workbench for AI-generated HTML documents, Markdown notes, and local service assets, with Source Guard, Agent Bridge, versioning, Markdown-style editing, service start/stop, asset checks, export, and publish workflows.
-
-## Current Gate
-
-The PRD recommends Tauri. This machine currently has Node/npm but does not have `rustc` or `cargo` in PATH, so desktop implementation cannot be built and self-tested until one of these is chosen:
-
-- install Rust toolchain for this user account, then proceed with Tauri
-- explicitly switch to the Electron fallback
-
-No real API key should be committed. Use ignored local config only.
-
-## Prototype Features
-
-The current prototype includes the following web-only capabilities. They are useful reference material, not final scope.
-
-## Features
-
-- Local Fastify + React app on `127.0.0.1`.
-- HTML source editor with live sanitized iframe preview.
-- Local filesystem note storage under `data/`.
-- Create, open, save, duplicate, and delete notes.
-- User-configured OpenAI-compatible AI provider.
-- AI actions: summarize, rewrite, outline, generate section, and clean HTML.
-- Secret-safe AI status API.
-- Prototype Vault home for bridge-registered HTML assets, including search/filter/list/card views, thumbnail generation, read-only preview, and a Source Guard preview-source edit review panel.
-- Unit, integration, and Playwright E2E tests.
+- Tauri + React desktop app.
+- Render-first HTML note reading: users see the rendered page by default, not raw HTML source.
+- Obsidian-style left Vault tree with folder and note rows.
+- English / Chinese UI switch.
+- Dark / light theme switch.
+- Agent Inbox for AI/agent-generated HTML registration.
+- BYOK OpenAI-compatible AI configuration through local env only.
+- Source Guard diff workflow before write-back.
+- Version timeline, rollback hooks, asset integrity scan, package/Markdown export.
 
 ## Requirements
 
-- Node.js 20 or newer.
+- macOS.
+- Node.js 20+.
 - npm.
+- Rust toolchain for desktop builds (`cargo`, `rustc`).
 
 ## Install
 
@@ -51,7 +31,7 @@ npm install
 
 ## Configure AI
 
-Copy the example:
+Copy the example file:
 
 ```bash
 cp .env.example .env.local
@@ -67,23 +47,11 @@ AI_TEMPERATURE=0.2
 AI_MAX_TOKENS=2048
 ```
 
-`.env.local` is gitignored. Do not commit real API keys.
-
-## Configure Static Publish
-
-Static publish is provider-neutral. The app creates a local static package first, then calls a user-configured command. Store provider tokens in `.env.local`, never in source code:
-
-```text
-PUBLISH_PROVIDER_MODE=command
-PUBLISH_COMMAND=/absolute/path/to/your-publish-script
-PUBLISH_COMMAND_ARGS=["--site","notes"]
-PUBLISH_REQUIRED_ENV=PUBLISH_TOKEN
-PUBLISH_TOKEN=replace-with-provider-token
-```
-
-The command receives `HTML_NATIVE_NOTES_PACKAGE_DIR`, `HTML_NATIVE_NOTES_PUBLISH_MANIFEST`, and `HTML_NATIVE_NOTES_ASSET_ID`, and must print JSON such as `{"publicUrl":"https://example.com/note/"}`.
+Do not commit real API keys. `.env.local` is ignored by git.
 
 ## Run
+
+Web/dev mode:
 
 ```bash
 npm run dev
@@ -95,74 +63,101 @@ Open:
 http://127.0.0.1:5178
 ```
 
+Desktop dev mode:
+
+```bash
+npm run tauri:dev
+```
+
+Release desktop build:
+
+```bash
+npm run tauri:build
+```
+
+The macOS app is generated under:
+
+```text
+src-tauri/target/release/bundle/macos/HTML Native Notes.app
+```
+
+Build artifacts are not intended to be committed to the open-source repository.
+
 ## Use
 
-1. Enter a note title.
-2. Click the create icon.
-3. Edit HTML in the source pane.
-4. Check the preview pane.
-5. Click Save.
-6. Configure AI in `.env.local` to enable AI actions.
+1. Open the app.
+2. Use the language and theme controls in the top-right corner.
+3. Browse the Vault from the left tree.
+4. Select an HTML note to read the rendered page.
+5. Use explicit edit/review actions when source changes are needed.
+6. Configure AI in `.env.local` before using AI features.
 
 ## Test
 
 ```bash
-npm run test
-npm run typecheck
-npm run lint
-npm run build
-npm run test:e2e
-npm audit --audit-level=moderate
-node scripts/test-ai-config.mjs
+npm run verify
+cargo check --manifest-path src-tauri/Cargo.toml
+npm run tauri:build
 ```
 
-Playwright browsers may need one-time installation:
+Current verified status:
 
-```bash
-npx playwright install chromium
-```
+- `npm run verify`: passed, 43 test files / 181 tests.
+- `cargo check --manifest-path src-tauri/Cargo.toml`: passed with non-blocking Rust unused warnings.
+- `npm run tauri:build`: passed, `.app` bundle generated.
+- Desktop smoke: passed with isolated `VAULT_DIR`; confirmed rendered HTML preview, relative Vault tree, English/Chinese switching, and dark/light theme switching.
 
 ## Project Structure
 
 ```text
-src/
-  app/              React app shell
-  features/         Notes, editor, preview, Vault, AI, settings UI
-  server/           Fastify server, routes, storage, AI client
-  shared/           Shared API client and TypeScript types
-bridge/             Agent Bridge, Vault intake, Source Guard, thumbnails, services
-tests/
-  unit/             Unit and component tests
-  integration/      Fastify API tests
-  e2e/              Playwright browser tests
-docs/
-  TECHNICAL_DESIGN.md
-  TEST_REPORT.md
-  SECURITY_REVIEW.md
-  superpowers/
+bridge/             Agent Bridge, inbox, CLI, service/export/version helpers
+docs/               PRD mapping, technical design, security review, test report
+src/                React app, features, local server, shared types
+src-tauri/          Tauri desktop shell and Rust native commands
+tests/              Unit, integration, fixtures, and desktop contract tests
 ```
 
-## UI Quality Rule
+## Security Notes
 
-All page interaction, UI, and visual polish changes should be treated as product-design work. The default direction is a polished professional editor experience: clear, durable, restrained, and pleasant enough for daily use.
+- API keys are never hardcoded.
+- Frontend only receives safe AI status, not the key value.
+- Source Guard protects source write-back with review and explicit decision.
+- Build output, runtime data, Vault test results, and Tauri target output are ignored.
 
-## Development Notes
+## 中文
 
-- Runtime notes are generated under `data/` and are gitignored.
-- Production build output goes to `dist/` and is gitignored.
-- Development Vite watch ignores `data/` so note saves do not reload the app.
-- Fastify owns `/api/*`; Vite serves the frontend.
+HTML Native Notes 是一个本地优先的 macOS 桌面笔记软件，用来管理 AI 生成的 HTML 页面、本地仪表盘、Markdown/HTML 笔记和可导出的静态资产。
 
-## FAQ
+核心体验：
 
-**Does the browser see my API key?**  
-No. The frontend only sees a safe configured/not-configured status. AI calls go through the local backend.
+- 用户默认看到 HTML 渲染后的页面，而不是 HTML 源码。
+- 左侧是类似 Obsidian 的目录树，用来管理 Vault。
+- 支持中文 / English 切换。
+- 支持深色 / 浅色主题。
+- AI 接入采用用户自行配置：`AI_BASE_URL`、`AI_MODEL`、`AI_API_KEY` 等都放在本地 `.env.local`，不会写死在代码里。
+- Agent Inbox 可以接收 AI/Agent 生成的 HTML 资产。
+- Source Guard 在写回源文件前提供审查和决策。
 
-**Can I use another OpenAI-compatible provider?**  
-Yes. Change `AI_BASE_URL`, `AI_MODEL`, and `AI_API_KEY`.
+常用命令：
 
-**Where are notes stored?**  
-In `data/notes/` with metadata in `data/metadata.json`.
+```bash
+npm install
+npm run verify
+npm run tauri:build
+```
 
-**Why does preview strip scripts?**  
-The preview is intentionally sandboxed for v0. HTML notes should be portable and readable without executing arbitrary scripts.
+配置 AI：
+
+```bash
+cp .env.example .env.local
+```
+
+然后在 `.env.local` 中填写你自己的模型服务地址、模型名和 API Key。不要提交真实密钥。
+
+打包产物位于：
+
+```text
+src-tauri/target/release/bundle/macos/HTML Native Notes.app
+```
+
+开源仓库只上传源码、文档、配置模板和测试，不上传打包产物。

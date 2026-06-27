@@ -46,10 +46,10 @@ describe('native desktop publish command contract', () => {
 
     const commandsMod = read('src-tauri/src/commands/mod.rs');
     const coreMod = read('src-tauri/src/core/mod.rs');
-    const mainSource = read('src-tauri/src/main.rs');
+    const libSource = read('src-tauri/src/lib.rs');
 
     expect(commandsMod).toContain('pub mod publish');
     expect(coreMod).toContain('pub mod publish');
-    expect(mainSource).toContain('commands::publish::publish_static');
+    expect(libSource).toContain('commands::publish::publish_static');
   });
 });

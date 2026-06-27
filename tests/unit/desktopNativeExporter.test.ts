@@ -45,8 +45,8 @@ describe('native desktop export command contract', () => {
     expect(commandSource).toContain('pub async fn export_markdown');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('commands::exporter::export_static_package');
-    expect(mainSource).toContain('commands::exporter::export_markdown');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('commands::exporter::export_static_package');
+    expect(libSource).toContain('commands::exporter::export_markdown');
   });
 });

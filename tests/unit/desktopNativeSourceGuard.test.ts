@@ -44,8 +44,8 @@ describe('native desktop Source Guard command contract', () => {
     expect(commandSource).toContain('pub async fn source_guard_apply_write_decision');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('commands::source_guard::source_guard_review_write');
-    expect(mainSource).toContain('commands::source_guard::source_guard_apply_write_decision');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('commands::source_guard::source_guard_review_write');
+    expect(libSource).toContain('commands::source_guard::source_guard_apply_write_decision');
   });
 });

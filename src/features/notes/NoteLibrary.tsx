@@ -1,4 +1,5 @@
 import { Copy, FilePlus2, Link2, Save, Tags, Trash2 } from 'lucide-react';
+import { appCopy, type AppCopy } from '../../shared/i18n';
 import type { NoteMeta } from '../../shared/types';
 
 interface NoteLibraryProps {
@@ -12,6 +13,7 @@ interface NoteLibraryProps {
   onSave: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  copy?: AppCopy['notes'];
 }
 
 export function NoteLibrary({
@@ -25,49 +27,50 @@ export function NoteLibrary({
   onSave,
   onDuplicate,
   onDelete,
+  copy = appCopy.en.notes,
 }: NoteLibraryProps) {
   return (
-    <aside className="panel library-panel" aria-label="Note library">
+    <aside className="panel library-panel" aria-label={copy.ariaLabel}>
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Library</p>
-          <h2>HTML Notes</h2>
+          <p className="eyebrow">{copy.eyebrow}</p>
+          <h2>{copy.title}</h2>
         </div>
       </div>
 
       <label className="field-label" htmlFor="note-title">
-        Note title
+        {copy.titleLabel}
       </label>
       <div className="create-row">
         <input
           id="note-title"
           value={newTitle}
           onChange={(event) => onTitleChange(event.target.value)}
-          placeholder="新 HTML 笔记"
+          placeholder={copy.titlePlaceholder}
         />
-        <button className="icon-button primary" type="button" onClick={onCreate} disabled={busy} aria-label="Create note">
+        <button className="icon-button primary" type="button" onClick={onCreate} disabled={busy} aria-label={copy.create}>
           <FilePlus2 size={18} />
         </button>
       </div>
 
-      <div className="tool-row" aria-label="Note actions">
-        <button type="button" onClick={onSave} disabled={busy || !activeNoteId} aria-label="Save note">
+      <div className="tool-row" aria-label={copy.actions}>
+        <button type="button" onClick={onSave} disabled={busy || !activeNoteId} aria-label={copy.save}>
           <Save size={16} />
-          Save
+          {copy.save}
         </button>
-        <button type="button" onClick={onDuplicate} disabled={busy || !activeNoteId} aria-label="Duplicate note">
+        <button type="button" onClick={onDuplicate} disabled={busy || !activeNoteId} aria-label={copy.duplicate}>
           <Copy size={16} />
-          Copy
+          {copy.duplicate}
         </button>
-        <button type="button" onClick={onDelete} disabled={busy || !activeNoteId} aria-label="Delete note">
+        <button type="button" onClick={onDelete} disabled={busy || !activeNoteId} aria-label={copy.delete}>
           <Trash2 size={16} />
-          Delete
+          {copy.delete}
         </button>
       </div>
 
-      <nav className="note-list" aria-label="Saved notes">
+      <nav className="note-list" aria-label={copy.savedNotes}>
         {notes.length === 0 ? (
-          <p className="muted">还没有笔记。创建一个 HTML 文件开始。</p>
+          <p className="muted">{copy.empty}</p>
         ) : (
           notes.map((note) => (
             <button

@@ -57,10 +57,10 @@ describe('native desktop importer command contract', () => {
 
     const commandsMod = read('src-tauri/src/commands/mod.rs');
     const coreMod = read('src-tauri/src/core/mod.rs');
-    const mainSource = read('src-tauri/src/main.rs');
+    const libSource = read('src-tauri/src/lib.rs');
 
     expect(commandsMod).toContain('pub mod importer');
     expect(coreMod).toContain('pub mod importer');
-    expect(mainSource).toContain('commands::importer::import_scan_candidates');
+    expect(libSource).toContain('commands::importer::import_scan_candidates');
   });
 });

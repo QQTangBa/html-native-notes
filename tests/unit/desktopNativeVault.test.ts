@@ -32,8 +32,8 @@ describe('native desktop Vault command contract', () => {
     expect(commandSource).toContain('pub async fn vault_get_asset_source');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('commands::vault::vault_list_library');
-    expect(mainSource).toContain('commands::vault::vault_get_asset_source');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('commands::vault::vault_list_library');
+    expect(libSource).toContain('commands::vault::vault_get_asset_source');
   });
 });

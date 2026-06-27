@@ -48,13 +48,13 @@ describe('native desktop HTML Profile command contract', () => {
 
     const commandsMod = read('src-tauri/src/commands/mod.rs');
     const coreMod = read('src-tauri/src/core/mod.rs');
-    const mainSource = read('src-tauri/src/main.rs');
+    const libSource = read('src-tauri/src/lib.rs');
 
     expect(commandsMod).toContain('pub mod profile');
     expect(coreMod).toContain('pub mod profile');
-    expect(mainSource).toContain('commands::profile::profile_build');
-    expect(mainSource).toContain('commands::profile::profile_embed');
-    expect(mainSource).toContain('commands::profile::profile_extract');
-    expect(mainSource).toContain('commands::profile::profile_migrate');
+    expect(libSource).toContain('commands::profile::profile_build');
+    expect(libSource).toContain('commands::profile::profile_embed');
+    expect(libSource).toContain('commands::profile::profile_extract');
+    expect(libSource).toContain('commands::profile::profile_migrate');
   });
 });

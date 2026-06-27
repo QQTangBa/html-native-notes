@@ -51,12 +51,12 @@ describe('native desktop notes command contract', () => {
     expect(commandSource).toContain('pub async fn note_delete');
     expect(commandSource).toContain('State');
 
-    const mainSource = read('src-tauri/src/main.rs');
-    expect(mainSource).toContain('commands::notes::note_list');
-    expect(mainSource).toContain('commands::notes::note_create');
-    expect(mainSource).toContain('commands::notes::note_get');
-    expect(mainSource).toContain('commands::notes::note_save_content');
-    expect(mainSource).toContain('commands::notes::note_duplicate');
-    expect(mainSource).toContain('commands::notes::note_delete');
+    const libSource = read('src-tauri/src/lib.rs');
+    expect(libSource).toContain('commands::notes::note_list');
+    expect(libSource).toContain('commands::notes::note_create');
+    expect(libSource).toContain('commands::notes::note_get');
+    expect(libSource).toContain('commands::notes::note_save_content');
+    expect(libSource).toContain('commands::notes::note_duplicate');
+    expect(libSource).toContain('commands::notes::note_delete');
   });
 });

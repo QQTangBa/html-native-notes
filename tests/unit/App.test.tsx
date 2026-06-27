@@ -31,7 +31,23 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   return { promise, resolve };
 }
 
+function installMemoryStorage(): void {
+  const store = new Map<string, string>();
+
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: {
+      clear: () => store.clear(),
+      getItem: (key: string) => store.get(key) ?? null,
+      removeItem: (key: string) => store.delete(key),
+      setItem: (key: string, value: string) => store.set(key, value),
+    },
+  });
+}
+
 beforeEach(() => {
+  installMemoryStorage();
+  window.localStorage.clear();
   vaultLibrary = {
     items: [],
     folders: [],
@@ -86,7 +102,23 @@ describe('App workspace', () => {
 
     expect(await screen.findByTestId('workspace-shell')).toBeInTheDocument();
     expect(screen.getByLabelText('Note title')).toBeInTheDocument();
-    expect(await screen.findByText('AI 未配置')).toBeInTheDocument();
+    expect(await screen.findByText('AI not configured')).toBeInTheDocument();
+  });
+
+  it('switches between English and Chinese copy and light and dark themes', async () => {
+    render(<App />);
+
+    const shell = await screen.findByTestId('workspace-shell');
+    expect(shell).toHaveAttribute('data-locale', 'en');
+    expect(shell).toHaveAttribute('data-theme', 'dark');
+
+    fireEvent.click(screen.getByRole('button', { name: '中文' }));
+    expect(screen.getByLabelText('笔记标题')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '创建笔记' })).toBeInTheDocument();
+    expect(shell).toHaveAttribute('data-locale', 'zh');
+
+    fireEvent.click(screen.getByRole('button', { name: '浅色主题' }));
+    expect(shell).toHaveAttribute('data-theme', 'light');
   });
 
   it('creates a note and opens it in the editor', async () => {
@@ -203,7 +235,57 @@ describe('App workspace', () => {
 
     render(<App />);
 
-    expect(await screen.findByText('Agent Market Map')).toBeInTheDocument();
+    const vaultItems = await screen.findByTestId('vault-items');
+    expect(within(vaultItems).getByText('Agent Market Map')).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Search Vault' })).toBeInTheDocument();
+  });
+
+  it('shows the Agent Inbox in the desktop Vault home even before any asset is confirmed', async () => {
+    const fetchMock = vi.mocked(fetch);
+
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/agent/inbox') {
+        return jsonResponse({
+          requests: [
+            {
+              requestId: 'inbox-html-empty-library',
+              type: 'registerHtmlAsset',
+              createdAt: '2026-06-27T00:00:00.000Z',
+              sourceAgent: 'codex',
+              sourcePath: '/Vault/agent-output/empty-library.html',
+              sourceHash: 'sha256:empty-library',
+              title: 'Empty Library Intake',
+              tags: ['ai'],
+              dedupeKey: 'registerHtmlAsset:sha256:empty-library',
+            },
+          ],
+          invalidLines: [],
+          skippedDuplicates: [],
+        });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    const inbox = await screen.findByRole('region', { name: 'Agent Inbox' });
+    expect(within(inbox).getByText('Empty Library Intake')).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Search Vault' })).toBeInTheDocument();
   });
 
@@ -358,7 +440,8 @@ describe('App workspace', () => {
 
     render(<App />);
 
-    expect(await screen.findByText('Desktop Bridge Note')).toBeInTheDocument();
+    const vaultItems = await screen.findByTestId('vault-items');
+    expect(within(vaultItems).getByText('Desktop Bridge Note')).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('vault_list_library', { filters: {} });
   });
 
@@ -605,7 +688,7 @@ describe('App workspace', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/assets/asset_market/integrity');
   });
 
-  it('opens a Vault HTML asset in the read-only preview pane', async () => {
+  it('automatically opens the first Vault HTML asset in the read-only preview pane', async () => {
     vaultLibrary = {
       items: [
         {
@@ -665,8 +748,6 @@ describe('App workspace', () => {
     });
 
     render(<App />);
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Preview Agent Market Map' }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith('/api/vault/assets/asset_market/source');

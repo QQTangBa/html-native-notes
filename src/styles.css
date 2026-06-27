@@ -64,7 +64,7 @@ textarea {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(240px, 300px) minmax(360px, 1fr) minmax(320px, 420px);
-  grid-template-rows: 1fr 34px;
+  grid-template-rows: auto minmax(0, 1fr) 34px;
   gap: 10px;
   padding: 10px;
   background:
@@ -76,14 +76,194 @@ textarea {
 .desktop-vault-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 34px;
+  grid-template-rows: auto minmax(0, 1fr) 34px;
   gap: 10px;
   padding: 10px;
   background: #0e1114;
 }
 
+.workspace-shell[data-theme="dark"] {
+  background:
+    linear-gradient(90deg, rgba(94, 126, 99, 0.12), transparent 26%),
+    #101417;
+}
+
+.workspace-shell[data-theme="dark"] .panel,
+.workspace-shell[data-theme="dark"] .settings-strip,
+.workspace-shell[data-theme="dark"] .preview-frame-wrap,
+.workspace-shell[data-theme="dark"] .ai-panel,
+.workspace-shell[data-theme="dark"] .diary-panel,
+.workspace-shell[data-theme="dark"] .status-bar {
+  border-color: #2f3837;
+  background: #171d20;
+  color: #dfe6df;
+}
+
+.workspace-shell[data-theme="dark"] .eyebrow,
+.workspace-shell[data-theme="dark"] .field-label,
+.workspace-shell[data-theme="dark"] .muted,
+.workspace-shell[data-theme="dark"] .diary-original,
+.workspace-shell[data-theme="dark"] .diary-style-card p,
+.workspace-shell[data-theme="dark"] .note-item time {
+  color: #9ea99f;
+}
+
+.workspace-shell[data-theme="dark"] input,
+.workspace-shell[data-theme="dark"] textarea {
+  border-color: #384440;
+  background: #11171a;
+  color: #e8ede8;
+}
+
+.workspace-shell[data-theme="dark"] .note-item.active,
+.workspace-shell[data-theme="dark"] .diary-style-card,
+.workspace-shell[data-theme="dark"] .settings-chips code {
+  border-color: #3f514a;
+  background: #202a2b;
+  color: #eef4ed;
+}
+
 .desktop-vault-shell .vault-home {
   min-height: 0;
+}
+
+.app-preferences {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.segmented-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 34px;
+  padding: 3px;
+  border: 1px solid #2e3837;
+  border-radius: 8px;
+  background: rgba(17, 21, 25, 0.86);
+  color: #aeb8b0;
+}
+
+.segmented-control > svg {
+  margin: 0 5px;
+}
+
+.segmented-control button {
+  min-height: 26px;
+  padding: 0 9px;
+  border-color: transparent;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+}
+
+.segmented-control button[aria-pressed="true"] {
+  border-color: #52625a;
+  background: #26302f;
+  color: #f0f5ef;
+}
+
+[data-theme="light"] .segmented-control {
+  border-color: #c9c2b5;
+  background: rgba(255, 253, 250, 0.9);
+  color: #4d5659;
+}
+
+[data-theme="light"] .segmented-control button[aria-pressed="true"] {
+  border-color: #b9c7b3;
+  background: #edf3e8;
+  color: #23352b;
+}
+
+.desktop-vault-shell[data-theme="light"] {
+  background: #f3f0e7;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-home {
+  color: #263033;
+  background: #f8f4ec;
+  border-color: #d9d1c4;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-sidebar {
+  border-color: #ded7cb;
+  background: #fffdfa;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-mark,
+.desktop-vault-shell[data-theme="light"] .vault-search,
+.desktop-vault-shell[data-theme="light"] .vault-item,
+.desktop-vault-shell[data-theme="light"] .vault-preview,
+.desktop-vault-shell[data-theme="light"] .vault-version-panel {
+  border-color: #d7d0c3;
+  background: #fffdfa;
+  color: #263033;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-tree-row,
+.desktop-vault-shell[data-theme="light"] .vault-token {
+  color: #4f5b57;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-tree-row:hover:not(:disabled),
+.desktop-vault-shell[data-theme="light"] .vault-tree-row.active,
+.desktop-vault-shell[data-theme="light"] .vault-token:hover:not(:disabled),
+.desktop-vault-shell[data-theme="light"] .vault-token.active {
+  border-color: #b8c8b4;
+  background: #edf3e8;
+  color: #23352b;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-toolbar,
+.desktop-vault-shell[data-theme="light"] .vault-preview-panel header {
+  border-color: #ded7cb;
+  background: #f6f1e8;
+  color: #263033;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-item h3,
+.desktop-vault-shell[data-theme="light"] .vault-preview-panel h3,
+.desktop-vault-shell[data-theme="light"] .vault-version-head strong,
+.desktop-vault-shell[data-theme="light"] .vault-version-row strong,
+.desktop-vault-shell[data-theme="light"] .inbox-title h2,
+.desktop-vault-shell[data-theme="light"] .inbox-request strong {
+  color: #202a2d;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-item p,
+.desktop-vault-shell[data-theme="light"] .vault-meta-row,
+.desktop-vault-shell[data-theme="light"] .vault-item time,
+.desktop-vault-shell[data-theme="light"] .vault-version-row span,
+.desktop-vault-shell[data-theme="light"] .vault-version-empty,
+.desktop-vault-shell[data-theme="light"] .vault-version-message,
+.desktop-vault-shell[data-theme="light"] .inbox-request code,
+.desktop-vault-shell[data-theme="light"] .vault-filter-title {
+  color: #5e6965;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-thumb,
+.desktop-vault-shell[data-theme="light"] .vault-asset-panel,
+.desktop-vault-shell[data-theme="light"] .vault-export-panel,
+.desktop-vault-shell[data-theme="light"] .vault-version-row,
+.desktop-vault-shell[data-theme="light"] .inbox-request,
+.desktop-vault-shell[data-theme="light"] .inbox-counters span,
+.desktop-vault-shell[data-theme="light"] .inbox-meta span {
+  border-color: #d8d1c6;
+  background: #f8f4ec;
+  color: #36413f;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-meta-row span,
+.desktop-vault-shell[data-theme="light"] .vault-tags span {
+  background: #e9efe4;
+  color: #2f4336;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-preview-frame {
+  background: #ffffff;
 }
 
 .panel {
@@ -542,14 +722,18 @@ code {
   color: #69736d;
 }
 
-.vault-folder-list,
+.vault-tree,
 .vault-token-grid {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.vault-folder,
+.vault-tree {
+  padding: 2px 0;
+}
+
+.vault-tree-row,
 .vault-token {
   min-height: 32px;
   justify-content: flex-start;
@@ -558,26 +742,32 @@ code {
   color: #acb5ad;
 }
 
-.vault-folder {
+.vault-tree-row {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;
   width: 100%;
-  padding: 0 8px;
+  padding: 0 8px 0 calc(8px + var(--depth, 0) * 14px);
 }
 
-.vault-folder span {
+.vault-tree-row.item {
+  grid-template-columns: 18px minmax(0, 1fr);
+  min-height: 30px;
+  color: #c5cdc6;
+}
+
+.vault-tree-row span {
   overflow: hidden;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.vault-folder small {
+.vault-tree-row small {
   color: #737d76;
 }
 
-.vault-folder:hover:not(:disabled),
-.vault-folder.active,
+.vault-tree-row:hover:not(:disabled),
+.vault-tree-row.active,
 .vault-token:hover:not(:disabled),
 .vault-token.active {
   border-color: #3d4a43;

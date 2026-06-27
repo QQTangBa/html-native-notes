@@ -2,11 +2,57 @@
 
 Date: 2026-06-27
 
-## Status Correction
+## Current Desktop Release Evidence
 
-This report describes the earlier local web prototype only. It is not evidence that the PRD-defined macOS desktop app is complete.
+Date: 2026-06-27
 
-Desktop PRD evidence must be collected against `docs/PRD_REQUIREMENTS_MATRIX.md` after the Tauri/Electron environment decision and desktop implementation.
+```bash
+npm run verify
+```
+
+Result: PASS. 43 test files and 181 tests passed. This ran TypeScript typecheck, ESLint, the full Vitest suite, and production Vite build.
+
+```bash
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+Result: PASS with non-blocking Rust unused/dead-code warnings.
+
+```bash
+npm run tauri:build
+```
+
+Result: PASS. The release app bundle was generated at `src-tauri/target/release/bundle/macos/HTML Native Notes.app`.
+
+Desktop smoke evidence was collected with an isolated test Vault:
+
+```bash
+VAULT_DIR=/Users/siter/Documents/HTML原生笔记编辑器/html-native-notes/test-results/desktop-smoke/vault \
+  'src-tauri/target/release/bundle/macos/HTML Native Notes.app/Contents/MacOS/html-native-notes'
+```
+
+Result: PASS. Computer Use inspection confirmed:
+
+- Tauri release window renders instead of opening blank.
+- Vault loads a confirmed HTML asset from the isolated test Vault.
+- Left navigation shows an Obsidian-style tree using relative folders, for example `desktop-smoke/ai-fixtures`, not local absolute paths.
+- The first HTML asset opens automatically in a rendered `about:srcdoc` preview.
+- Raw HTML source is hidden by default behind an explicit edit/review action.
+- English and Chinese UI switching works in the desktop app.
+- Dark and light theme switching works in the desktop app.
+- The light theme card and preview text are readable after contrast fixes.
+
+## Recent UX Regression Evidence
+
+```bash
+npx vitest run tests/unit/VaultHome.test.tsx tests/unit/App.test.tsx
+```
+
+Result: PASS. 2 files and 33 tests passed. This covers render-first Vault preview, relative tree paths, localized Vault labels, language switching, theme switching, and App startup behavior.
+
+## Historical Status Correction
+
+Older sections below include evidence gathered while the repository was still a local web prototype and early desktop scaffold. The current desktop release evidence above supersedes the earlier "desktop pending" status, while the older entries remain useful as implementation provenance.
 
 ## Desktop Reset Evidence
 

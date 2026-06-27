@@ -1,7 +1,7 @@
 # HTML Native Notes Desktop Technical Design
 
 Date: 2026-06-26
-Status: Corrected PRD-aligned desktop plan
+Status: PRD-aligned desktop implementation in progress; current release build and desktop smoke pass on 2026-06-27
 Scope root: `/Users/siter/Documents/HTML原生笔记编辑器/html-native-notes`
 Authoritative PRD: `/Users/siter/Documents/需求池项目/research/ai-html-notes-prd.html`
 
@@ -64,6 +64,10 @@ Product Design context is explicit enough to proceed to architecture, but UI imp
 - Visual source: Obsidian is the reference for information density, sidebar/workspace mental model, command palette, Markdown friendliness, and restrained editor feel. It is a reference, not a clone.
 - Interaction level: full interactivity. Controls, menus, dialogs, service states, import states, diff states, edit states, and error states must work.
 - Visual direction: polished native-adjacent desktop app, dense but calm, dark/light themes, clear panels, low visual noise, readable typography, reliable keyboard workflows.
+- Reading direction: HTML notes are render-first. Users should see the rendered HTML page by default; raw HTML source is hidden behind explicit edit/review flows.
+- Navigation direction: Vault management uses an Obsidian-style left tree with folders and note leaves. UI-facing paths must be relative Vault paths, not local absolute machine paths.
+- Localization direction: core workspace and Vault labels support English and Chinese through a frontend copy dictionary.
+- Theme direction: app-level dark and light themes are user-switchable and persisted locally.
 - UI rule: all page interaction and visual changes must be treated as Product Design work and checked for layout quality, spacing, states, accessibility, and desktop ergonomics.
 
 ## 3. Technical Choice

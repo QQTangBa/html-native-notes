@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Languages, Moon, Sun } from 'lucide-react';
 import { AiPanel } from '../features/ai/AiPanel';
 import { DiaryPanel } from '../features/diary/DiaryPanel';
 import { HtmlEditor } from '../features/editor/HtmlEditor';
@@ -7,6 +8,7 @@ import { PreviewPane } from '../features/preview/PreviewPane';
 import { SettingsPanel } from '../features/settings/SettingsPanel';
 import { VaultHome } from '../features/vault/VaultHome';
 import { desktopBridge } from '../shared/desktopBridge';
+import { appCopy, detectInitialLocale, detectInitialTheme, persistPreference, type Locale, type ThemeMode } from '../shared/i18n';
 import type {
   AgentInboxResponse,
   AiAction,
@@ -34,6 +36,8 @@ const emptyAgentInbox: AgentInboxResponse = {
 };
 
 export function App() {
+  const [locale, setLocale] = useState<Locale>(() => detectInitialLocale());
+  const [theme, setTheme] = useState<ThemeMode>(() => detectInitialTheme());
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   const [activeNote, setActiveNote] = useState<NoteRecord | undefined>();
   const [newTitle, setNewTitle] = useState('新 HTML 笔记');
@@ -71,17 +75,26 @@ export function App() {
   const requestedVaultPreviewIdRef = useRef<string | undefined>(undefined);
 
   const activeNoteId = activeNote?.id;
+  const copy = appCopy[locale];
   const statusLine = useMemo(() => {
     if (error) {
       return error;
     }
 
     if (activeNote) {
-      return `Editing ${activeNote.title}`;
+      return copy.status.editing(activeNote.title);
     }
 
-    return 'Ready';
-  }, [activeNote, error]);
+    return copy.status.ready;
+  }, [activeNote, copy, error]);
+
+  useEffect(() => {
+    persistPreference('locale', locale);
+  }, [locale]);
+
+  useEffect(() => {
+    persistPreference('theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     void refresh();
@@ -93,6 +106,16 @@ export function App() {
   useEffect(() => {
     activeVaultPreviewIdRef.current = vaultPreview?.assetId;
   }, [vaultPreview?.assetId]);
+
+  useEffect(() => {
+    const firstHtmlAsset = vaultLibrary?.items.find((item) => item.kind === 'html-note');
+
+    if (!firstHtmlAsset || vaultPreview || vaultPreviewBusy || requestedVaultPreviewIdRef.current) {
+      return;
+    }
+
+    void openVaultItem(firstHtmlAsset.id);
+  }, [vaultLibrary, vaultPreview, vaultPreviewBusy]);
 
   async function refresh(): Promise<void> {
     setNotes(await desktopBridge.listNotes());
@@ -482,11 +505,42 @@ export function App() {
     setSource((current) => `${current}\n${style.html}`);
   }
 
-  if (vaultLibrary?.items.length) {
+  const shouldShowVaultHome =
+    vaultLibrary &&
+    (vaultLibrary.items.length > 0 ||
+      vaultInbox.requests.length > 0 ||
+      vaultInbox.invalidLines.length > 0 ||
+      vaultInbox.skippedDuplicates.length > 0);
+
+  const preferenceControls = (
+    <div className="app-preferences" aria-label="Application preferences">
+      <div className="segmented-control" aria-label={copy.preferences.language}>
+        <Languages size={15} aria-hidden="true" />
+        <button type="button" aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>
+          {copy.preferences.english}
+        </button>
+        <button type="button" aria-pressed={locale === 'zh'} onClick={() => setLocale('zh')}>
+          {copy.preferences.chinese}
+        </button>
+      </div>
+      <div className="segmented-control" aria-label={copy.preferences.theme}>
+        <button type="button" aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')} aria-label={copy.preferences.darkTheme}>
+          <Moon size={15} aria-hidden="true" />
+        </button>
+        <button type="button" aria-pressed={theme === 'light'} onClick={() => setTheme('light')} aria-label={copy.preferences.lightTheme}>
+          <Sun size={15} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+
+  if (shouldShowVaultHome) {
     return (
-      <main className="desktop-vault-shell" data-testid="workspace-shell">
+      <main className="desktop-vault-shell" data-testid="workspace-shell" data-locale={locale} data-theme={theme}>
+        {preferenceControls}
         <VaultHome
           items={vaultLibrary.items}
+          copy={copy.vault}
           activeItemId={vaultPreview?.assetId}
           previewHtml={vaultPreview?.html}
           previewTitle={vaultPreviewBusy ? 'Loading preview' : vaultPreview?.title}
@@ -546,12 +600,14 @@ export function App() {
   }
 
   return (
-    <main className="workspace-shell" data-testid="workspace-shell">
+    <main className="workspace-shell" data-testid="workspace-shell" data-locale={locale} data-theme={theme}>
+      {preferenceControls}
       <NoteLibrary
         notes={notes}
         activeNoteId={activeNoteId}
         newTitle={newTitle}
         busy={busy}
+        copy={copy.notes}
         onTitleChange={setNewTitle}
         onCreate={() => void createNote()}
         onOpen={(id) => void openNote(id)}
@@ -563,7 +619,7 @@ export function App() {
       <HtmlEditor value={source} onChange={setSource} />
 
       <aside className="panel side-panel">
-        <SettingsPanel status={aiStatus} />
+        <SettingsPanel status={aiStatus} copy={copy.settings} />
         <PreviewPane html={source} />
         <DiaryPanel
           status={aiStatus}
