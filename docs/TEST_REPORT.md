@@ -36,11 +36,21 @@ npm run test -- tests/unit/desktopBridge.test.ts tests/unit/App.test.tsx
 
 Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` boundary that maps Vault, preview, version, service, asset, export, Source Guard, note, AI, and diary operations to explicit Tauri command names when `globalThis.__TAURI__.core.invoke` is available. It also proves the bridge falls back to the HTTP API in web/dev mode and when the current transitional Tauri shell reports a missing command, and that `App` loads Vault items through this bridge instead of importing `apiClient` directly. It does not prove the Rust commands exist yet.
 
+Native desktop inbox command source evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test:desktop:contract
+```
+
+Result: PASS. 2 files, 6 tests. This proves the desktop contract test suite now covers both the Tauri macOS scaffold and the native inbox command source. `src-tauri/src/core/inbox.rs` contains Rust functions for reading inbox JSONL files, acking processed requests, and intaking a request into the Vault manifest with source hash checks. `src-tauri/src/commands/inbox.rs` exposes `inbox_list_requests`, `inbox_confirm_request`, and `inbox_dismiss_request`, and `src-tauri/src/main.rs` registers those commands. This is source-contract evidence only; Rust/Cargo is not installed, so there is still no native compile, `.app` build, or opened desktop run evidence.
+
 ```bash
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, MCP bridge foundation, Agent Inbox React UI, and App startup inbox wiring changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 136 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, MCP bridge foundation, Agent Inbox React UI, App startup inbox wiring, and native inbox source-contract changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 32 test files and 138 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 PRD fixture-scale import foundation:
 
@@ -391,7 +401,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 136 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 32 test files and 138 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

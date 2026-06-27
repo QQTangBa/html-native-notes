@@ -178,7 +178,7 @@ Checkpoint evidence: `bridge/mcp/server.ts` now exposes the seven PRD V1 tool de
 
 Read from app support inbox and Vault `.htmlvault/inbox/requests.jsonl`; normalize, dedupe, and expose pending items to renderer.
 
-Checkpoint evidence: non-Rust fallback path now covers Vault `.htmlvault/inbox/requests.jsonl` through `/api/agent/inbox`, `desktopBridge` command boundaries, and App startup rendering with confirm/dismiss actions. Native app-support path merge and Rust/Tauri command implementation remain pending.
+Checkpoint evidence: non-Rust fallback path now covers Vault `.htmlvault/inbox/requests.jsonl` through `/api/agent/inbox`, `desktopBridge` command boundaries, and App startup rendering with confirm/dismiss actions. Rust source now includes `src-tauri/src/core/inbox.rs` and `src-tauri/src/commands/inbox.rs` for app-support + Vault inbox path merge, list, confirm, dismiss, source-hash checked intake, and command registration. Cargo verification and launched Tauri flow remain pending until Rust is available.
 
 - [ ] **Step 5: Verify**
 
