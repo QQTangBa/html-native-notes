@@ -4,6 +4,7 @@ pub mod importer;
 pub mod inbox;
 pub mod notes;
 pub mod publish;
+pub mod profile;
 pub mod service_runtime;
 pub mod source_guard;
 pub mod version_store;

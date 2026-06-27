@@ -266,6 +266,8 @@ Use a proven editor stack if dependencies are approved; otherwise implement an i
 
 Saving must write HTML with metadata/profile/backlinks and must preserve source guard behavior for imported originals.
 
+Checkpoint evidence before editor persistence work: Rust source now includes `src-tauri/src/core/profile.rs` and `src-tauri/src/commands/profile.rs` for native HTML Profile build/embed/extract/migration command boundaries. The source covers schema/profile version, title/tags/source hash, assets, blocks, AI context, theme vars, `data-ainote-block-id`, embedded `ainote-profile`, and legacy migration. `npm run test:desktop:contract` covers this source/registration contract; editor save wiring, sidecar manifests, Cargo verification, and launched Tauri flow remain pending until Rust is available.
+
 - [ ] **Step 4: Verify**
 
 Run:

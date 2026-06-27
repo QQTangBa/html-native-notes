@@ -508,6 +508,19 @@ npm run test:desktop:contract
 
 Result: PASS. `tests/unit/desktopNativeImporter.test.ts` passed 4 tests covering Rust importer source for read-only existing project scans, `import_scan_candidates` command registration, HTML, Markdown, project, and service candidate markers, `package.json` and `index.html` detection, source hash reporting, no `fs::write` or `fs::copy` in the scanner core, and skip rules for `.git`, `.htmlvault`, `node_modules`, `dist`, `build`, and `target`. `npm run test:desktop:contract` passed 11 files and 33 tests, now including the importer native command source contract. This is source/contract evidence only; Cargo build, import confirmation, full 100 old project-dir hash proof, and launched Tauri import flow remain pending because Rust is not installed in PATH.
 
+Native desktop HTML Profile command source evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run test -- tests/unit/desktopNativeProfile.test.ts
+npm run test:desktop:contract
+```
+
+Result: PASS. `tests/unit/desktopNativeProfile.test.ts` passed 3 tests covering Rust profile core source for build/embed/extract/migration, `profile_build`, `profile_embed`, `profile_extract`, and `profile_migrate` command registration, schema/profile version fields, source hash, assets, blocks, AI context, theme variables, `data-ainote-block-id`, and embedded `ainote-profile` handling. `npm run test:desktop:contract` passed 12 files and 36 tests, now including the HTML Profile native command source contract. This is source/contract evidence only; Cargo build, sidecar manifest persistence, editor save wiring, and launched Tauri profile flow remain pending because Rust is not installed in PATH.
+
 Native desktop note command source evidence:
 
 Date: 2026-06-27

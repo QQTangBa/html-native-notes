@@ -381,6 +381,8 @@ interface HtmlProfile {
 }
 ```
 
+Current native source status: `src-tauri/src/core/profile.rs` and `src-tauri/src/commands/profile.rs` expose `profile_build`, `profile_embed`, `profile_extract`, and `profile_migrate`. The source mirrors the TypeScript profile contract for title/tags/source hash, assets, block IDs, AI context headings/summary, theme variables, embedded `ainote-profile` JSON, and legacy migration. Sidecar manifest persistence, editor save integration, Cargo verification, and launched desktop profile flows remain pending.
+
 ### 7.4 Service Registration
 
 ```ts
