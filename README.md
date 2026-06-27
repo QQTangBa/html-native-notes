@@ -11,7 +11,9 @@ Local-first macOS desktop app for AI-generated HTML notes, rendered HTML reading
 - Obsidian-style left Vault tree with folder and note rows.
 - English / Chinese UI switch.
 - Dark / light theme switch.
-- Agent Inbox for AI/agent-generated HTML registration.
+- Agent Inbox for AI/agent-generated HTML and Markdown registration.
+- Markdown notes can be managed in the Vault, previewed as rendered HTML, and converted into managed HTML assets.
+- Rendered HTML elements can be selected for scoped manual edits or scoped AI edits, then reviewed through Source Guard.
 - BYOK OpenAI-compatible AI configuration through local env only.
 - Source Guard diff workflow before write-back.
 - Version timeline, rollback hooks, asset integrity scan, package/Markdown export.
@@ -88,9 +90,10 @@ Build artifacts are not intended to be committed to the open-source repository.
 1. Open the app.
 2. Use the language and theme controls in the top-right corner.
 3. Browse the Vault from the left tree.
-4. Select an HTML note to read the rendered page.
-5. Use explicit edit/review actions when source changes are needed.
-6. Configure AI in `.env.local` before using AI features.
+4. Select an HTML or Markdown note to read the rendered page.
+5. Convert Markdown notes into HTML assets when you want HTML export or element-level editing.
+6. Select a rendered HTML element for scoped manual or AI edits, then review the diff before saving.
+7. Configure AI in `.env.local` before using AI features.
 
 ## Test
 
@@ -102,10 +105,10 @@ npm run tauri:build
 
 Current verified status:
 
-- `npm run verify`: passed, 43 test files / 181 tests.
+- `npm run verify`: passed, 44 test files / 188 tests.
 - `cargo check --manifest-path src-tauri/Cargo.toml`: passed with non-blocking Rust unused warnings.
 - `npm run tauri:build`: passed, `.app` bundle generated.
-- Desktop smoke: passed with isolated `VAULT_DIR`; confirmed rendered HTML preview, relative Vault tree, English/Chinese switching, and dark/light theme switching.
+- Desktop/browser smoke: passed with isolated `VAULT_DIR`; confirmed rendered preview, relative Vault tree, Markdown conversion, element-level Source Guard review, English/Chinese switching, and dark/light theme switching.
 
 ## Project Structure
 
@@ -134,8 +137,10 @@ HTML Native Notes 是一个本地优先的 macOS 桌面笔记软件，用来管�
 - 左侧是类似 Obsidian 的目录树，用来管理 Vault。
 - 支持中文 / English 切换。
 - 支持深色 / 浅色主题。
+- 支持接管 AI 生成的 HTML 和 Markdown；Markdown 可以以渲染页面预览，也可以转换成受管理的 HTML 资产。
+- 支持在渲染页面里选择具体 HTML 元素，进行局部手动编辑或局部 AI 编辑，然后走 Source Guard 审查。
 - AI 接入采用用户自行配置：`AI_BASE_URL`、`AI_MODEL`、`AI_API_KEY` 等都放在本地 `.env.local`，不会写死在代码里。
-- Agent Inbox 可以接收 AI/Agent 生成的 HTML 资产。
+- Agent Inbox 可以接收 AI/Agent 生成的 HTML 和 Markdown 资产。
 - Source Guard 在写回源文件前提供审查和决策。
 
 常用命令：

@@ -12,6 +12,11 @@ const htmlPathSchema = nonEmptyTrimmedString.refine(
   'HTML asset registrations must point to .html, .htm, or .ainote.html files',
 );
 
+const markdownPathSchema = nonEmptyTrimmedString.refine(
+  (value) => /\.(md|markdown)$/i.test(value),
+  'Markdown asset registrations must point to .md or .markdown files',
+);
+
 const sourceHashSchema = nonEmptyTrimmedString.refine(
   (value) => /^sha256:[A-Za-z0-9._:-]+$/.test(value),
   'sourceHash must use a sha256: prefix',
@@ -76,7 +81,7 @@ export const webServiceRegistrationSchema = z
 
 export const agentInboxRequestSchema = z.object({
   requestId: nonEmptyTrimmedString,
-  type: z.enum(['registerHtmlAsset', 'registerWebService', 'snapshot', 'publish', 'importExisting']),
+  type: z.enum(['registerHtmlAsset', 'registerMarkdownAsset', 'registerWebService', 'snapshot', 'publish', 'importExisting']),
   createdAt: isoDateString,
   sourceAgent: nonEmptyTrimmedString.optional(),
   sourcePath: nonEmptyTrimmedString.optional(),
@@ -85,6 +90,19 @@ export const agentInboxRequestSchema = z.object({
   tags: tagSchema,
   service: z.record(z.string(), z.unknown()).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+}).superRefine((request, context) => {
+  if (request.type !== 'registerMarkdownAsset' || !request.sourcePath) {
+    return;
+  }
+
+  const parsedPath = markdownPathSchema.safeParse(request.sourcePath);
+  if (!parsedPath.success) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['sourcePath'],
+      message: 'Markdown asset registrations must point to .md or .markdown files',
+    });
+  }
 });
 
 export type HtmlAssetRegistration = z.infer<typeof htmlAssetRegistrationSchema>;

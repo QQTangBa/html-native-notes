@@ -1,5 +1,6 @@
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { convertMarkdownFileToHtml } from '../markdown/importer';
 import { buildHtmlProfile, extractEmbeddedHtmlProfile } from '../profile/htmlProfile';
 import { readVaultManifest, type BridgeVaultAsset } from './intake';
 
@@ -124,8 +125,50 @@ async function enrichHtmlAsset(asset: BridgeVaultAsset): Promise<{
   };
 }
 
+function stringFrontmatterValue(value: string | string[] | undefined): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function stringArrayFrontmatterValue(value: string | string[] | undefined): string[] {
+  return Array.isArray(value) ? value : [];
+}
+
+async function enrichMarkdownAsset(asset: BridgeVaultAsset, vaultDir: string): Promise<{
+  title?: string;
+  tags: string[];
+  summary: string;
+}> {
+  if (asset.kind !== 'markdown-note' || !asset.sourcePath) {
+    return { tags: [], summary: '' };
+  }
+
+  const converted = await convertMarkdownFileToHtml({
+    rootDir: vaultDir,
+    markdownPath: asset.sourcePath,
+    templateId: 'technical-doc',
+  });
+
+  return {
+    title: stringFrontmatterValue(converted.frontmatter.title),
+    tags: stringArrayFrontmatterValue(converted.frontmatter.tags),
+    summary: stringFrontmatterValue(converted.frontmatter.summary) ?? '',
+  };
+}
+
+async function enrichAsset(asset: BridgeVaultAsset, vaultDir: string): Promise<{
+  title?: string;
+  tags: string[];
+  summary: string;
+}> {
+  if (asset.kind === 'markdown-note') {
+    return enrichMarkdownAsset(asset, vaultDir);
+  }
+
+  return enrichHtmlAsset(asset);
+}
+
 async function itemFromAsset(vaultDir: string, asset: BridgeVaultAsset): Promise<VaultLibraryItem> {
-  const enriched = await enrichHtmlAsset(asset);
+  const enriched = await enrichAsset(asset, vaultDir);
   const relativePath = relativeSourcePath(vaultDir, asset.sourcePath);
   const folderPath = folderFor(relativePath);
   const thumbnailPath = path.join(vaultDir, '.htmlvault', 'thumbnails', `${asset.id}.png`);

@@ -37,6 +37,22 @@ const items: VaultHomeItem[] = [
       path: '/Vault/.htmlvault/thumbnails/asset_dashboard.png',
     },
   },
+  {
+    id: 'asset_markdown',
+    kind: 'markdown-note',
+    title: 'Markdown Strategy Note',
+    sourceAgent: 'codex',
+    sourcePath: '/Vault/imports/ai-agent/strategy.md',
+    relativeSourcePath: 'imports/ai-agent/strategy.md',
+    folderPath: 'imports/ai-agent',
+    tags: ['strategy', 'markdown'],
+    summary: 'AI generated Markdown strategy note',
+    updatedAt: '2026-06-27T00:20:00.000Z',
+    thumbnail: {
+      status: 'pending',
+      path: '/Vault/.htmlvault/thumbnails/asset_markdown.png',
+    },
+  },
 ];
 
 const inboxRequest: NormalizedBridgeRequest = {
@@ -82,7 +98,7 @@ describe('VaultHome', () => {
     expect(screen.getByRole('searchbox', { name: '搜索笔记库' })).toBeInTheDocument();
     expect(screen.getByText('标签')).toBeInTheDocument();
     expect(screen.getByText('来源')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '2 资产' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '3 资产' })).toBeInTheDocument();
   });
 
   it('renders native manifest unix timestamps without crashing the Vault list', () => {
@@ -172,6 +188,48 @@ describe('VaultHome', () => {
 
     fireEvent.click(button);
     expect(onGenerateThumbnails).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets Markdown notes open as rendered previews and convert into HTML assets', () => {
+    const onOpenItem = vi.fn();
+    const onConvertMarkdownToHtml = vi.fn();
+
+    render(<VaultHome items={items} onOpenItem={onOpenItem} onConvertMarkdownToHtml={onConvertMarkdownToHtml} />);
+
+    const markdownCard = screen.getByTestId('vault-item-asset_markdown');
+    fireEvent.click(within(markdownCard).getByRole('button', { name: 'Preview Markdown Strategy Note' }));
+    fireEvent.click(within(markdownCard).getByRole('button', { name: 'Convert Markdown to HTML Markdown Strategy Note' }));
+
+    expect(onOpenItem).toHaveBeenCalledWith('asset_markdown');
+    expect(onConvertMarkdownToHtml).toHaveBeenCalledWith('asset_markdown');
+  });
+
+  it('reviews manual and AI-scoped edits from selected rendered HTML elements', () => {
+    const onReviewEdit = vi.fn();
+    const onRunScopedAiEdit = vi.fn();
+
+    render(
+      <VaultHome
+        items={items}
+        previewHtml="<main><h1>Preview title</h1><p>Original paragraph.</p></main>"
+        previewTitle="Preview"
+        onReviewEdit={onReviewEdit}
+        onRunScopedAiEdit={onRunScopedAiEdit}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Rendered element'), { target: { value: 'main > p:nth-of-type(1)' } });
+    fireEvent.change(screen.getByLabelText('Selected element text'), { target: { value: 'Edited paragraph.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Review selected element change' }));
+
+    expect(onReviewEdit).toHaveBeenCalledWith('<main><h1>Preview title</h1><p>Edited paragraph.</p></main>');
+
+    fireEvent.change(screen.getByLabelText('AI instruction for selected element'), { target: { value: 'Make it shorter' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask AI to edit selected element' }));
+    expect(onRunScopedAiEdit).toHaveBeenCalledWith({
+      selector: 'main > p:nth-of-type(1)',
+      instruction: 'Make it shorter',
+    });
   });
 
   it('renders the Agent Inbox review panel in the Vault sidebar', () => {

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { applyWriteDecision, hashFile, reviewHtmlWrite } from '../../../bridge/sourceGuard/writeGate';
 import { buildVaultLibrary } from '../../../bridge/vault/library';
+import { convertMarkdownAssetToHtml } from '../../../bridge/vault/markdownConversion';
 import { readVaultAssetSource } from '../../../bridge/vault/source';
 import { generateMissingVaultThumbnails } from '../../../bridge/vault/thumbnails';
 import {
@@ -19,7 +20,12 @@ const libraryQuerySchema = z.object({
   q: z.string().optional(),
   tag: z.union([z.string(), z.array(z.string())]).optional(),
   sourceAgent: z.union([z.string(), z.array(z.string())]).optional(),
-  kind: z.union([z.enum(['html-note', 'service', 'project']), z.array(z.enum(['html-note', 'service', 'project']))]).optional(),
+  kind: z
+    .union([
+      z.enum(['html-note', 'markdown-note', 'service', 'project']),
+      z.array(z.enum(['html-note', 'markdown-note', 'service', 'project'])),
+    ])
+    .optional(),
   folder: z.union([z.string(), z.array(z.string())]).optional(),
 });
 
@@ -170,6 +176,16 @@ export async function registerVaultRoutes(app: FastifyInstance, config: AppConfi
       vaultDir: config.vaultDir,
       assetId: params.assetId,
     });
+  });
+
+  app.post('/api/vault/assets/:assetId/convert-html', async (request, reply) => {
+    const params = assetParamsSchema.parse(request.params);
+    const result = await convertMarkdownAssetToHtml({
+      vaultDir: config.vaultDir,
+      assetId: params.assetId,
+    });
+
+    return reply.code(201).send(result);
   });
 
   app.get('/api/vault/assets/:assetId/versions', async (request) => {

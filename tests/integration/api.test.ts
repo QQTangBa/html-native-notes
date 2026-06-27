@@ -367,6 +367,64 @@ describe('local API', () => {
     });
   });
 
+  it('converts a registered Markdown note into a managed HTML note without mutating the original source', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const markdownPath = path.join(aiDir, 'market-brief.md');
+    const markdown = [
+      '---',
+      'title: Market Brief',
+      'tags: [brief, ai]',
+      'summary: Generated Markdown brief',
+      '---',
+      '# Market Brief',
+      '',
+      'Connect this note to [[HTML publishing]].',
+    ].join('\n');
+
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(markdownPath, markdown, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_markdown_convert',
+        type: 'registerMarkdownAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: markdownPath,
+        sourceHash: sha256(markdown),
+        title: 'Market Brief',
+        tags: ['agent-output'],
+      },
+    });
+
+    const response = await request(app.server).post(`/api/vault/assets/${intake.asset.id}/convert-html`).expect(201);
+    const outputPath = path.join(aiDir, 'market-brief.html');
+
+    expect(response.body).toMatchObject({
+      markdownAssetId: intake.asset.id,
+      outputPath,
+      asset: {
+        kind: 'html-note',
+        title: 'Market Brief',
+        relativeSourcePath: 'imports/ai/market-brief.html',
+      },
+    });
+    expect(await readFile(markdownPath, 'utf8')).toBe(markdown);
+    expect(await readFile(outputPath, 'utf8')).toContain('<article class="markdown-import template-technical-doc">');
+    expect(await readFile(outputPath, 'utf8')).toContain('data-wikilink="HTML publishing"');
+
+    const library = await request(app.server).get('/api/vault/library?q=publishing&kind=html-note').expect(200);
+    expect(library.body.items).toHaveLength(1);
+    expect(library.body.items[0]).toMatchObject({
+      id: response.body.asset.id,
+      kind: 'html-note',
+      title: 'Market Brief',
+      sourceAgent: 'codex',
+      folderPath: 'imports/ai',
+    });
+  });
+
   it('reviews Vault HTML edits and applies explicit Source Guard decisions', async () => {
     const vaultDir = path.join(tempDir, 'vault');
     const aiDir = path.join(vaultDir, 'imports', 'ai');

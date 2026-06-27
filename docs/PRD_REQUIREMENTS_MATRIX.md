@@ -6,6 +6,15 @@ Project root: `/Users/siter/Documents/HTML原生笔记编辑器/html-native-note
 
 This matrix is the completion ledger. Rows cannot be marked complete without direct evidence from code, tests, screenshots, command output, or a launched desktop app run.
 
+## Latest Incremental Evidence
+
+Date: 2026-06-27
+
+- Markdown takeover advanced: `registerMarkdownAsset` now stores `markdown-note` assets, preserves the original Markdown hash, exposes rendered HTML preview, indexes frontmatter/tags/wikilinks, and supports conversion into a new managed `html-note` without mutating the `.md` source.
+- Rendered-page editing advanced: the preview panel can list editable rendered HTML elements by stable selector, review selected-element text changes through Source Guard, and build scoped AI edit requests using `selection` metadata.
+- Browser smoke evidence exists under `test-results/desktop-smoke/`: `vault-element-editor-review.png` and `vault-markdown-converted-preview.png`.
+- Live BYOK provider smoke passed through `node scripts/test-ai-config.mjs` against DeepSeek `deepseek-v4-flash`; the API key stayed in ignored `.env.local`.
+
 ## Core Feature Matrix
 
 | ID | PRD requirement | Implementation owner | Required tests | Current status | Evidence |

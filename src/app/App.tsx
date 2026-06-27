@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Languages, Moon, Sun } from 'lucide-react';
+import { applyElementTextEdit, buildScopedAiEditRequest } from '../../bridge/html/elementEditing';
 import { AiPanel } from '../features/ai/AiPanel';
 import { DiaryPanel } from '../features/diary/DiaryPanel';
 import { HtmlEditor } from '../features/editor/HtmlEditor';
@@ -60,6 +61,7 @@ export function App() {
   const [vaultAssetBusyIds, setVaultAssetBusyIds] = useState<string[]>([]);
   const [vaultExportResults, setVaultExportResults] = useState<Record<string, VaultExportResponse>>({});
   const [vaultExportBusyIds, setVaultExportBusyIds] = useState<string[]>([]);
+  const [vaultMarkdownConvertBusyIds, setVaultMarkdownConvertBusyIds] = useState<string[]>([]);
   const [vaultInbox, setVaultInbox] = useState<AgentInboxResponse>(emptyAgentInbox);
   const [vaultInboxBusyIds, setVaultInboxBusyIds] = useState<string[]>([]);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
@@ -108,7 +110,8 @@ export function App() {
   }, [vaultPreview?.assetId]);
 
   useEffect(() => {
-    const firstHtmlAsset = vaultLibrary?.items.find((item) => item.kind === 'html-note');
+    const firstHtmlAsset =
+      vaultLibrary?.items.find((item) => item.kind === 'html-note') ?? vaultLibrary?.items.find((item) => item.kind === 'markdown-note');
 
     if (!firstHtmlAsset || vaultPreview || vaultPreviewBusy || requestedVaultPreviewIdRef.current) {
       return;
@@ -238,6 +241,21 @@ export function App() {
       setThumbnailMessage('Thumbnail generation failed');
     } finally {
       setThumbnailBusy(false);
+    }
+  }
+
+  async function convertVaultMarkdownToHtml(itemId: string): Promise<void> {
+    setVaultMarkdownConvertBusyIds((current) => [...new Set([...current, itemId])]);
+    setError('');
+
+    try {
+      const result = await desktopBridge.convertVaultMarkdownToHtml(itemId);
+      await refreshVaultLibrary();
+      await openVaultItem(result.asset.id);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Markdown 转 HTML 失败');
+    } finally {
+      setVaultMarkdownConvertBusyIds((current) => current.filter((id) => id !== itemId));
     }
   }
 
@@ -456,6 +474,34 @@ export function App() {
     }
   }
 
+  async function runVaultScopedAiEdit(input: { selector: string; instruction: string }): Promise<void> {
+    const preview = vaultPreview;
+    if (!preview) {
+      return;
+    }
+
+    setVaultWriteBusy(true);
+    setVaultWriteMessage('Running scoped AI edit');
+    setError('');
+
+    try {
+      const request = buildScopedAiEditRequest({
+        html: preview.html,
+        selector: input.selector,
+        instruction: input.instruction,
+        language: locale,
+      });
+      const response = await desktopBridge.runAiAction(request);
+      const editedHtml = applyElementTextEdit(preview.html, input.selector, response.result.trim());
+      await reviewVaultEdit(editedHtml);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'AI 局部编辑失败');
+      setVaultWriteMessage('Scoped AI edit failed');
+    } finally {
+      setVaultWriteBusy(false);
+    }
+  }
+
   function saveAsPathFor(sourcePath: string): string {
     return sourcePath.match(/\.html?$/i) ? sourcePath.replace(/\.html?$/i, '.copy.html') : `${sourcePath}.copy.html`;
   }
@@ -560,6 +606,7 @@ export function App() {
           assetBusyIds={vaultAssetBusyIds}
           exportResults={vaultExportResults}
           exportBusyIds={vaultExportBusyIds}
+          markdownConvertBusyIds={vaultMarkdownConvertBusyIds}
           inboxRequests={vaultInbox.requests}
           inboxInvalidLines={vaultInbox.invalidLines}
           inboxSkippedDuplicates={vaultInbox.skippedDuplicates}
@@ -572,9 +619,11 @@ export function App() {
           onScanAssetIntegrity={(itemId) => void scanVaultAssetIntegrity(itemId)}
           onExportPackage={(itemId) => void runVaultExportAction(itemId, desktopBridge.exportVaultPackage, '导出静态包失败')}
           onExportMarkdown={(itemId) => void runVaultExportAction(itemId, desktopBridge.exportVaultMarkdown, '导出 Markdown 失败')}
+          onConvertMarkdownToHtml={(itemId) => void convertVaultMarkdownToHtml(itemId)}
           onCompareLatestVersions={() => void compareLatestVaultVersions()}
           onRollbackSnapshot={(snapshotId) => void rollbackVaultVersion(snapshotId)}
           onReviewEdit={(editedHtml) => void reviewVaultEdit(editedHtml)}
+          onRunScopedAiEdit={(input) => void runVaultScopedAiEdit(input)}
           onCancelWrite={() => void applyVaultDecision({ action: 'cancel' })}
           onSaveAs={() => {
             if (vaultWriteReview) {

@@ -190,6 +190,18 @@ macOS Application Support:
 
 Application Support is runtime state, not repository source. The app must never store API keys in committed files. Local test keys may live only in ignored `.env.local` or OS-secure user config during testing.
 
+### 4.3 Current Markdown And Element Editing Implementation
+
+The current TypeScript/runtime implementation includes the following PRD-facing flows:
+
+- `registerMarkdownAsset` is accepted by the Agent Bridge protocol and stored as Vault kind `markdown-note`.
+- `bridge/vault/source.ts` reads Markdown sources by preserving the original Markdown hash while returning rendered HTML for preview.
+- `bridge/vault/library.ts` indexes Markdown frontmatter title, summary, tags, folder path, source agent, and wikilinks.
+- `bridge/vault/markdownConversion.ts` converts a `markdown-note` into a new managed `html-note`, writes the generated HTML next to the source Markdown, registers the generated HTML in the manifest, and does not mutate the `.md` source.
+- `bridge/html/elementEditing.ts` lists editable rendered HTML elements by stable selectors, applies selected-element text edits, and builds scoped AI requests with `selection` metadata.
+- `src/features/vault/VaultHome.tsx` keeps the default experience render-first: users see iframe previews, an Obsidian-style tree, Markdown Convert actions, selected-element editing controls, and Source Guard review panels instead of raw HTML by default.
+- `src/app/App.tsx` routes scoped AI edits through the existing user-configured AI provider and then through Source Guard review; AI output does not write directly to source files.
+
 ## 5. Directory Structure
 
 Planned source tree:

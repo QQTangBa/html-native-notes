@@ -10,7 +10,7 @@ Date: 2026-06-27
 npm run verify
 ```
 
-Result: PASS. 43 test files and 181 tests passed. This ran TypeScript typecheck, ESLint, the full Vitest suite, and production Vite build.
+Result: PASS. Latest run: 44 test files and 188 tests passed. This ran TypeScript typecheck, ESLint, the full Vitest suite, and production Vite build.
 
 ```bash
 cargo check --manifest-path src-tauri/Cargo.toml
@@ -41,6 +41,45 @@ Result: PASS. Computer Use inspection confirmed:
 - English and Chinese UI switching works in the desktop app.
 - Dark and light theme switching works in the desktop app.
 - The light theme card and preview text are readable after contrast fixes.
+
+## Markdown Takeover And Element Editing Evidence
+
+Date: 2026-06-27
+
+```bash
+npx vitest run tests/unit/agentBridgeProtocol.test.ts tests/integration/bridge/markdownImport.test.ts tests/integration/bridge/vaultLibrary.test.ts tests/integration/api.test.ts tests/unit/htmlElementEditing.test.ts tests/unit/VaultHome.test.tsx tests/unit/desktopBridge.test.ts
+```
+
+Result: PASS. 7 files and 58 tests passed. This proves:
+
+- `registerMarkdownAsset` is accepted by the Agent Bridge protocol and stored as `markdown-note`.
+- AI-generated Markdown can be intaken into the Vault, searched by title/tags/frontmatter/wikilinks, and previewed as rendered HTML while preserving the original Markdown source hash.
+- A Markdown note can be converted into a new managed `html-note` without mutating the original `.md` file.
+- Markdown-derived HTML includes searchable metadata and `markdown-converted` tags.
+- The Vault UI shows Markdown preview and Convert actions while keeping thumbnail generation scoped to HTML assets.
+- Rendered HTML elements can be listed by stable selector, edited manually in isolation, and sent as scoped AI edit requests with `selection` metadata.
+- Element-level edits flow into the existing Source Guard review instead of writing directly.
+
+Browser smoke evidence was collected with an isolated test Vault under `test-results/desktop-smoke/vault`:
+
+```bash
+node --input-type=module "<open VaultHome with Playwright, select rendered element, review Source Guard diff, convert Markdown to HTML, save screenshots>"
+```
+
+Result: PASS. Screenshots saved locally at:
+
+- `test-results/desktop-smoke/vault-element-editor-review.png`
+- `test-results/desktop-smoke/vault-markdown-converted-preview.png`
+
+The smoke proves the web-renderer path can manage an AI-generated HTML note and an AI-generated Markdown note from the isolated Vault, show relative Obsidian-style tree entries, open a rendered preview, review a selected rendered element change through Source Guard, and convert Markdown into a managed HTML asset.
+
+Live BYOK AI smoke:
+
+```bash
+node scripts/test-ai-config.mjs
+```
+
+Result: PASS. DeepSeek `deepseek-v4-flash` returned `HTML Native Notes AI OK`. The script read local ignored `.env.local`; the API key was not printed.
 
 ## Recent UX Regression Evidence
 

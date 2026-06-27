@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { convertMarkdownFileToHtml } from '../markdown/importer';
 import { readVaultManifest } from './intake';
 
 export interface VaultAssetSource {
@@ -33,12 +34,22 @@ export async function readVaultAssetSource(options: ReadVaultAssetSourceOptions)
     throw httpError(`Vault asset not found: ${options.assetId}`, 404);
   }
 
-  if (asset.kind !== 'html-note' || !asset.sourcePath) {
-    throw httpError(`Vault asset is not a previewable HTML note: ${options.assetId}`, 400);
+  if ((asset.kind !== 'html-note' && asset.kind !== 'markdown-note') || !asset.sourcePath) {
+    throw httpError(`Vault asset is not a previewable note: ${options.assetId}`, 400);
   }
 
-  const html = await readFile(asset.sourcePath, 'utf8');
-  const currentHash = sha256(html);
+  const source = await readFile(asset.sourcePath, 'utf8');
+  const html =
+    asset.kind === 'markdown-note'
+      ? (
+          await convertMarkdownFileToHtml({
+            rootDir: options.vaultDir,
+            markdownPath: asset.sourcePath,
+            templateId: 'technical-doc',
+          })
+        ).html
+      : source;
+  const currentHash = sha256(source);
 
   return {
     assetId: asset.id,

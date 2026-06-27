@@ -266,6 +266,24 @@ textarea {
   background: #ffffff;
 }
 
+.desktop-vault-shell[data-theme="light"] .vault-element-edit-panel {
+  border-color: #ded7cb;
+  background: #fffdfa;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-element-edit-panel label,
+.desktop-vault-shell[data-theme="light"] .vault-element-ai-row label {
+  color: #5e6965;
+}
+
+.desktop-vault-shell[data-theme="light"] .vault-element-edit-panel select,
+.desktop-vault-shell[data-theme="light"] .vault-element-edit-panel textarea,
+.desktop-vault-shell[data-theme="light"] .vault-element-ai-row input {
+  border-color: #d7d0c3;
+  background: #ffffff;
+  color: #263033;
+}
+
 .panel {
   min-width: 0;
   min-height: 0;
@@ -1516,6 +1534,59 @@ code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 12px;
   line-height: 1.55;
+}
+
+.vault-element-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #303941;
+  background: #10161a;
+  padding: 12px;
+}
+
+.vault-element-edit-grid {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.8fr) minmax(220px, 1.2fr);
+  gap: 10px;
+}
+
+.vault-element-edit-panel label,
+.vault-element-ai-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #aeb8b1;
+  font-size: 12px;
+}
+
+.vault-element-edit-panel select,
+.vault-element-edit-panel textarea,
+.vault-element-ai-row input {
+  width: 100%;
+  border: 1px solid #334048;
+  border-radius: 8px;
+  background: #0b1013;
+  color: #e4e9e1;
+  padding: 8px;
+  font: inherit;
+}
+
+.vault-element-edit-panel textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.vault-element-ai-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.vault-element-ai-row button {
+  min-height: 34px;
+  white-space: nowrap;
 }
 
 .vault-write-actions,

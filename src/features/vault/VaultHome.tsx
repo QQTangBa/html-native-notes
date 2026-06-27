@@ -19,6 +19,7 @@ import {
   Download,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } from 'react';
+import { applyElementTextEdit, listEditableHtmlElements } from '../../../bridge/html/elementEditing';
 import type { InvalidInboxLine } from '../../../bridge/inbox/jsonlInbox';
 import type { NormalizedBridgeRequest } from '../../../bridge/shared/protocol';
 import { InboxPanel } from '../bridge/InboxPanel';
@@ -34,7 +35,7 @@ import type {
 
 export interface VaultHomeItem {
   id: string;
-  kind: 'html-note' | 'service' | 'project';
+  kind: 'html-note' | 'markdown-note' | 'service' | 'project';
   title: string;
   sourceAgent?: string;
   sourcePath?: string;
@@ -68,6 +69,7 @@ export interface VaultHomeProps {
   assetBusyIds?: string[];
   exportResults?: Record<string, VaultExportResponse>;
   exportBusyIds?: string[];
+  markdownConvertBusyIds?: string[];
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
   inboxRequests?: NormalizedBridgeRequest[];
@@ -83,6 +85,8 @@ export interface VaultHomeProps {
   onScanAssetIntegrity?: (itemId: string) => void;
   onExportPackage?: (itemId: string) => void;
   onExportMarkdown?: (itemId: string) => void;
+  onConvertMarkdownToHtml?: (itemId: string) => void;
+  onRunScopedAiEdit?: (input: { selector: string; instruction: string }) => void;
   onCompareLatestVersions?: () => void;
   onRollbackSnapshot?: (snapshotId: string) => void;
   onReviewEdit?: (editedHtml: string) => void;
@@ -253,6 +257,7 @@ export function VaultHome({
   assetBusyIds = [],
   exportResults,
   exportBusyIds = [],
+  markdownConvertBusyIds = [],
   thumbnailBusy = false,
   thumbnailMessage,
   inboxRequests = [],
@@ -268,6 +273,8 @@ export function VaultHome({
   onScanAssetIntegrity,
   onExportPackage,
   onExportMarkdown,
+  onConvertMarkdownToHtml,
+  onRunScopedAiEdit,
   onCompareLatestVersions,
   onRollbackSnapshot,
   onReviewEdit,
@@ -284,6 +291,9 @@ export function VaultHome({
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [isEditingPreview, setIsEditingPreview] = useState(false);
   const [draftHtml, setDraftHtml] = useState('');
+  const [selectedElementSelector, setSelectedElementSelector] = useState('');
+  const [elementDraft, setElementDraft] = useState('');
+  const [elementAiInstruction, setElementAiInstruction] = useState('');
 
   useLayoutEffect(() => {
     setIsEditingPreview(false);
@@ -300,7 +310,23 @@ export function VaultHome({
   const tags = useMemo(() => uniqueSorted(items.flatMap((item) => item.tags)), [items]);
   const sourceAgents = useMemo(() => uniqueSorted(items.flatMap((item) => (item.sourceAgent ? [item.sourceAgent] : []))), [items]);
   const treeRows = useMemo(() => buildVaultTreeRows(items), [items]);
-  const pendingThumbnailCount = useMemo(() => items.filter((item) => item.thumbnail.status === 'pending').length, [items]);
+  const activeItem = useMemo(() => items.find((item) => item.id === activeItemId), [activeItemId, items]);
+  const canEditRenderedElements = !activeItem || activeItem.kind === 'html-note';
+  const editableElements = useMemo(() => {
+    if (!previewHtml || !canEditRenderedElements) {
+      return [];
+    }
+
+    try {
+      return listEditableHtmlElements(previewHtml);
+    } catch {
+      return [];
+    }
+  }, [canEditRenderedElements, previewHtml]);
+  const pendingThumbnailCount = useMemo(
+    () => items.filter((item) => item.kind === 'html-note' && item.thumbnail.status === 'pending').length,
+    [items],
+  );
   const visibleItems = useMemo(
     () =>
       items
@@ -324,12 +350,78 @@ export function VaultHome({
     setIsEditingPreview(true);
   }
 
+  function selectEditableElement(selector: string): void {
+    const nextElement = editableElements.find((element) => element.selector === selector);
+    setSelectedElementSelector(selector);
+    setElementDraft(nextElement?.text ?? '');
+  }
+
+  function reviewSelectedElementEdit(): void {
+    if (!previewHtml || !selectedElementSelector || !onReviewEdit) {
+      return;
+    }
+
+    onReviewEdit(applyElementTextEdit(previewHtml, selectedElementSelector, elementDraft));
+  }
+
+  function runScopedAiEdit(): void {
+    const instruction = elementAiInstruction.trim();
+    if (!selectedElementSelector || !instruction) {
+      return;
+    }
+
+    onRunScopedAiEdit?.({
+      selector: selectedElementSelector,
+      instruction,
+    });
+  }
+
   const canGenerateThumbnails = Boolean(onGenerateThumbnails && pendingThumbnailCount > 0);
   const thumbnailButtonLabel = thumbnailBusy ? `${copy.rendering} thumbnails` : `${copy.generate} ${pendingThumbnailLabel(pendingThumbnailCount)}`;
   const thumbnailStatusText = thumbnailMessage ?? (pendingThumbnailCount > 0 ? pendingThumbnailLabel(pendingThumbnailCount) : 'Thumbnails ready');
   const diffLines = writeReview?.diff ? writeReview.diff.split('\n') : [];
   const hasVersionTimeline = Boolean(versionSnapshots || versionMessage || versionBusy);
   const canCompareVersions = Boolean(onCompareLatestVersions && versionSnapshots && versionSnapshots.length >= 2 && !versionBusy);
+  const writeReviewPanel = writeReview ? (
+    <section className="vault-write-review" role="region" aria-label="Source Guard review">
+      <div className="vault-write-review-head">
+        <div>
+          <p className="eyebrow">Source Guard review</p>
+          <strong>{writeReview.status === 'changed' ? 'Changes detected' : 'No source changes'}</strong>
+        </div>
+        <small>{writeReview.sourcePath}</small>
+      </div>
+      <pre className="vault-diff" aria-label="Readable HTML diff">
+        {diffLines.length ? (
+          diffLines.map((line, index) => (
+            <code key={`${index}-${line}`} data-diff={line.startsWith('+') ? 'add' : line.startsWith('-') ? 'remove' : 'same'}>
+              {line}
+            </code>
+          ))
+        ) : (
+          <code data-diff="same">No textual diff</code>
+        )}
+      </pre>
+      <div className="vault-write-decisions">
+        <button type="button" disabled={writeBusy} onClick={onCancelWrite}>
+          Cancel write
+        </button>
+        <button type="button" disabled={writeBusy} onClick={onSaveAs}>
+          Save as copy
+        </button>
+        <button type="button" disabled={writeBusy} onClick={onWriteBack}>
+          Write back to source
+        </button>
+      </div>
+    </section>
+  ) : null;
+
+  useEffect(() => {
+    const firstElement = editableElements[0];
+    setSelectedElementSelector(firstElement?.selector ?? '');
+    setElementDraft(firstElement?.text ?? '');
+    setElementAiInstruction('');
+  }, [editableElements]);
 
   return (
     <section className="vault-home" aria-label={copy.ariaLabel}>
@@ -601,7 +693,25 @@ export function VaultHome({
                       </div>
                     </div>
                   ) : null}
-                  {onOpenItem && item.kind === 'html-note' ? (
+                  {item.kind === 'markdown-note' && onConvertMarkdownToHtml ? (
+                    <div className="vault-export-panel">
+                      <div className="vault-export-head">
+                        <FileText size={13} aria-hidden="true" />
+                        <strong>HTML version</strong>
+                      </div>
+                      <div className="vault-export-actions">
+                        <button
+                          type="button"
+                          aria-label={`Convert Markdown to HTML ${item.title}`}
+                          disabled={markdownConvertBusyIds.includes(item.id)}
+                          onClick={() => onConvertMarkdownToHtml(item.id)}
+                        >
+                          Convert
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {onOpenItem && (item.kind === 'html-note' || item.kind === 'markdown-note') ? (
                     <button type="button" className="vault-preview-button" aria-label={`Preview ${item.title}`} onClick={() => onOpenItem(item.id)}>
                       <Eye size={14} aria-hidden="true" />
                       <span>Preview</span>
@@ -647,46 +757,49 @@ export function VaultHome({
                     {writeMessage ? <span>{writeMessage}</span> : null}
                   </div>
 
-                  {writeReview ? (
-                    <section className="vault-write-review" role="region" aria-label="Source Guard review">
-                      <div className="vault-write-review-head">
-                        <div>
-                          <p className="eyebrow">Source Guard review</p>
-                          <strong>{writeReview.status === 'changed' ? 'Changes detected' : 'No source changes'}</strong>
-                        </div>
-                        <small>{writeReview.sourcePath}</small>
-                      </div>
-                      <pre className="vault-diff" aria-label="Readable HTML diff">
-                        {diffLines.length ? (
-                          diffLines.map((line, index) => (
-                            <code
-                              key={`${index}-${line}`}
-                              data-diff={line.startsWith('+') ? 'add' : line.startsWith('-') ? 'remove' : 'same'}
-                            >
-                              {line}
-                            </code>
-                          ))
-                        ) : (
-                          <code data-diff="same">No textual diff</code>
-                        )}
-                      </pre>
-                      <div className="vault-write-decisions">
-                        <button type="button" disabled={writeBusy} onClick={onCancelWrite}>
-                          Cancel write
-                        </button>
-                        <button type="button" disabled={writeBusy} onClick={onSaveAs}>
-                          Save as copy
-                        </button>
-                        <button type="button" disabled={writeBusy} onClick={onWriteBack}>
-                          Write back to source
-                        </button>
-                      </div>
-                    </section>
-                  ) : null}
+                  {writeReviewPanel}
                 </div>
               ) : (
                 <>
                   <iframe className="vault-preview-frame" title="Vault HTML preview" srcDoc={previewHtml} sandbox="allow-same-origin" />
+                  {editableElements.length > 0 && onReviewEdit ? (
+                    <section className="vault-element-edit-panel" role="region" aria-label="Rendered element editor">
+                      <div className="vault-element-edit-grid">
+                        <label>
+                          <span>Rendered element</span>
+                          <select value={selectedElementSelector} onChange={(event) => selectEditableElement(event.target.value)}>
+                            {editableElements.map((element) => (
+                              <option key={element.selector} value={element.selector}>
+                                {element.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Selected element text</span>
+                          <textarea value={elementDraft} onChange={(event) => setElementDraft(event.target.value)} />
+                        </label>
+                      </div>
+                      <div className="vault-write-actions">
+                        <button type="button" disabled={writeBusy || !selectedElementSelector} onClick={reviewSelectedElementEdit}>
+                          <ShieldCheck size={14} aria-hidden="true" />
+                          <span>Review selected element change</span>
+                        </button>
+                      </div>
+                      {onRunScopedAiEdit ? (
+                        <div className="vault-element-ai-row">
+                          <label>
+                            <span>AI instruction for selected element</span>
+                            <input value={elementAiInstruction} onChange={(event) => setElementAiInstruction(event.target.value)} />
+                          </label>
+                          <button type="button" disabled={!selectedElementSelector || !elementAiInstruction.trim()} onClick={runScopedAiEdit}>
+                            Ask AI to edit selected element
+                          </button>
+                        </div>
+                      ) : null}
+                    </section>
+                  ) : null}
+                  {writeReviewPanel}
                   {hasVersionTimeline ? (
                     <section className="vault-version-panel" role="region" aria-label="Version timeline">
                       <div className="vault-version-head">

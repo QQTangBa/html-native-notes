@@ -48,7 +48,7 @@ export interface AppConfig {
 
 export interface VaultLibraryItem {
   id: string;
-  kind: 'html-note' | 'service' | 'project';
+  kind: 'html-note' | 'markdown-note' | 'service' | 'project';
   title: string;
   source: 'bridge';
   sourceAgent?: string;
@@ -99,6 +99,12 @@ export interface VaultAssetSourceResponse {
   currentHash: string;
   sourceHashMatches: boolean;
   html: string;
+}
+
+export interface VaultMarkdownHtmlConversionResponse {
+  markdownAssetId: string;
+  outputPath: string;
+  asset: VaultLibraryItem;
 }
 
 export interface VaultVersionSnapshot {

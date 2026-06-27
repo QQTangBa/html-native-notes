@@ -12,6 +12,7 @@ import type {
   VaultMarkdownExportResponse,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
+  VaultMarkdownHtmlConversionResponse,
   VaultServiceRuntimeState,
   VaultStaticPublishResponse,
   VaultStaticPackageExportResponse,
@@ -57,6 +58,12 @@ export const apiClient = {
 
   async getVaultAssetSource(assetId: string): Promise<VaultAssetSourceResponse> {
     return parseResponse<VaultAssetSourceResponse>(await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/source`));
+  },
+
+  async convertVaultMarkdownToHtml(assetId: string): Promise<VaultMarkdownHtmlConversionResponse> {
+    return parseResponse<VaultMarkdownHtmlConversionResponse>(
+      await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/convert-html`, { method: 'POST' }),
+    );
   },
 
   async listVaultVersions(assetId: string): Promise<VaultVersionsResponse> {

@@ -6,7 +6,7 @@ import { createVersionSnapshot } from './versionStore';
 
 export interface BridgeVaultAsset {
   id: string;
-  kind: 'html-note' | 'service' | 'project';
+  kind: 'html-note' | 'markdown-note' | 'service' | 'project';
   title: string;
   source: 'bridge';
   sourcePath?: string;
@@ -98,6 +98,8 @@ async function assertSourceHash(request: NormalizedBridgeRequest): Promise<void>
 
 function assetFromRequest(request: NormalizedBridgeRequest, now: string): BridgeVaultAsset {
   const service = request.service as { title?: unknown; cwd?: unknown } | undefined;
+  const kind =
+    request.type === 'registerWebService' ? 'service' : request.type === 'registerMarkdownAsset' ? 'markdown-note' : 'html-note';
   const title =
     request.title ??
     (typeof service?.title === 'string' ? service.title : undefined) ??
@@ -105,7 +107,7 @@ function assetFromRequest(request: NormalizedBridgeRequest, now: string): Bridge
 
   return {
     id: assetIdFor(request.dedupeKey),
-    kind: request.type === 'registerWebService' ? 'service' : 'html-note',
+    kind,
     title,
     source: 'bridge',
     sourcePath: request.sourcePath ?? (typeof service?.cwd === 'string' ? service.cwd : undefined),
@@ -144,7 +146,7 @@ export async function intakeBridgeRequestToVault(options: IntakeOptions): Promis
 
   const manifestPath = await writeVaultManifest(options.vaultDir, nextManifest);
 
-  if (asset.kind === 'html-note' && asset.sourcePath) {
+  if ((asset.kind === 'html-note' || asset.kind === 'markdown-note') && asset.sourcePath) {
     await createVersionSnapshot({
       vaultDir: options.vaultDir,
       assetId: asset.id,

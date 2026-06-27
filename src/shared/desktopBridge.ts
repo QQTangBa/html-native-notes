@@ -12,6 +12,7 @@ import type {
   VaultMarkdownExportResponse,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
+  VaultMarkdownHtmlConversionResponse,
   VaultServiceRuntimeState,
   VaultStaticPublishResponse,
   VaultStaticPackageExportResponse,
@@ -70,6 +71,10 @@ export const desktopBridge = {
 
   getVaultAssetSource(assetId: string): Promise<VaultAssetSourceResponse> {
     return invokeOrFallback('vault_get_asset_source', { assetId }, () => apiClient.getVaultAssetSource(assetId));
+  },
+
+  convertVaultMarkdownToHtml(assetId: string): Promise<VaultMarkdownHtmlConversionResponse> {
+    return invokeOrFallback('vault_convert_markdown_to_html', { assetId }, () => apiClient.convertVaultMarkdownToHtml(assetId));
   },
 
   listVaultVersions(assetId: string): Promise<VaultVersionsResponse> {
