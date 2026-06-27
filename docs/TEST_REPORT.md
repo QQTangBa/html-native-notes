@@ -40,7 +40,15 @@ Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` 
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge boundary change. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 27 test files and 121 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
+Result: PASS on 2026-06-27 after the desktop bridge and fixture-scale import foundation changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 28 test files and 124 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
+
+PRD fixture-scale import foundation:
+
+```bash
+npm run test -- tests/integration/fixtures/prdFixtures.test.ts
+```
+
+Result: PASS. 3 tests. The equivalent package command `npm run test:fixtures:mixed100` also passes. This proves `scripts/generate-prd-fixtures.mjs` can generate deterministic 100-file mixed fixtures and 30 Markdown migration notes; the Markdown converter preserves source hashes while converting 30 notes with frontmatter, wikilinks, images, and code blocks; and the current TS Vault intake can register 70 importable HTML/project-index fixtures with source hashes preserved. It does not yet prove the desktop import wizard, Rust scanner, or the PRD requirement that 95 of 100 mixed files open/search/preview in the launched macOS app.
 
 ```bash
 npm run test

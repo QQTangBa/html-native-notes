@@ -200,13 +200,15 @@ git commit -m "feat: add mcp bridge and desktop inbox review"
 - Create: `src-tauri/src/core/importer.rs`
 - Test: `tests/integration/fixtures/mixed100.test.ts`, `tests/integration/fixtures/markdown30.test.ts`
 
-- [ ] **Step 1: Generate deterministic fixtures**
+- [x] **Step 1: Generate deterministic fixtures**
 
 Create 100 mixed HTML/Markdown/project fixtures and 30 Markdown notes with frontmatter, images, wikilinks, tags, folders, and code blocks.
 
 - [ ] **Step 2: Write failing scale tests**
 
 Tests must hash all source files before import, run import, assert sources unchanged, assert at least 95 mixed files open/search/preview, and assert 30 Markdown notes preserve required metadata.
+
+Checkpoint evidence: `scripts/generate-prd-fixtures.mjs` creates the deterministic fixture sets, and `tests/integration/fixtures/prdFixtures.test.ts` proves 30 Markdown notes convert without source mutation plus 70 importable HTML/project index files register into the current TS Vault library. The full 95/100 open-search-preview acceptance and native import wizard remain pending.
 
 - [ ] **Step 3: Implement import wizard and native importer**
 
