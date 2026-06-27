@@ -17,6 +17,8 @@ export function App() {
   const [source, setSource] = useState(starterHtml);
   const [aiStatus, setAiStatus] = useState<SafeAiStatus>();
   const [vaultLibrary, setVaultLibrary] = useState<VaultLibraryResponse>();
+  const [thumbnailBusy, setThumbnailBusy] = useState(false);
+  const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -36,12 +38,16 @@ export function App() {
 
   useEffect(() => {
     void refresh();
-    void apiClient.listVaultLibrary().then(setVaultLibrary).catch(() => setVaultLibrary(undefined));
+    void refreshVaultLibrary();
     void apiClient.aiStatus().then(setAiStatus).catch(() => setAiStatus({ configured: false, baseUrlSet: false }));
   }, []);
 
   async function refresh(): Promise<void> {
     setNotes(await apiClient.listNotes());
+  }
+
+  async function refreshVaultLibrary(): Promise<void> {
+    await apiClient.listVaultLibrary().then(setVaultLibrary).catch(() => setVaultLibrary(undefined));
   }
 
   async function runTask(task: () => Promise<void>): Promise<void> {
@@ -122,6 +128,27 @@ export function App() {
     });
   }
 
+  async function generateVaultThumbnails(): Promise<void> {
+    setThumbnailBusy(true);
+    setThumbnailMessage('Rendering thumbnails');
+    setError('');
+
+    try {
+      const result = await apiClient.generateVaultThumbnails();
+      await refreshVaultLibrary();
+      setThumbnailMessage(
+        result.generatedCount > 0
+          ? `${result.generatedCount} thumbnail${result.generatedCount === 1 ? '' : 's'} ready`
+          : 'Thumbnails ready',
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '缩略图生成失败');
+      setThumbnailMessage('Thumbnail generation failed');
+    } finally {
+      setThumbnailBusy(false);
+    }
+  }
+
   function insertAiResult(): void {
     if (!aiResult) {
       return;
@@ -134,7 +161,12 @@ export function App() {
   if (vaultLibrary?.items.length) {
     return (
       <main className="desktop-vault-shell" data-testid="workspace-shell">
-        <VaultHome items={vaultLibrary.items} />
+        <VaultHome
+          items={vaultLibrary.items}
+          thumbnailBusy={thumbnailBusy}
+          thumbnailMessage={thumbnailMessage || undefined}
+          onGenerateThumbnails={() => void generateVaultThumbnails()}
+        />
         <div className={error ? 'status-bar error' : 'status-bar'}>{statusLine}</div>
       </main>
     );

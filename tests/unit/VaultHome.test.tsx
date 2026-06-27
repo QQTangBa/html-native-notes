@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { VaultHome, type VaultHomeItem } from '../../src/features/vault/VaultHome';
 
 const items: VaultHomeItem[] = [
@@ -84,5 +84,24 @@ describe('VaultHome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'List view' }));
     expect(screen.getByRole('button', { name: 'List view' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('vault-items')).toHaveAttribute('data-view', 'list');
+  });
+
+  it('shows a compact thumbnail generation action when thumbnails are pending', () => {
+    const onGenerateThumbnails = vi.fn();
+    render(<VaultHome items={items} thumbnailBusy={false} thumbnailMessage="1 pending" onGenerateThumbnails={onGenerateThumbnails} />);
+
+    const button = screen.getByRole('button', { name: 'Generate 1 pending thumbnail' });
+    expect(button).toBeInTheDocument();
+    expect(screen.getByText('1 pending')).toBeInTheDocument();
+
+    fireEvent.click(button);
+    expect(onGenerateThumbnails).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables thumbnail generation while a run is in progress', () => {
+    render(<VaultHome items={items} thumbnailBusy thumbnailMessage="Rendering thumbnails" onGenerateThumbnails={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Rendering thumbnails' })).toBeDisabled();
+    expect(screen.getByText('Rendering thumbnails')).toBeInTheDocument();
   });
 });

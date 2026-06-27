@@ -141,4 +141,80 @@ describe('App workspace', () => {
     expect(await screen.findByText('Agent Market Map')).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Search Vault' })).toBeInTheDocument();
   });
+
+  it('generates pending Vault thumbnails from the desktop toolbar and refreshes the library', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/market.html',
+          relativeSourcePath: 'imports/ai/market.html',
+          folderPath: 'imports/ai',
+          tags: ['market', 'ai'],
+          summary: 'Agent generated market map',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'pending',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports/ai', itemCount: 1 }],
+      availableFilters: {
+        tags: ['ai', 'market'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/vault/thumbnails/generate' && method === 'POST') {
+        vaultLibrary = {
+          ...vaultLibrary,
+          items: vaultLibrary.items.map((item) => ({
+            ...item,
+            thumbnail: { ...item.thumbnail, status: 'ready' },
+          })),
+        };
+        return jsonResponse({
+          ok: true,
+          generatedCount: 1,
+          skippedCount: 0,
+          generated: [{ assetId: 'asset_market', path: '/Vault/.htmlvault/thumbnails/asset_market.png' }],
+          skipped: [],
+        });
+      }
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Generate 1 pending thumbnail' }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/vault/thumbnails/generate', { method: 'POST' });
+      expect(screen.getByText('Thumbnail ready')).toBeInTheDocument();
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { FileText, Folder, Grid2X2, List, Search, SlidersHorizontal } from 'lucide-react';
+import { FileText, Folder, Grid2X2, List, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export interface VaultHomeItem {
@@ -20,6 +20,9 @@ export interface VaultHomeItem {
 
 export interface VaultHomeProps {
   items: VaultHomeItem[];
+  thumbnailBusy?: boolean;
+  thumbnailMessage?: string;
+  onGenerateThumbnails?: () => void;
 }
 
 type ViewMode = 'card' | 'list';
@@ -50,7 +53,11 @@ function formatTime(value: string): string {
   }).format(new Date(value));
 }
 
-export function VaultHome({ items }: VaultHomeProps) {
+function pendingThumbnailLabel(count: number): string {
+  return `${count} pending thumbnail${count === 1 ? '' : 's'}`;
+}
+
+export function VaultHome({ items, thumbnailBusy = false, thumbnailMessage, onGenerateThumbnails }: VaultHomeProps) {
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
   const [sourceAgent, setSourceAgent] = useState('');
@@ -60,6 +67,7 @@ export function VaultHome({ items }: VaultHomeProps) {
   const tags = useMemo(() => uniqueSorted(items.flatMap((item) => item.tags)), [items]);
   const sourceAgents = useMemo(() => uniqueSorted(items.flatMap((item) => (item.sourceAgent ? [item.sourceAgent] : []))), [items]);
   const folders = useMemo(() => uniqueSorted(items.map((item) => item.folderPath)), [items]);
+  const pendingThumbnailCount = useMemo(() => items.filter((item) => item.thumbnail.status === 'pending').length, [items]);
   const visibleItems = useMemo(
     () =>
       items
@@ -77,6 +85,10 @@ export function VaultHome({ items }: VaultHomeProps) {
     setSourceAgent('');
     setFolder('');
   }
+
+  const canGenerateThumbnails = Boolean(onGenerateThumbnails && pendingThumbnailCount > 0);
+  const thumbnailButtonLabel = thumbnailBusy ? 'Rendering thumbnails' : `Generate ${pendingThumbnailLabel(pendingThumbnailCount)}`;
+  const thumbnailStatusText = thumbnailMessage ?? (pendingThumbnailCount > 0 ? pendingThumbnailLabel(pendingThumbnailCount) : 'Thumbnails ready');
 
   return (
     <section className="vault-home" aria-label="Vault home">
@@ -161,6 +173,19 @@ export function VaultHome({ items }: VaultHomeProps) {
             <h2>{visibleItems.length} assets</h2>
           </div>
           <div className="vault-toolbar-actions">
+            {canGenerateThumbnails ? (
+              <button
+                type="button"
+                className="vault-thumbnail-action"
+                aria-label={thumbnailButtonLabel}
+                disabled={thumbnailBusy}
+                onClick={onGenerateThumbnails}
+              >
+                <RefreshCw size={15} aria-hidden="true" />
+                <span>{thumbnailBusy ? 'Rendering' : 'Generate'}</span>
+              </button>
+            ) : null}
+            {onGenerateThumbnails ? <span className="vault-toolbar-status">{thumbnailStatusText}</span> : null}
             <button type="button" className="icon-button" aria-label="Card view" aria-pressed={viewMode === 'card'} onClick={() => setViewMode('card')}>
               <Grid2X2 size={16} aria-hidden="true" />
             </button>

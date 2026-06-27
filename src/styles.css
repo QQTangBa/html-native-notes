@@ -526,6 +526,25 @@ code {
   color: #f2e8a7;
 }
 
+.vault-thumbnail-action {
+  max-width: 148px;
+  min-width: 0;
+  padding: 0 10px;
+}
+
+.vault-thumbnail-action span,
+.vault-toolbar-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-toolbar-status {
+  max-width: 138px;
+  color: #8f9a92;
+  font-size: 12px;
+}
+
 .vault-items {
   min-height: 0;
   display: grid;
