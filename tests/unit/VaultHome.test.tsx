@@ -165,6 +165,39 @@ describe('VaultHome', () => {
     expect(onScanAssetIntegrity).toHaveBeenCalledWith('asset_gut');
   });
 
+  it('shows local export actions and the latest package path on HTML note cards', () => {
+    const onExportPackage = vi.fn();
+    const onExportMarkdown = vi.fn();
+    render(
+      <VaultHome
+        items={items}
+        exportResults={{
+          asset_gut: {
+            assetId: 'asset_gut',
+            exportType: 'static-package',
+            outputDir: '/Vault/.htmlvault/exports/asset_gut/latest',
+            indexPath: '/Vault/.htmlvault/exports/asset_gut/latest/index.html',
+            manifestPath: '/Vault/.htmlvault/exports/asset_gut/latest/manifest.json',
+            copiedAssets: [],
+            skippedExternal: [],
+            sourceHash: 'sha256:exported',
+          },
+        }}
+        onExportPackage={onExportPackage}
+        onExportMarkdown={onExportMarkdown}
+      />,
+    );
+
+    expect(screen.getByText('Package ready')).toBeInTheDocument();
+    expect(screen.getByText('/Vault/.htmlvault/exports/asset_gut/latest')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export package Gut Market Research' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export Markdown Gut Market Research' }));
+
+    expect(onExportPackage).toHaveBeenCalledWith('asset_gut');
+    expect(onExportMarkdown).toHaveBeenCalledWith('asset_gut');
+  });
+
   it('disables thumbnail generation while a run is in progress', () => {
     render(<VaultHome items={items} thumbnailBusy thumbnailMessage="Rendering thumbnails" onGenerateThumbnails={vi.fn()} />);
 

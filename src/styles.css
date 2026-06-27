@@ -853,6 +853,47 @@ code {
   padding: 8px;
 }
 
+.vault-export-panel {
+  display: grid;
+  gap: 7px;
+  border: 1px solid #303b42;
+  border-radius: 6px;
+  background: #12181c;
+  padding: 8px;
+}
+
+.vault-export-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #d7ddc9;
+  font-size: 12px;
+}
+
+.vault-export-path {
+  min-width: 0;
+  overflow: hidden;
+  color: #8f9a92;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-export-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vault-export-actions button {
+  min-height: 30px;
+  border-color: #384248;
+  background: #0f1417;
+  color: #c7d0c9;
+  font-size: 12px;
+}
+
 .vault-asset-head {
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr) auto;

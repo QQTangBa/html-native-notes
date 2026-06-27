@@ -15,6 +15,7 @@ import type {
   NoteRecord,
   SafeAiStatus,
   VaultAssetIntegrityReport,
+  VaultExportResponse,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultServiceRuntimeState,
@@ -47,6 +48,8 @@ export function App() {
   const [vaultServiceBusyIds, setVaultServiceBusyIds] = useState<string[]>([]);
   const [vaultAssetReports, setVaultAssetReports] = useState<Record<string, VaultAssetIntegrityReport>>({});
   const [vaultAssetBusyIds, setVaultAssetBusyIds] = useState<string[]>([]);
+  const [vaultExportResults, setVaultExportResults] = useState<Record<string, VaultExportResponse>>({});
+  const [vaultExportBusyIds, setVaultExportBusyIds] = useState<string[]>([]);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
@@ -351,6 +354,20 @@ export function App() {
     }
   }
 
+  async function runVaultExportAction(assetId: string, action: (id: string) => Promise<VaultExportResponse>, failureMessage: string): Promise<void> {
+    setVaultExportBusyIds((current) => [...new Set([...current, assetId])]);
+    setError('');
+
+    try {
+      const result = await action(assetId);
+      setVaultExportResults((current) => ({ ...current, [assetId]: result }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : failureMessage);
+    } finally {
+      setVaultExportBusyIds((current) => current.filter((id) => id !== assetId));
+    }
+  }
+
   async function reviewVaultEdit(editedHtml: string): Promise<void> {
     const preview = vaultPreview;
     if (!preview) {
@@ -454,12 +471,16 @@ export function App() {
           serviceBusyIds={vaultServiceBusyIds}
           assetReports={vaultAssetReports}
           assetBusyIds={vaultAssetBusyIds}
+          exportResults={vaultExportResults}
+          exportBusyIds={vaultExportBusyIds}
           onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
           onServiceHealth={(itemId) => void runVaultServiceAction(itemId, apiClient.checkVaultService, '服务状态检查失败')}
           onServiceStart={(itemId) => void runVaultServiceAction(itemId, apiClient.startVaultService, '服务启动失败')}
           onServiceStop={(itemId) => void runVaultServiceAction(itemId, apiClient.stopVaultService, '服务停止失败')}
           onScanAssetIntegrity={(itemId) => void scanVaultAssetIntegrity(itemId)}
+          onExportPackage={(itemId) => void runVaultExportAction(itemId, apiClient.exportVaultPackage, '导出静态包失败')}
+          onExportMarkdown={(itemId) => void runVaultExportAction(itemId, apiClient.exportVaultMarkdown, '导出 Markdown 失败')}
           onCompareLatestVersions={() => void compareLatestVaultVersions()}
           onRollbackSnapshot={(snapshotId) => void rollbackVaultVersion(snapshotId)}
           onReviewEdit={(editedHtml) => void reviewVaultEdit(editedHtml)}

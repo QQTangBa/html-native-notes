@@ -16,10 +16,12 @@ import {
   SlidersHorizontal,
   Square,
   Activity,
+  Download,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import type {
   VaultAssetIntegrityReport,
+  VaultExportResponse,
   VaultServiceRuntimeState,
   VaultVersionDiff,
   VaultVersionSnapshot,
@@ -60,6 +62,8 @@ export interface VaultHomeProps {
   serviceBusyIds?: string[];
   assetReports?: Record<string, VaultAssetIntegrityReport>;
   assetBusyIds?: string[];
+  exportResults?: Record<string, VaultExportResponse>;
+  exportBusyIds?: string[];
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
   onOpenItem?: (itemId: string) => void;
@@ -68,6 +72,8 @@ export interface VaultHomeProps {
   onServiceStart?: (itemId: string) => void;
   onServiceStop?: (itemId: string) => void;
   onScanAssetIntegrity?: (itemId: string) => void;
+  onExportPackage?: (itemId: string) => void;
+  onExportMarkdown?: (itemId: string) => void;
   onCompareLatestVersions?: () => void;
   onRollbackSnapshot?: (snapshotId: string) => void;
   onReviewEdit?: (editedHtml: string) => void;
@@ -125,6 +131,8 @@ export function VaultHome({
   serviceBusyIds = [],
   assetReports,
   assetBusyIds = [],
+  exportResults,
+  exportBusyIds = [],
   thumbnailBusy = false,
   thumbnailMessage,
   onOpenItem,
@@ -133,6 +141,8 @@ export function VaultHome({
   onServiceStart,
   onServiceStop,
   onScanAssetIntegrity,
+  onExportPackage,
+  onExportMarkdown,
   onCompareLatestVersions,
   onRollbackSnapshot,
   onReviewEdit,
@@ -304,12 +314,15 @@ export function VaultHome({
 
         <div className={previewHtml ? 'vault-main-body with-preview' : 'vault-main-body'}>
           <div className="vault-items" data-testid="vault-items" data-view={viewMode}>
-            {visibleItems.map((item) => (
-              <article
-                className={activeItemId === item.id ? 'vault-item active' : 'vault-item'}
-                key={item.id}
-                data-testid={`vault-item-${item.id}`}
-              >
+            {visibleItems.map((item) => {
+              const exportResult = exportResults?.[item.id];
+
+              return (
+                <article
+                  className={activeItemId === item.id ? 'vault-item active' : 'vault-item'}
+                  key={item.id}
+                  data-testid={`vault-item-${item.id}`}
+                >
                 <div className="vault-thumb" data-status={item.thumbnail.status}>
                   <FileText size={22} aria-hidden="true" />
                   <span>Thumbnail {item.thumbnail.status}</span>
@@ -389,6 +402,47 @@ export function VaultHome({
                       ) : null}
                     </div>
                   ) : null}
+                  {item.kind === 'html-note' && (onExportPackage || onExportMarkdown) ? (
+                    <div className="vault-export-panel">
+                      <div className="vault-export-head">
+                        <Download size={13} aria-hidden="true" />
+                        <strong>
+                          {exportResult?.exportType === 'static-package'
+                            ? 'Package ready'
+                            : exportResult?.exportType === 'markdown'
+                              ? 'Markdown ready'
+                              : 'Export'}
+                        </strong>
+                      </div>
+                      {exportResult ? (
+                        <span className="vault-export-path">
+                          {exportResult.exportType === 'static-package' ? exportResult.outputDir : exportResult.outputPath}
+                        </span>
+                      ) : null}
+                      <div className="vault-export-actions">
+                        {onExportPackage ? (
+                          <button
+                            type="button"
+                            aria-label={`Export package ${item.title}`}
+                            disabled={exportBusyIds.includes(item.id)}
+                            onClick={() => onExportPackage(item.id)}
+                          >
+                            Package
+                          </button>
+                        ) : null}
+                        {onExportMarkdown ? (
+                          <button
+                            type="button"
+                            aria-label={`Export Markdown ${item.title}`}
+                            disabled={exportBusyIds.includes(item.id)}
+                            onClick={() => onExportMarkdown(item.id)}
+                          >
+                            Markdown
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
                   {onOpenItem && item.kind === 'html-note' ? (
                     <button type="button" className="vault-preview-button" aria-label={`Preview ${item.title}`} onClick={() => onOpenItem(item.id)}>
                       <Eye size={14} aria-hidden="true" />
@@ -396,8 +450,9 @@ export function VaultHome({
                     </button>
                   ) : null}
                 </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
 
           {previewHtml ? (

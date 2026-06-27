@@ -655,4 +655,45 @@ describe('local API', () => {
     });
     expect(await readFile(htmlPath, 'utf8')).toBe(html);
   });
+
+  it('exports registered Vault HTML assets as static packages and Markdown through the local API', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const assetDir = path.join(aiDir, 'assets');
+    await mkdir(assetDir, { recursive: true });
+    await writeFile(path.join(assetDir, 'note.css'), 'body{font-family:sans-serif}', 'utf8');
+    const html =
+      '<html><head><title>Exportable</title><link rel="stylesheet" href="assets/note.css"></head><body><h1>Exportable</h1><p>Ready.</p></body></html>';
+    const htmlPath = path.join(aiDir, 'exportable.html');
+    await writeFile(htmlPath, html, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_export',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(html),
+        title: 'Exportable',
+      },
+    });
+
+    const packageResponse = await request(app.server).post(`/api/export/${intake.asset.id}/package`).expect(200);
+    expect(packageResponse.body).toMatchObject({
+      assetId: intake.asset.id,
+      exportType: 'static-package',
+      sourceHash: sha256(html),
+    });
+    expect(await readFile(packageResponse.body.indexPath, 'utf8')).toBe(html);
+
+    const markdownResponse = await request(app.server).post(`/api/export/${intake.asset.id}/markdown`).expect(200);
+    expect(markdownResponse.body).toMatchObject({
+      assetId: intake.asset.id,
+      exportType: 'markdown',
+      sourceHash: sha256(html),
+    });
+    expect(await readFile(markdownResponse.body.outputPath, 'utf8')).toContain('# Exportable');
+    expect(await readFile(htmlPath, 'utf8')).toBe(html);
+  });
 });

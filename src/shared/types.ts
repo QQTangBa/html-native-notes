@@ -163,6 +163,33 @@ export interface VaultAssetIntegrityReport {
   safeModeRequired: boolean;
 }
 
+export interface VaultStaticPackageExportResponse {
+  assetId: string;
+  exportType: 'static-package';
+  outputDir: string;
+  indexPath: string;
+  manifestPath: string;
+  copiedAssets: Array<{
+    kind: 'image' | 'script' | 'stylesheet';
+    reference: string;
+    outputPath: string;
+  }>;
+  skippedExternal: Array<{
+    kind: 'image' | 'script' | 'stylesheet';
+    reference: string;
+  }>;
+  sourceHash: string;
+}
+
+export interface VaultMarkdownExportResponse {
+  assetId: string;
+  exportType: 'markdown';
+  outputPath: string;
+  sourceHash: string;
+}
+
+export type VaultExportResponse = VaultStaticPackageExportResponse | VaultMarkdownExportResponse;
+
 export interface VaultWriteReview {
   sourcePath: string;
   expectedSourceHash: string;

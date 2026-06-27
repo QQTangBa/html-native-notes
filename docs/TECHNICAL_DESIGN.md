@@ -547,6 +547,49 @@ Implementation files:
 
 This starts F11/A11 in the main App surface. Live provider timing, 300-1000 word fixture timing, persistent diary note creation, and native desktop verification remain pending.
 
+### 7.11 Current Local Export Contract
+
+The current non-Rust app server exposes the first local export boundary for Vault HTML assets:
+
+- `POST /api/export/:assetId/package`
+- `POST /api/export/:assetId/markdown`
+
+Static package response:
+
+```ts
+interface VaultStaticPackageExportResponse {
+  assetId: string;
+  exportType: "static-package";
+  outputDir: string;
+  indexPath: string;
+  manifestPath: string;
+  copiedAssets: Array<{ kind: "image" | "script" | "stylesheet"; reference: string; outputPath: string }>;
+  skippedExternal: Array<{ kind: "image" | "script" | "stylesheet"; reference: string }>;
+  sourceHash: string;
+}
+```
+
+Markdown response:
+
+```ts
+interface VaultMarkdownExportResponse {
+  assetId: string;
+  exportType: "markdown";
+  outputPath: string;
+  sourceHash: string;
+}
+```
+
+Implementation files:
+
+- `bridge/exporter/staticPackage.ts`: writes `.htmlvault/exports/<assetId>/latest/index.html`, copies local relative image/script/stylesheet assets, writes `manifest.json`, records external resources, and creates a basic Markdown copy.
+- `src/server/routes/export.ts`: local App API routes with safe `asset_*` id validation.
+- `src/shared/api/client.ts`: renderer export package and Markdown methods.
+- `src/app/App.tsx`: export busy/result state and action dispatch.
+- `src/features/vault/VaultHome.tsx`: compact package/Markdown export actions and latest exported path on HTML note cards.
+
+This starts F14/A17 in the main App surface. PDF export, provider-backed publish/static hosting, zipped package generation, native file-save dialogs, and native desktop verification remain pending.
+
 ## 8. Data Flows
 
 ### 8.1 Agent HTML Enters Vault

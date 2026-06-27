@@ -519,6 +519,91 @@ describe('App workspace', () => {
     });
   });
 
+  it('exports Vault HTML assets from an HTML note card', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/market.html',
+          relativeSourcePath: 'imports/ai/market.html',
+          folderPath: 'imports/ai',
+          tags: ['market'],
+          summary: 'Agent generated market map',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'ready',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports/ai', itemCount: 1 }],
+      availableFilters: {
+        tags: ['market'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      if (url === '/api/export/asset_market/package' && method === 'POST') {
+        return jsonResponse({
+          assetId: 'asset_market',
+          exportType: 'static-package',
+          outputDir: '/Vault/.htmlvault/exports/asset_market/latest',
+          indexPath: '/Vault/.htmlvault/exports/asset_market/latest/index.html',
+          manifestPath: '/Vault/.htmlvault/exports/asset_market/latest/manifest.json',
+          copiedAssets: [{ kind: 'stylesheet', reference: 'style.css', outputPath: '/Vault/.htmlvault/exports/asset_market/latest/style.css' }],
+          skippedExternal: [],
+          sourceHash: 'sha256:market',
+        });
+      }
+
+      if (url === '/api/export/asset_market/markdown' && method === 'POST') {
+        return jsonResponse({
+          assetId: 'asset_market',
+          exportType: 'markdown',
+          outputPath: '/Vault/.htmlvault/exports/asset_market/Agent Market Map.md',
+          sourceHash: 'sha256:market',
+        });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Export package Agent Market Map' }));
+    expect(await screen.findByText('Package ready')).toBeInTheDocument();
+    expect(screen.getByText('/Vault/.htmlvault/exports/asset_market/latest')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export Markdown Agent Market Map' }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/export/asset_market/package', { method: 'POST' });
+      expect(fetchMock).toHaveBeenCalledWith('/api/export/asset_market/markdown', { method: 'POST' });
+    });
+  });
+
   it('reviews a Vault preview edit and cancels the Source Guard write decision', async () => {
     vaultLibrary = {
       items: [

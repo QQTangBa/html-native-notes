@@ -7,9 +7,11 @@ import type {
   NoteRecord,
   SafeAiStatus,
   VaultAssetIntegrityReport,
+  VaultMarkdownExportResponse,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultServiceRuntimeState,
+  VaultStaticPackageExportResponse,
   VaultThumbnailGenerationResponse,
   VaultVersionDiff,
   VaultVersionRollbackResponse,
@@ -97,6 +99,14 @@ export const apiClient = {
 
   async scanVaultAssetIntegrity(assetId: string): Promise<VaultAssetIntegrityReport> {
     return parseResponse<VaultAssetIntegrityReport>(await fetch(`/api/assets/${encodeURIComponent(assetId)}/integrity`));
+  },
+
+  async exportVaultPackage(assetId: string): Promise<VaultStaticPackageExportResponse> {
+    return parseResponse<VaultStaticPackageExportResponse>(await fetch(`/api/export/${encodeURIComponent(assetId)}/package`, { method: 'POST' }));
+  },
+
+  async exportVaultMarkdown(assetId: string): Promise<VaultMarkdownExportResponse> {
+    return parseResponse<VaultMarkdownExportResponse>(await fetch(`/api/export/${encodeURIComponent(assetId)}/markdown`, { method: 'POST' }));
   },
 
   async reviewVaultAssetWrite(assetId: string, editedHtml: string): Promise<VaultWriteReview> {
