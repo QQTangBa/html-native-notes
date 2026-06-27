@@ -11,6 +11,7 @@ import type {
   NoteMeta,
   NoteRecord,
   SafeAiStatus,
+  VaultAssetIntegrityReport,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultServiceRuntimeState,
@@ -41,6 +42,8 @@ export function App() {
   const [vaultVersionMessage, setVaultVersionMessage] = useState('');
   const [vaultServiceStates, setVaultServiceStates] = useState<Record<string, VaultServiceRuntimeState>>({});
   const [vaultServiceBusyIds, setVaultServiceBusyIds] = useState<string[]>([]);
+  const [vaultAssetReports, setVaultAssetReports] = useState<Record<string, VaultAssetIntegrityReport>>({});
+  const [vaultAssetBusyIds, setVaultAssetBusyIds] = useState<string[]>([]);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
@@ -316,6 +319,20 @@ export function App() {
     }
   }
 
+  async function scanVaultAssetIntegrity(assetId: string): Promise<void> {
+    setVaultAssetBusyIds((current) => [...new Set([...current, assetId])]);
+    setError('');
+
+    try {
+      const report = await apiClient.scanVaultAssetIntegrity(assetId);
+      setVaultAssetReports((current) => ({ ...current, [assetId]: report }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '资源完整性扫描失败');
+    } finally {
+      setVaultAssetBusyIds((current) => current.filter((id) => id !== assetId));
+    }
+  }
+
   async function reviewVaultEdit(editedHtml: string): Promise<void> {
     const preview = vaultPreview;
     if (!preview) {
@@ -413,11 +430,14 @@ export function App() {
           versionMessage={vaultVersionMessage || undefined}
           serviceStates={vaultServiceStates}
           serviceBusyIds={vaultServiceBusyIds}
+          assetReports={vaultAssetReports}
+          assetBusyIds={vaultAssetBusyIds}
           onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
           onServiceHealth={(itemId) => void runVaultServiceAction(itemId, apiClient.checkVaultService, '服务状态检查失败')}
           onServiceStart={(itemId) => void runVaultServiceAction(itemId, apiClient.startVaultService, '服务启动失败')}
           onServiceStop={(itemId) => void runVaultServiceAction(itemId, apiClient.stopVaultService, '服务停止失败')}
+          onScanAssetIntegrity={(itemId) => void scanVaultAssetIntegrity(itemId)}
           onCompareLatestVersions={() => void compareLatestVaultVersions()}
           onRollbackSnapshot={(snapshotId) => void rollbackVaultVersion(snapshotId)}
           onReviewEdit={(editedHtml) => void reviewVaultEdit(editedHtml)}

@@ -4,6 +4,7 @@ import type {
   NoteMeta,
   NoteRecord,
   SafeAiStatus,
+  VaultAssetIntegrityReport,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultServiceRuntimeState,
@@ -90,6 +91,10 @@ export const apiClient = {
 
   async stopVaultService(assetId: string): Promise<VaultServiceRuntimeState> {
     return parseResponse<VaultServiceRuntimeState>(await fetch(`/api/services/${encodeURIComponent(assetId)}/stop`, { method: 'POST' }));
+  },
+
+  async scanVaultAssetIntegrity(assetId: string): Promise<VaultAssetIntegrityReport> {
+    return parseResponse<VaultAssetIntegrityReport>(await fetch(`/api/assets/${encodeURIComponent(assetId)}/integrity`));
   },
 
   async reviewVaultAssetWrite(assetId: string, editedHtml: string): Promise<VaultWriteReview> {

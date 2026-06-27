@@ -11,13 +11,20 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
   Square,
   Activity,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import type { VaultServiceRuntimeState, VaultVersionDiff, VaultVersionSnapshot, VaultWriteReview } from '../../shared/types';
+import type {
+  VaultAssetIntegrityReport,
+  VaultServiceRuntimeState,
+  VaultVersionDiff,
+  VaultVersionSnapshot,
+  VaultWriteReview,
+} from '../../shared/types';
 
 export interface VaultHomeItem {
   id: string;
@@ -51,6 +58,8 @@ export interface VaultHomeProps {
   versionMessage?: string;
   serviceStates?: Record<string, VaultServiceRuntimeState>;
   serviceBusyIds?: string[];
+  assetReports?: Record<string, VaultAssetIntegrityReport>;
+  assetBusyIds?: string[];
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
   onOpenItem?: (itemId: string) => void;
@@ -58,6 +67,7 @@ export interface VaultHomeProps {
   onServiceHealth?: (itemId: string) => void;
   onServiceStart?: (itemId: string) => void;
   onServiceStop?: (itemId: string) => void;
+  onScanAssetIntegrity?: (itemId: string) => void;
   onCompareLatestVersions?: () => void;
   onRollbackSnapshot?: (snapshotId: string) => void;
   onReviewEdit?: (editedHtml: string) => void;
@@ -113,6 +123,8 @@ export function VaultHome({
   versionMessage,
   serviceStates,
   serviceBusyIds = [],
+  assetReports,
+  assetBusyIds = [],
   thumbnailBusy = false,
   thumbnailMessage,
   onOpenItem,
@@ -120,6 +132,7 @@ export function VaultHome({
   onServiceHealth,
   onServiceStart,
   onServiceStop,
+  onScanAssetIntegrity,
   onCompareLatestVersions,
   onRollbackSnapshot,
   onReviewEdit,
@@ -350,6 +363,30 @@ export function VaultHome({
                           <Square size={13} aria-hidden="true" />
                         </button>
                       </div>
+                    </div>
+                  ) : null}
+                  {item.kind === 'html-note' && onScanAssetIntegrity ? (
+                    <div className="vault-asset-panel">
+                      <div className="vault-asset-head" data-safe={assetReports?.[item.id]?.safeModeRequired ? 'false' : 'true'}>
+                        <ShieldAlert size={13} aria-hidden="true" />
+                        <strong>{assetReports?.[item.id]?.safeModeRequired ? 'Safe mode required' : 'Assets unchecked'}</strong>
+                        <button
+                          type="button"
+                          aria-label={`Scan assets ${item.title}`}
+                          disabled={assetBusyIds.includes(item.id)}
+                          onClick={() => onScanAssetIntegrity(item.id)}
+                        >
+                          Scan
+                        </button>
+                      </div>
+                      {assetReports?.[item.id] ? (
+                        <div className="vault-asset-stats">
+                          <span>{assetReports[item.id].missingAssets.length} missing</span>
+                          <span>{assetReports[item.id].externalResources.length} external</span>
+                          <span>{assetReports[item.id].dangerousScripts.length} script</span>
+                          <span>{assetReports[item.id].unpublishableResources.length} blocked</span>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                   {onOpenItem && item.kind === 'html-note' ? (

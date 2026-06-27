@@ -139,6 +139,30 @@ export interface VaultServiceRuntimeState {
   startedByApp: boolean;
 }
 
+export interface VaultAssetIntegrityReport {
+  htmlPath: string;
+  sourceHash: string;
+  missingAssets: Array<{
+    kind: 'image' | 'script' | 'stylesheet' | 'link';
+    reference: string;
+    resolvedPath: string;
+  }>;
+  externalResources: Array<{
+    kind: 'image' | 'script' | 'stylesheet' | 'link';
+    reference: string;
+  }>;
+  dangerousScripts: Array<{
+    kind: 'inline-script';
+    reason: string;
+  }>;
+  unpublishableResources: Array<{
+    kind: 'image' | 'script' | 'stylesheet' | 'link';
+    reference: string;
+    reason: string;
+  }>;
+  safeModeRequired: boolean;
+}
+
 export interface VaultWriteReview {
   sourcePath: string;
   expectedSourceHash: string;

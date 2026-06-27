@@ -119,6 +119,16 @@ npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx test
 
 Result: PASS. 34 focused tests. The added service tests prove a registry service can be mapped from a Vault service asset by cwd, checked through `GET /api/services/:assetId/health`, started through `POST /api/services/:assetId/start`, stopped through `POST /api/services/:assetId/stop`, and rendered on Vault service cards with status, cwd, health/start/stop controls, and App state updates. This is still local App API/web-renderer evidence; native Tauri process-boundary hardening and desktop launch verification remain pending.
 
+Asset Integrity App API and UI evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx tests/unit/App.test.tsx
+```
+
+Result: PASS. 37 focused tests. The added asset tests prove `GET /api/assets/:assetId/integrity` scans a registered Vault HTML note without modifying source content, reports missing local images, external resources, dangerous inline scripts, unpublishable `file://` resources, and `safeModeRequired`, and renders a compact risk summary plus scan action on Vault HTML note cards. This does not yet prove asset localization, repair/package flow, or native desktop asset-panel verification.
+
 Markdown import contract evidence:
 
 Date: 2026-06-27
@@ -286,7 +296,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 23 test files and 102 tests, then Vite built `dist/index.html`, `dist/assets/index-9dhOZhEj.css`, and `dist/assets/index-C3UZsGiL.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 23 test files and 105 tests, then Vite built `dist/index.html`, `dist/assets/index-DA-1-C-3.css`, and `dist/assets/index-CxSKyacs.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

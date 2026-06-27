@@ -564,4 +564,45 @@ describe('local API', () => {
     const stopped = await request(app.server).post(`/api/services/${intake.asset.id}/stop`).expect(200);
     expect(stopped.body.status).toBe('stopped');
   });
+
+  it('scans registered Vault HTML assets for integrity risks through the local API', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'asset-risk.html');
+    const html = [
+      '<!doctype html>',
+      '<link rel="stylesheet" href="https://cdn.example.com/theme.css">',
+      '<script>console.log("inline")</script>',
+      '<img src="./missing.png" alt="missing">',
+      '<a href="file:///Users/example/private.html">private</a>',
+    ].join('\n');
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, html, 'utf8');
+    const before = sha256(html);
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_asset_integrity',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: before,
+        title: 'Asset Risk',
+      },
+    });
+
+    const response = await request(app.server).get(`/api/assets/${intake.asset.id}/integrity`).expect(200);
+
+    expect(response.body).toMatchObject({
+      htmlPath,
+      sourceHash: before,
+      safeModeRequired: true,
+      missingAssets: [{ kind: 'image', reference: './missing.png', resolvedPath: path.join(aiDir, 'missing.png') }],
+      externalResources: [{ kind: 'stylesheet', reference: 'https://cdn.example.com/theme.css' }],
+      dangerousScripts: [{ kind: 'inline-script', reason: 'Inline script execution is unsafe in static safe mode' }],
+      unpublishableResources: [{ kind: 'link', reference: 'file:///Users/example/private.html', reason: 'file:// resources cannot be published' }],
+    });
+    expect(await readFile(htmlPath, 'utf8')).toBe(html);
+  });
 });

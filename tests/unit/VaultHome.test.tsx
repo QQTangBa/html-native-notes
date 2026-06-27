@@ -134,6 +134,37 @@ describe('VaultHome', () => {
     expect(onServiceStop).toHaveBeenCalledWith('asset_dashboard');
   });
 
+  it('shows asset integrity scan actions and risk summaries on HTML note cards', () => {
+    const onScanAssetIntegrity = vi.fn();
+    render(
+      <VaultHome
+        items={items}
+        assetReports={{
+          asset_gut: {
+            htmlPath: '/Vault/imports/ai-agent/gut-report.html',
+            sourceHash: 'sha256:risk',
+            missingAssets: [{ kind: 'image', reference: './missing.png', resolvedPath: '/Vault/imports/ai-agent/missing.png' }],
+            externalResources: [{ kind: 'script', reference: 'https://cdn.example.com/app.js' }],
+            dangerousScripts: [{ kind: 'inline-script', reason: 'Inline script execution is unsafe in static safe mode' }],
+            unpublishableResources: [{ kind: 'link', reference: 'file:///Users/example/private.html', reason: 'file:// resources cannot be published' }],
+            safeModeRequired: true,
+          },
+        }}
+        onScanAssetIntegrity={onScanAssetIntegrity}
+      />,
+    );
+
+    const gutCard = screen.getByTestId('vault-item-asset_gut');
+    expect(within(gutCard).getByText('Safe mode required')).toBeInTheDocument();
+    expect(within(gutCard).getByText('1 missing')).toBeInTheDocument();
+    expect(within(gutCard).getByText('1 external')).toBeInTheDocument();
+    expect(within(gutCard).getByText('1 script')).toBeInTheDocument();
+    expect(within(gutCard).getByText('1 blocked')).toBeInTheDocument();
+
+    fireEvent.click(within(gutCard).getByRole('button', { name: 'Scan assets Gut Market Research' }));
+    expect(onScanAssetIntegrity).toHaveBeenCalledWith('asset_gut');
+  });
+
   it('disables thumbnail generation while a run is in progress', () => {
     render(<VaultHome items={items} thumbnailBusy thumbnailMessage="Rendering thumbnails" onGenerateThumbnails={vi.fn()} />);
 

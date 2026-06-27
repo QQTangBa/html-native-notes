@@ -769,6 +769,61 @@ code {
   color: #d8d09d;
 }
 
+.vault-asset-panel {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #303b42;
+  border-radius: 6px;
+  background: #12181c;
+  padding: 8px;
+}
+
+.vault-asset-head {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  color: #9fa9a2;
+}
+
+.vault-asset-head strong {
+  overflow: hidden;
+  color: #dfe6dc;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-asset-head[data-safe="false"] strong {
+  color: #e6c27d;
+}
+
+.vault-asset-head button {
+  min-height: 26px;
+  padding: 0 8px;
+  border-color: #3a474e;
+  background: #10161a;
+  color: #d8d09d;
+  font-size: 11px;
+}
+
+.vault-asset-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.vault-asset-stats span {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #1f282d;
+  color: #c7d0c9;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
 .vault-preview-panel {
   min-width: 0;
   min-height: 0;

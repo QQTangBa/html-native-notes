@@ -323,6 +323,76 @@ describe('App workspace', () => {
     });
   });
 
+  it('scans Vault HTML asset integrity from an HTML note card', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/market.html',
+          relativeSourcePath: 'imports/ai/market.html',
+          folderPath: 'imports/ai',
+          tags: ['market', 'ai'],
+          summary: 'Agent generated market map',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'ready',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports/ai', itemCount: 1 }],
+      availableFilters: {
+        tags: ['ai', 'market'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/assets/asset_market/integrity') {
+        return jsonResponse({
+          htmlPath: '/Vault/imports/ai/market.html',
+          sourceHash: 'sha256:risk',
+          missingAssets: [{ kind: 'image', reference: './missing.png', resolvedPath: '/Vault/imports/ai/missing.png' }],
+          externalResources: [{ kind: 'script', reference: 'https://cdn.example.com/app.js' }],
+          dangerousScripts: [{ kind: 'inline-script', reason: 'Inline script execution is unsafe in static safe mode' }],
+          unpublishableResources: [],
+          safeModeRequired: true,
+        });
+      }
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    const card = await screen.findByTestId('vault-item-asset_market');
+    fireEvent.click(within(card).getByRole('button', { name: 'Scan assets Agent Market Map' }));
+
+    expect(await within(card).findByText('Safe mode required')).toBeInTheDocument();
+    expect(within(card).getByText('1 missing')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith('/api/assets/asset_market/integrity');
+  });
+
   it('opens a Vault HTML asset in the read-only preview pane', async () => {
     vaultLibrary = {
       items: [

@@ -493,6 +493,22 @@ Implementation files:
 
 This proves the service workflow through the local web renderer. It still needs Rust/Tauri process boundary hardening and native desktop verification.
 
+### 7.9 Current Asset Integrity App Contract
+
+The current non-Rust app server exposes the existing TypeScript asset scanner to the renderer by Vault HTML asset id:
+
+- `GET /api/assets/:assetId/integrity`
+
+Implementation files:
+
+- `bridge/assets/scanner.ts`: read-only scan for missing local assets, external resources, inline scripts, unpublishable `file://` references, and safe-mode need.
+- `src/server/routes/assets.ts`: maps Vault HTML assets to source paths and verifies the source file stays inside the configured Vault before scanning.
+- `src/shared/api/client.ts`: renderer scan method.
+- `src/app/App.tsx`: scan state and report storage.
+- `src/features/vault/VaultHome.tsx`: scan action and compact risk summary on HTML note cards.
+
+This starts F13/A16 in the main App surface. Localization/package repair and native desktop verification remain pending.
+
 ## 8. Data Flows
 
 ### 8.1 Agent HTML Enters Vault

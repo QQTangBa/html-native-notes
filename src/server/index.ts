@@ -10,6 +10,7 @@ import type { AppConfig } from '../shared/types';
 import { loadRuntimeConfig } from './config';
 import { FileNoteStore } from './storage/noteStore';
 import { registerAiRoutes } from './routes/ai';
+import { registerAssetRoutes } from './routes/assets';
 import { registerConfigRoutes } from './routes/config';
 import { registerHealthRoutes } from './routes/health';
 import { registerNoteRoutes } from './routes/notes';
@@ -72,6 +73,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
   await registerNoteRoutes(app, store);
   await registerVaultRoutes(app, config);
   await registerServiceRoutes(app, config);
+  await registerAssetRoutes(app, config);
   await registerAiRoutes(app, config);
 
   if (options.enableVite ?? config.env === 'development') {
