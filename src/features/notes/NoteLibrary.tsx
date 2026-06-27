@@ -1,4 +1,4 @@
-import { Copy, FilePlus2, Save, Trash2 } from 'lucide-react';
+import { Copy, FilePlus2, Link2, Save, Tags, Trash2 } from 'lucide-react';
 import type { NoteMeta } from '../../shared/types';
 
 interface NoteLibraryProps {
@@ -78,6 +78,27 @@ export function NoteLibrary({
             >
               <span>{note.title}</span>
               <time>{new Date(note.updatedAt).toLocaleString()}</time>
+              {note.tags.length || note.wikilinks?.length || note.backlinks?.length ? (
+                <span className="note-meta-pills">
+                  {note.tags.map((tag) => (
+                    <span key={`tag-${tag}`} className="note-pill">
+                      <Tags size={11} aria-hidden="true" />
+                      #{tag}
+                    </span>
+                  ))}
+                  {note.wikilinks?.map((link) => (
+                    <span key={`link-${link}`} className="note-pill">
+                      <Link2 size={11} aria-hidden="true" />
+                      [[{link}]]
+                    </span>
+                  ))}
+                  {note.backlinks?.map((backlink) => (
+                    <span key={`backlink-${backlink}`} className="note-pill backlink">
+                      backlink: {backlink}
+                    </span>
+                  ))}
+                </span>
+              ) : null}
             </button>
           ))
         )}

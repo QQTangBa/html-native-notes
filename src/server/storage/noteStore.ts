@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { extractHtmlNoteMetadata } from '../../shared/htmlNoteMetadata';
 import type { NoteMeta, NoteRecord } from '../../shared/types';
 
 interface CreateNoteInput {
@@ -53,6 +54,27 @@ function assertValidNoteId(id: string): void {
   }
 }
 
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const value of values) {
+    const normalized = value.trim();
+    const key = normalized.toLowerCase();
+    if (!normalized || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    result.push(normalized);
+  }
+
+  return result;
+}
+
+function normalizeGraphKey(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, '-');
+}
+
 export class FileNoteStore {
   private readonly notesDir: string;
   private readonly trashDir: string;
@@ -78,7 +100,9 @@ export class FileNoteStore {
 
   async listNotes(): Promise<NoteMeta[]> {
     const metadata = await this.readMetadata();
-    return metadata.notes.filter((note) => !note.archived).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return (await this.hydrateNoteGraph(metadata.notes.filter((note) => !note.archived))).sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt),
+    );
   }
 
   async createNote(input: CreateNoteInput): Promise<NoteMeta> {
@@ -107,7 +131,14 @@ export class FileNoteStore {
 
   async getNote(id: string): Promise<NoteRecord> {
     assertValidNoteId(id);
-    const note = await this.findActiveNote(id);
+    const metadata = await this.readMetadata();
+    const hydrated = await this.hydrateNoteGraph(metadata.notes.filter((note) => !note.archived));
+    const note = hydrated.find((item) => item.id === id);
+
+    if (!note) {
+      throw new Error(`Note not found: ${id}`);
+    }
+
     const content = await readFile(this.resolveNoteFile(note.fileName), 'utf8');
     return { ...note, content };
   }
@@ -193,6 +224,38 @@ export class FileNoteStore {
     }
 
     return note;
+  }
+
+  private async hydrateNoteGraph(notes: NoteMeta[]): Promise<NoteMeta[]> {
+    const withContentMetadata = await Promise.all(
+      notes.map(async (note) => {
+        const content = await readFile(this.resolveNoteFile(note.fileName), 'utf8');
+        const extracted = extractHtmlNoteMetadata(content);
+        return {
+          ...note,
+          tags: uniqueStrings([...note.tags, ...extracted.tags]),
+          wikilinks: extracted.wikilinks,
+          backlinks: [] as string[],
+        };
+      }),
+    );
+    const targets = new Map<string, NoteMeta & { backlinks: string[] }>();
+
+    for (const note of withContentMetadata) {
+      targets.set(normalizeGraphKey(note.title), note);
+      targets.set(normalizeGraphKey(note.slug), note);
+    }
+
+    for (const source of withContentMetadata) {
+      for (const target of source.wikilinks ?? []) {
+        const targetNote = targets.get(normalizeGraphKey(target));
+        if (targetNote && targetNote.id !== source.id) {
+          targetNote.backlinks = uniqueStrings([...(targetNote.backlinks ?? []), source.title]);
+        }
+      }
+    }
+
+    return withContentMetadata;
   }
 
   private async readMetadata(): Promise<MetadataFile> {

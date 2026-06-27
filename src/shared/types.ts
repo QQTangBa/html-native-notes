@@ -6,6 +6,8 @@ export interface NoteMeta {
   createdAt: string;
   updatedAt: string;
   tags: string[];
+  wikilinks?: string[];
+  backlinks?: string[];
   archived: boolean;
 }
 

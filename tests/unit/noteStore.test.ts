@@ -51,6 +51,31 @@ describe('FileNoteStore', () => {
     expect(record.content).toContain('Changed');
   });
 
+  it('hydrates wikilinks, tags, and backlinks from saved HTML notes', async () => {
+    const alpha = await store.createNote({
+      title: 'Alpha',
+      content: '<article><h1>Alpha</h1><span data-tag="research">#research</span></article>',
+      tags: ['seed'],
+    });
+    const beta = await store.createNote({
+      title: 'Beta',
+      content: '<article><p>Connects to <a data-wikilink="Alpha" href="alpha.html">Alpha</a> for #market work.</p></article>',
+    });
+
+    const listed = await store.listNotes();
+    const alphaMeta = listed.find((note) => note.id === alpha.id);
+    const betaMeta = listed.find((note) => note.id === beta.id);
+
+    expect(alphaMeta?.tags).toEqual(['seed', 'research']);
+    expect(alphaMeta?.backlinks).toEqual(['Beta']);
+    expect(betaMeta?.tags).toEqual(['market']);
+    expect(betaMeta?.wikilinks).toEqual(['Alpha']);
+
+    const betaRecord = await store.getNote(beta.id);
+    expect(betaRecord.wikilinks).toEqual(['Alpha']);
+    expect(betaRecord.backlinks).toEqual([]);
+  });
+
   it('duplicates notes with a new id, filename, and title', async () => {
     const note = await store.createNote({ title: 'Original', content: '<h1>Original</h1>' });
     const copy = await store.duplicateNote(note.id);

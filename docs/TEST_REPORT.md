@@ -129,6 +129,16 @@ npm run test -- tests/unit/htmlProfile.test.ts
 
 Result: PASS. 3 tests. This proves the initial HTML Profile contract can extract metadata, assets, AI context, theme variables, and block IDs from HTML; embed and extract profile JSON without rewriting body content; and migrate legacy profile metadata into the current schema. It does not yet prove Rust profile parsing, sidecar manifest synchronization, or full `.ainote.html` migration fixtures.
 
+Markdown note graph metadata evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/noteStore.test.ts tests/unit/NoteLibrary.test.tsx
+```
+
+Result: PASS. 8 tests. The added Markdown graph tests prove saved HTML notes are hydrated with `data-wikilink` targets, `data-tag` and visible `#tag` values, computed backlinks by matching wikilinks to note title/slug, and compact NoteLibrary chips for tags, wikilinks, and backlinks. This is still a metadata/display foundation, not the full Markdown-first editor, slash command, or quick-open workflow.
+
 Source Guard write-gate contract evidence:
 
 Date: 2026-06-27
@@ -266,7 +276,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 22 test files and 97 tests, then Vite built `dist/index.html`, `dist/assets/index-D2NzwLvW.css`, and `dist/assets/index-BlvhswOV.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 23 test files and 99 tests, then Vite built `dist/index.html`, `dist/assets/index-DnbUwHWW.css`, and `dist/assets/index-DjgJYvyc.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

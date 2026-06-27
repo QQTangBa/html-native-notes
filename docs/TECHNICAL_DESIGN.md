@@ -456,6 +456,25 @@ Security notes:
 - API responses omit internal snapshot `contentPath` values from renderer-facing version metadata.
 - Renderer version operations use request tokens so late compare/rollback responses cannot update the UI after the user starts opening another asset.
 
+### 7.7 Current Markdown Graph Metadata Contract
+
+The current non-Rust note workspace now extracts Markdown-style graph metadata from saved HTML notes:
+
+```ts
+interface HtmlNoteMetadata {
+  tags: string[];
+  wikilinks: string[];
+}
+```
+
+Implementation files:
+
+- `src/shared/htmlNoteMetadata.ts`: extracts `data-wikilink`, `data-tag`, and visible `#tags` from HTML.
+- `src/server/storage/noteStore.ts`: hydrates note list/get responses with extracted tags, wikilinks, and computed backlinks.
+- `src/features/notes/NoteLibrary.tsx`: renders compact tag, wikilink, and backlink chips in the note list.
+
+This is the first F7 foundation. It does not replace the planned Markdown-first rich editor, slash command, quick-open modal, or full backlink index.
+
 ## 8. Data Flows
 
 ### 8.1 Agent HTML Enters Vault

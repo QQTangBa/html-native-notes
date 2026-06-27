@@ -207,6 +207,33 @@ h2 {
   font-size: 11px;
 }
 
+.note-meta-pills {
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.note-item .note-pill {
+  max-width: 100%;
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #d9d1c4;
+  border-radius: 999px;
+  background: #fffdfa;
+  color: #4d5659;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.note-item .note-pill.backlink {
+  border-color: #bfd3cf;
+  background: #edf6f3;
+  color: #20525b;
+}
+
 .muted {
   margin: 8px;
   color: #6f665b;
