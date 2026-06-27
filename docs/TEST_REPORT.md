@@ -444,13 +444,26 @@ npm run test:desktop:contract
 
 Result: PASS. `tests/unit/desktopNativeAssetScan.test.ts` passed 3 tests covering Rust asset scanner source for read-only HTML integrity checks, `asset_scan_integrity` command registration, source hash reporting, dangerous inline script collection, Vault boundary checks before scan, and absence of `fs::write` in the scanner core. `npm run test:desktop:contract` passed 6 files and 17 tests, now including the asset scan native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
 
+Native desktop service runtime command source evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run test -- tests/unit/desktopNativeServiceRuntime.test.ts
+npm run test:desktop:contract
+```
+
+Result: PASS. `tests/unit/desktopNativeServiceRuntime.test.ts` passed 3 tests covering Rust service runtime source for registry-backed health/start/stop, `service_check_health`, `service_start`, and `service_stop` command registration, service asset to registry mapping, PRD fields for cwd/start/stop/url/health/env/log, `/bin/zsh` command boundary, local TCP health probe, app-managed process tracking, and failure/log-path status evidence. `npm run test:desktop:contract` passed 7 files and 20 tests, now including the service runtime native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
+
 Latest full non-Rust validation:
 
 ```bash
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 36 test files and 149 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 37 test files and 152 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Additional security check:
 

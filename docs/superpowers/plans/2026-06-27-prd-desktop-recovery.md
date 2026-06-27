@@ -198,6 +198,10 @@ git add bridge/mcp src/features/bridge src-tauri/src tests/integration/bridge/mc
 git commit -m "feat: add mcp bridge and desktop inbox review"
 ```
 
+## Task 4.5: Native Service Runtime Boundary
+
+Checkpoint evidence: Rust source now includes `src-tauri/src/core/service_runtime.rs` and `src-tauri/src/commands/service_runtime.rs` for native `service_check_health`, `service_start`, and `service_stop` command boundaries. The source covers registry-backed service asset mapping, cwd/start/stop/url/health/env/log fields, local TCP health probing, `/bin/zsh` process launch, app-managed process id tracking, stop command fallback, and failure/log-path status evidence. `npm run test:desktop:contract` covers this source/registration contract; Cargo verification and launched Tauri service flow remain pending until Rust is available.
+
 ## Task 5: Fixture-Scale Import
 
 **Files:**
