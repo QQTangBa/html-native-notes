@@ -1,9 +1,12 @@
 // @vitest-environment node
 
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { intakeBridgeRequestToVault } from '../../../bridge/vault/intake';
+import { snapshotExternalVaultEdits } from '../../../bridge/vault/externalEditWatcher';
 import {
   createVersionSnapshot,
   diffVersionSnapshots,
@@ -152,4 +155,40 @@ describe('Vault version store', () => {
       }),
     ).rejects.toThrow('Snapshot content path is outside the asset version directory');
   });
+
+  it('creates one external edit snapshot when a registered source hash changes', async () => {
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        type: 'registerHtmlAsset',
+        requestId: 'req_external_edit',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourcePath: managedPath,
+        sourceHash: await hashFile(managedPath),
+        title: 'External Edit Fixture',
+        tags: ['version'],
+        sourceAgent: 'codex',
+      },
+    });
+
+    await writeFile(managedPath, '<!doctype html><title>V2</title><main><h1>Changed outside app</h1></main>', 'utf8');
+
+    const firstScan = await snapshotExternalVaultEdits({ vaultDir });
+    const secondScan = await snapshotExternalVaultEdits({ vaultDir });
+    const snapshots = await listVersionSnapshots(vaultDir, intake.asset.id);
+
+    expect(firstScan.created).toEqual([
+      expect.objectContaining({
+        assetId: intake.asset.id,
+        reason: 'external-agent-edit',
+      }),
+    ]);
+    expect(secondScan.created).toEqual([]);
+    expect(snapshots.map((snapshot) => snapshot.reason)).toEqual(['baseline', 'external-agent-edit']);
+  });
 });
+
+async function hashFile(filePath: string): Promise<string> {
+  const content = await readFile(filePath);
+  return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}

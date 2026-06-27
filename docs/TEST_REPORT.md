@@ -40,7 +40,7 @@ Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` 
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge and fixture-scale import foundation changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 28 test files and 124 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
+Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, and external edit scan changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 28 test files and 125 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
 
 PRD fixture-scale import foundation:
 
@@ -293,7 +293,15 @@ Date: 2026-06-27
 npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx tests/unit/App.test.tsx
 ```
 
-Result: PASS. 35 focused tests after review fixes. The added version tests prove the local API can list baseline snapshots, create an explicit `external-agent-edit` snapshot, diff two snapshots with source/content/DOM summaries, and roll back a registered Vault source to a selected snapshot. They also prove the VaultHome preview pane renders a compact Version timeline, Compare latest versions action, rollback buttons, and source/content/DOM diff regions; the App shell loads versions after preview open, calls the latest-version diff endpoint, posts rollback decisions, and refreshes preview source after rollback. Review follow-up tests prove unsafe encoded asset IDs are rejected, tampered snapshot `contentPath` values outside `.htmlvault/versions/<assetId>/` are rejected before reads, renderer-facing snapshots do not expose `contentPath`, and late version diff responses are ignored after the user starts opening another preview asset. This still does not prove automatic watcher-created snapshots, branch/recover, screenshot hints, or native Tauri desktop launch.
+Result: PASS. 35 focused tests after review fixes. The added version tests prove the local API can list baseline snapshots, create an explicit `external-agent-edit` snapshot, diff two snapshots with source/content/DOM summaries, and roll back a registered Vault source to a selected snapshot. They also prove the VaultHome preview pane renders a compact Version timeline, Compare latest versions action, rollback buttons, and source/content/DOM diff regions; the App shell loads versions after preview open, calls the latest-version diff endpoint, posts rollback decisions, and refreshes preview source after rollback. Review follow-up tests prove unsafe encoded asset IDs are rejected, tampered snapshot `contentPath` values outside `.htmlvault/versions/<assetId>/` are rejected before reads, renderer-facing snapshots do not expose `contentPath`, and late version diff responses are ignored after the user starts opening another preview asset.
+
+Additional external edit scan evidence:
+
+```bash
+npm run test -- tests/integration/bridge/versionStore.test.ts
+```
+
+Result: PASS. 5 tests. The added test proves `snapshotExternalVaultEdits` can detect a registered HTML source hash change, create exactly one `external-agent-edit` snapshot, and skip duplicate snapshots when the same changed content is scanned again. This still does not prove debounced native watcher wiring, branch/recover, screenshot hints, or native Tauri desktop launch.
 
 Runtime VaultHome browser evidence:
 

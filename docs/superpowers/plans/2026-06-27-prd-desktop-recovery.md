@@ -308,13 +308,15 @@ git commit -m "feat: add page-in-place edit overlay"
 - Modify: `bridge/vault/versionStore.ts`
 - Test: `tests/integration/bridge/externalEditVersion.test.ts`
 
-- [ ] **Step 1: Write failing external edit test**
+- [x] **Step 1: Write failing external edit test**
 
 Test imports HTML, creates baseline, mutates file externally, watcher snapshots it, UI/API diff can compare, rollback restores.
 
 - [ ] **Step 2: Implement watcher-to-version pipeline**
 
 Debounce writes, group by asset, record author/source/reason, compute screenshot hint placeholder.
+
+Checkpoint evidence: `bridge/vault/externalEditWatcher.ts` now scans registered TS Vault HTML assets and creates exactly one `external-agent-edit` snapshot when the current source hash differs from the latest snapshot. Debounced filesystem watcher integration, Rust watcher, UI diff flow, rollback proof from that flow, and screenshot hints remain pending.
 
 - [ ] **Step 3: Verify**
 
