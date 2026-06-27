@@ -44,13 +44,23 @@ Date: 2026-06-27
 npm run test:desktop:contract
 ```
 
-Result: PASS. 2 files, 6 tests. This proves the desktop contract test suite now covers both the Tauri macOS scaffold and the native inbox command source. `src-tauri/src/core/inbox.rs` contains Rust functions for reading inbox JSONL files, acking processed requests, and intaking a request into the Vault manifest with source hash checks. `src-tauri/src/commands/inbox.rs` exposes `inbox_list_requests`, `inbox_confirm_request`, and `inbox_dismiss_request`, and `src-tauri/src/main.rs` registers those commands. This is source-contract evidence only; Rust/Cargo is not installed, so there is still no native compile, `.app` build, or opened desktop run evidence.
+Result: PASS. 2 files, 6 tests. This proves the desktop contract test suite covers both the Tauri macOS scaffold and the native inbox command source. `src-tauri/src/core/inbox.rs` contains Rust functions for reading inbox JSONL files, acking processed requests, and intaking a request into the Vault manifest with source hash checks. `src-tauri/src/commands/inbox.rs` exposes `inbox_list_requests`, `inbox_confirm_request`, and `inbox_dismiss_request`, and `src-tauri/src/main.rs` registers those commands. This is source-contract evidence only; Rust/Cargo is not installed, so there is still no native compile, `.app` build, or opened desktop run evidence.
+
+Native desktop Vault read-only command source evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test:desktop:contract
+```
+
+Result: PASS. 3 files, 8 tests. This proves the desktop contract suite now also covers `src-tauri/src/core/vault.rs` and `src-tauri/src/commands/vault.rs`. The Rust source declares native `vault_list_library` and `vault_get_asset_source` command boundaries, a manifest reader, library item mapping with relative source paths and thumbnail status, and source reading with current hash / `source_hash_matches` reporting. This is still source-contract evidence only; Cargo build and a launched desktop Vault flow remain pending.
 
 ```bash
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, MCP bridge foundation, Agent Inbox React UI, App startup inbox wiring, and native inbox source-contract changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 32 test files and 138 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, MCP bridge foundation, Agent Inbox React UI, App startup inbox wiring, native inbox source-contract, and native Vault read-only source-contract changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 33 test files and 140 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 PRD fixture-scale import foundation:
 
@@ -401,7 +411,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 32 test files and 138 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 33 test files and 140 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

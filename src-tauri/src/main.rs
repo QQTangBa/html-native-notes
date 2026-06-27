@@ -20,6 +20,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_health,
+            commands::vault::vault_list_library,
+            commands::vault::vault_get_asset_source,
             commands::inbox::inbox_list_requests,
             commands::inbox::inbox_confirm_request,
             commands::inbox::inbox_dismiss_request

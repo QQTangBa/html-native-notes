@@ -14,7 +14,7 @@
     "preview": "APP_ENV=production tsx src/server/index.ts",
     "test": "vitest run",
     "test:bridge": "vitest run tests/unit/agentBridgeProtocol.test.ts tests/integration/bridge",
-    "test:desktop:contract": "vitest run tests/unit/desktopScaffold.test.ts tests/unit/desktopNativeInbox.test.ts",
+    "test:desktop:contract": "vitest run tests/unit/desktopScaffold.test.ts tests/unit/desktopNativeInbox.test.ts tests/unit/desktopNativeVault.test.ts",
     "test:fixtures": "vitest run tests/integration/fixtures",
     "test:fixtures:mixed100": "vitest run tests/integration/fixtures/prdFixtures.test.ts",
     "test:fixtures:markdown30": "vitest run tests/integration/fixtures/prdFixtures.test.ts",
