@@ -19,6 +19,9 @@ import {
   Download,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import type { InvalidInboxLine } from '../../../bridge/inbox/jsonlInbox';
+import type { NormalizedBridgeRequest } from '../../../bridge/shared/protocol';
+import { InboxPanel } from '../bridge/InboxPanel';
 import type {
   VaultAssetIntegrityReport,
   VaultExportResponse,
@@ -66,6 +69,10 @@ export interface VaultHomeProps {
   exportBusyIds?: string[];
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
+  inboxRequests?: NormalizedBridgeRequest[];
+  inboxInvalidLines?: InvalidInboxLine[];
+  inboxSkippedDuplicates?: string[];
+  inboxBusyRequestIds?: string[];
   onOpenItem?: (itemId: string) => void;
   onGenerateThumbnails?: () => void;
   onServiceHealth?: (itemId: string) => void;
@@ -80,6 +87,8 @@ export interface VaultHomeProps {
   onCancelWrite?: () => void;
   onSaveAs?: () => void;
   onWriteBack?: () => void;
+  onConfirmInboxRequest?: (requestId: string) => void;
+  onDismissInboxRequest?: (requestId: string) => void;
 }
 
 type ViewMode = 'card' | 'list';
@@ -135,6 +144,10 @@ export function VaultHome({
   exportBusyIds = [],
   thumbnailBusy = false,
   thumbnailMessage,
+  inboxRequests = [],
+  inboxInvalidLines = [],
+  inboxSkippedDuplicates = [],
+  inboxBusyRequestIds = [],
   onOpenItem,
   onGenerateThumbnails,
   onServiceHealth,
@@ -149,6 +162,8 @@ export function VaultHome({
   onCancelWrite,
   onSaveAs,
   onWriteBack,
+  onConfirmInboxRequest,
+  onDismissInboxRequest,
 }: VaultHomeProps) {
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
@@ -278,6 +293,17 @@ export function VaultHome({
             ))}
           </div>
         </div>
+
+        {onConfirmInboxRequest && onDismissInboxRequest ? (
+          <InboxPanel
+            requests={inboxRequests}
+            invalidLines={inboxInvalidLines}
+            skippedDuplicates={inboxSkippedDuplicates}
+            busyRequestIds={inboxBusyRequestIds}
+            onConfirm={onConfirmInboxRequest}
+            onDismiss={onDismissInboxRequest}
+          />
+        ) : null}
       </aside>
 
       <div className="vault-main">

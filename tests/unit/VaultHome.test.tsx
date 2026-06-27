@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { VaultHome, type VaultHomeItem } from '../../src/features/vault/VaultHome';
+import type { NormalizedBridgeRequest } from '../../bridge/shared/protocol';
 
 const items: VaultHomeItem[] = [
   {
@@ -36,6 +37,18 @@ const items: VaultHomeItem[] = [
     },
   },
 ];
+
+const inboxRequest: NormalizedBridgeRequest = {
+  requestId: 'inbox-html-001',
+  type: 'registerHtmlAsset',
+  createdAt: '2026-06-27T00:00:00.000Z',
+  sourceAgent: 'codex',
+  sourcePath: '/Vault/imports/ai/inbox-report.html',
+  sourceHash: 'sha256:inbox1',
+  title: 'Inbox Report',
+  tags: ['ai', 'review'],
+  dedupeKey: 'registerHtmlAsset:sha256:inbox1',
+};
 
 describe('VaultHome', () => {
   it('renders a dense desktop Vault home with cards, folders, filters, and thumbnail state', () => {
@@ -96,6 +109,35 @@ describe('VaultHome', () => {
 
     fireEvent.click(button);
     expect(onGenerateThumbnails).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the Agent Inbox review panel in the Vault sidebar', () => {
+    const onConfirmInboxRequest = vi.fn();
+    const onDismissInboxRequest = vi.fn();
+
+    render(
+      <VaultHome
+        items={items}
+        inboxRequests={[inboxRequest]}
+        inboxInvalidLines={[{ lineNumber: 7, reason: 'Invalid JSON' }]}
+        inboxSkippedDuplicates={['duplicate-request']}
+        inboxBusyRequestIds={[]}
+        onConfirmInboxRequest={onConfirmInboxRequest}
+        onDismissInboxRequest={onDismissInboxRequest}
+      />,
+    );
+
+    const inbox = screen.getByRole('region', { name: 'Agent Inbox' });
+    expect(within(inbox).getByText('Inbox Report')).toBeInTheDocument();
+    expect(within(inbox).getByText('1 pending')).toBeInTheDocument();
+    expect(within(inbox).getByText('1 duplicate')).toBeInTheDocument();
+    expect(within(inbox).getByText('1 invalid')).toBeInTheDocument();
+
+    fireEvent.click(within(inbox).getByRole('button', { name: 'Confirm Inbox Report' }));
+    fireEvent.click(within(inbox).getByRole('button', { name: 'Dismiss Inbox Report' }));
+
+    expect(onConfirmInboxRequest).toHaveBeenCalledWith('inbox-html-001');
+    expect(onDismissInboxRequest).toHaveBeenCalledWith('inbox-html-001');
   });
 
   it('shows service runtime status and actions on service cards', () => {

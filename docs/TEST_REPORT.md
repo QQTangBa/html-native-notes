@@ -40,7 +40,7 @@ Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` 
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, and MCP bridge foundation changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 30 test files and 130 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
+Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, MCP bridge foundation, and Agent Inbox React UI changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 134 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-DY4sOvVL.js`.
 
 PRD fixture-scale import foundation:
 
@@ -76,7 +76,17 @@ MCP bridge foundation evidence:
 npm run test -- tests/integration/bridge/mcpServer.test.ts
 ```
 
-Result: PASS. 4 tests. This proves the MCP bridge foundation exposes the seven PRD V1 tool definitions: `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, and `importExisting`. It also proves local tool calls can register/search HTML assets, create an HTML note, create a version snapshot, export a local static package, register a service, and accept a read-only `importExisting` request without mutating external source files. This does not yet prove official MCP SDK stdio transport or desktop inbox UI.
+Result: PASS. 4 tests. This proves the MCP bridge foundation exposes the seven PRD V1 tool definitions: `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, and `importExisting`. It also proves local tool calls can register/search HTML assets, create an HTML note, create a version snapshot, export a local static package, register a service, and accept a read-only `importExisting` request without mutating external source files. This does not yet prove official MCP SDK stdio transport, native inbox commands, or desktop startup inbox loading.
+
+Agent Inbox React UI evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/InboxPanel.test.tsx tests/unit/VaultHome.test.tsx
+```
+
+Result: PASS. 2 files, 15 tests. This proves the React Agent Inbox review panel renders pending offline inbox requests, duplicate and invalid-line counters, request tags/source metadata, busy disabled states, an empty state, and confirm/dismiss actions. It also proves VaultHome can place that panel in the dense desktop sidebar and forward confirm/dismiss callbacks by request id. This does not yet prove app startup loading from app-support/Vault inbox JSONL files, Rust/Tauri inbox commands, or a launched native desktop prompt.
 
 Agent Bridge fallback evidence:
 
@@ -371,7 +381,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 26 test files and 115 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-B6nZ8ThR.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 134 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-DY4sOvVL.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

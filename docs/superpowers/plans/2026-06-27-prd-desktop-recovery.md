@@ -162,9 +162,11 @@ git commit -m "feat: add native vault command core"
 
 Tests must cover `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, and `importExisting` tool schemas.
 
-- [ ] **Step 2: Add failing inbox UI tests**
+- [x] **Step 2: Add failing inbox UI tests**
 
 Tests must render pending offline requests, dedupe by request id/source hash, confirm registration, and dismiss invalid requests.
+
+Checkpoint evidence: `tests/unit/InboxPanel.test.tsx` and `tests/unit/VaultHome.test.tsx` now cover a React Agent Inbox review panel for pending requests, duplicate and invalid-line counters, row busy state, empty state, and Vault sidebar confirm/dismiss event forwarding. Native startup inbox loading and Rust/Tauri inbox commands remain pending.
 
 - [ ] **Step 3: Implement MCP server**
 
@@ -181,7 +183,7 @@ Read from app support inbox and Vault `.htmlvault/inbox/requests.jsonl`; normali
 Run:
 
 ```bash
-npm run test -- tests/integration/bridge/mcpServer.test.ts tests/unit/InboxPanel.test.tsx
+npm run test -- tests/integration/bridge/mcpServer.test.ts tests/unit/InboxPanel.test.tsx tests/unit/VaultHome.test.tsx
 cd src-tauri && cargo test
 ```
 
