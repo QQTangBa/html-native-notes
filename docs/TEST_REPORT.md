@@ -144,6 +144,16 @@ npm run test -- tests/integration/bridge/vaultLibrary.test.ts
 
 Result: PASS. 2 tests. This proves an AI-generated HTML file can be registered into the Vault manifest and then surfaced as a searchable/filterable Vault Library item with title, tags, summary, source agent, relative source path, folder summary, and thumbnail pending path. It does not yet prove the React Vault home UI, true screenshot thumbnail generation, 100 mixed fixture import, preview/open flow, or native Rust Vault core.
 
+VaultHome React component evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/VaultHome.test.tsx
+```
+
+Result: PASS. 2 tests. This proves the first React Vault home component renders an Obsidian-inspired dense desktop workspace with sidebar folders, search, card/list view toggle, tag/source/folder filters, card metadata, and thumbnail ready/pending states. It does not yet prove App/Tauri wiring, true native desktop launch, keyboard command palette, visual screenshot QA, or real Vault data loading.
+
 Latest full non-Rust validation:
 
 ```bash
@@ -153,7 +163,7 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 20 files, 70 tests. Bridge test run: 12 files, 42 tests.
+Result: PASS. Full test run: 21 files, 72 tests. Bridge test run: 12 files, 42 tests.
 
 During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 
