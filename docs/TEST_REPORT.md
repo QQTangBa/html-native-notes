@@ -60,7 +60,7 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 11 files, 40 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, and the initial Source Guard write-gate contract:
+Result: PASS. 12 files, 42 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Vault Library data contract, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, and the initial Source Guard write-gate contract:
 
 - `GET /health`
 - `POST /api/agent/register-html`
@@ -79,6 +79,9 @@ Result: PASS. 11 files, 40 tests. This proves the shared protocol, local HTTP fa
 - bridge intake preserves the original source file hash
 - repeat bridge intake deduplicates by dedupe key
 - bridge intake creates a baseline version snapshot
+- Vault Library indexes bridge-intaken HTML assets for card/list metadata
+- Vault Library enriches title, tags, summary, source agent, source path, folder, and thumbnail status
+- Vault Library supports query, tag, source-agent, kind, and folder filters
 - version store creates and lists snapshots
 - version store returns source diff, readable content diff, and DOM summary
 - version store can roll back a managed HTML copy to a prior snapshot
@@ -131,6 +134,16 @@ npm run test -- tests/integration/bridge/sourceGuardWriteGate.test.ts
 
 Result: PASS. 5 tests. This proves the initial write-gate contract can produce readable diffs without changing source files, cancel without writing, save edited HTML as a new file while preserving the source hash, write back only after source-hash verification, and reject stale write-back after external source changes. It does not yet prove the Rust Source Guard boundary, desktop diff UI, or page-in-place editing flow.
 
+Vault Library contract evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/bridge/vaultLibrary.test.ts
+```
+
+Result: PASS. 2 tests. This proves an AI-generated HTML file can be registered into the Vault manifest and then surfaced as a searchable/filterable Vault Library item with title, tags, summary, source agent, relative source path, folder summary, and thumbnail pending path. It does not yet prove the React Vault home UI, true screenshot thumbnail generation, 100 mixed fixture import, preview/open flow, or native Rust Vault core.
+
 Latest full non-Rust validation:
 
 ```bash
@@ -140,7 +153,7 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 19 files, 68 tests. Bridge test run: 11 files, 40 tests.
+Result: PASS. Full test run: 20 files, 70 tests. Bridge test run: 12 files, 42 tests.
 
 During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 
