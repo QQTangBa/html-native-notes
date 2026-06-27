@@ -19,23 +19,23 @@ afterEach(async () => {
   await rm(tempDir, { recursive: true, force: true });
 });
 
-function waitFor<T>(predicate: () => T | undefined, timeoutMs = 1500): Promise<T> {
+function waitFor<T>(predicate: () => T | Promise<T | undefined> | undefined, timeoutMs = 1500): Promise<T> {
   const startedAt = Date.now();
 
   return new Promise((resolve, reject) => {
     const timer = setInterval(() => {
-      const result = predicate();
+      void Promise.resolve(predicate()).then((result) => {
+        if (result) {
+          clearInterval(timer);
+          resolve(result);
+          return;
+        }
 
-      if (result) {
-        clearInterval(timer);
-        resolve(result);
-        return;
-      }
-
-      if (Date.now() - startedAt > timeoutMs) {
-        clearInterval(timer);
-        reject(new Error('Timed out waiting for watcher result'));
-      }
+        if (Date.now() - startedAt > timeoutMs) {
+          clearInterval(timer);
+          reject(new Error('Timed out waiting for watcher result'));
+        }
+      });
     }, 25);
   });
 }
@@ -118,4 +118,5 @@ describe('agent bridge file watcher', () => {
       await watcher.stop();
     }
   });
+
 });

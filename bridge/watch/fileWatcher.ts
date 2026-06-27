@@ -4,6 +4,7 @@ import { watch, type FSWatcher } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { normalizeBridgeRequest, type NormalizedBridgeRequest } from '../shared/protocol';
+import { snapshotExternalVaultEdits } from '../vault/externalEditWatcher';
 
 interface WatcherOptions {
   rootDir: string;
@@ -16,6 +17,13 @@ interface WatcherOptions {
 interface ScanOptions {
   rootDir: string;
   sourceAgent: string;
+}
+
+interface ExternalEditVersionWatcherOptions {
+  vaultDir: string;
+  rootDir: string;
+  settleMs?: number;
+  pollMs?: number;
 }
 
 export interface HtmlAssetWatcher {
@@ -163,6 +171,76 @@ export function createHtmlAssetWatcher(options: WatcherOptions): HtmlAssetWatche
       poller = undefined;
       watcher?.close();
       watcher = undefined;
+    },
+  };
+}
+
+export function createExternalEditVersionWatcher(options: ExternalEditVersionWatcherOptions): HtmlAssetWatcher {
+  const settleMs = options.settleMs ?? 100;
+  const pollMs = options.pollMs ?? 500;
+  const timers = new Map<string, NodeJS.Timeout>();
+  let watcher: FSWatcher | undefined;
+  let poller: NodeJS.Timeout | undefined;
+  let scanInFlight: Promise<void> | undefined;
+
+  async function runScan(): Promise<void> {
+    if (scanInFlight) {
+      return scanInFlight;
+    }
+
+    scanInFlight = snapshotExternalVaultEdits({ vaultDir: options.vaultDir })
+      .then(() => undefined)
+      .finally(() => {
+        scanInFlight = undefined;
+      });
+
+    return scanInFlight;
+  }
+
+  function schedule(filePath: string): void {
+    if (!isHtmlAsset(filePath)) {
+      return;
+    }
+
+    const existingTimer = timers.get(filePath);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    const timer = setTimeout(() => {
+      timers.delete(filePath);
+      void runScan();
+    }, settleMs);
+
+    timers.set(filePath, timer);
+  }
+
+  return {
+    async start() {
+      await runScan();
+      watcher = watch(options.rootDir, (_eventType, filename) => {
+        if (!filename) {
+          return;
+        }
+
+        schedule(path.join(options.rootDir, filename.toString()));
+      });
+      poller = setInterval(() => {
+        void runScan();
+      }, pollMs);
+    },
+    async stop() {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+      if (poller) {
+        clearInterval(poller);
+      }
+      poller = undefined;
+      watcher?.close();
+      watcher = undefined;
+      await scanInFlight;
     },
   };
 }

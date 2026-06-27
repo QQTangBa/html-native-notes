@@ -40,7 +40,7 @@ Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` 
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, and external edit scan changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 28 test files and 125 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
+Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, and external edit watcher changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 29 test files and 126 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
 
 PRD fixture-scale import foundation:
 
@@ -301,7 +301,19 @@ Additional external edit scan evidence:
 npm run test -- tests/integration/bridge/versionStore.test.ts
 ```
 
-Result: PASS. 5 tests. The added test proves `snapshotExternalVaultEdits` can detect a registered HTML source hash change, create exactly one `external-agent-edit` snapshot, and skip duplicate snapshots when the same changed content is scanned again. This still does not prove debounced native watcher wiring, branch/recover, screenshot hints, or native Tauri desktop launch.
+Result: PASS. 5 tests. The added test proves `snapshotExternalVaultEdits` can detect a registered HTML source hash change, create exactly one `external-agent-edit` snapshot, and skip duplicate snapshots when the same changed content is scanned again.
+
+```bash
+npm run test -- tests/integration/bridge/fileWatcher.test.ts tests/integration/bridge/externalEditVersion.test.ts tests/integration/bridge/versionStore.test.ts
+```
+
+Result: PASS. 3 files, 9 tests. This proves `createExternalEditVersionWatcher` debounces filesystem events and polling into the external-edit snapshot pipeline, so a registered HTML file changed outside the app gets a new `external-agent-edit` snapshot. This still does not prove native Rust watcher wiring, branch/recover, screenshot hints, or native Tauri desktop launch.
+
+```bash
+npm run test:bridge
+```
+
+Result: PASS. 15 files, 49 tests.
 
 Runtime VaultHome browser evidence:
 
