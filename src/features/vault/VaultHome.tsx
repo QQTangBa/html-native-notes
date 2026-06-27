@@ -1,5 +1,6 @@
-import { Eye, FileText, Folder, Grid2X2, List, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Eye, FileText, Folder, Grid2X2, List, Pencil, RefreshCw, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import type { VaultWriteReview } from '../../shared/types';
 
 export interface VaultHomeItem {
   id: string;
@@ -23,10 +24,18 @@ export interface VaultHomeProps {
   activeItemId?: string;
   previewHtml?: string;
   previewTitle?: string;
+  writeReview?: VaultWriteReview;
+  writeBusy?: boolean;
+  writeMessage?: string;
+  writeDecisionKey?: number;
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
   onOpenItem?: (itemId: string) => void;
   onGenerateThumbnails?: () => void;
+  onReviewEdit?: (editedHtml: string) => void;
+  onCancelWrite?: () => void;
+  onSaveAs?: () => void;
+  onWriteBack?: () => void;
 }
 
 type ViewMode = 'card' | 'list';
@@ -66,16 +75,38 @@ export function VaultHome({
   activeItemId,
   previewHtml,
   previewTitle,
+  writeReview,
+  writeBusy = false,
+  writeMessage,
+  writeDecisionKey = 0,
   thumbnailBusy = false,
   thumbnailMessage,
   onOpenItem,
   onGenerateThumbnails,
+  onReviewEdit,
+  onCancelWrite,
+  onSaveAs,
+  onWriteBack,
 }: VaultHomeProps) {
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
   const [sourceAgent, setSourceAgent] = useState('');
   const [folder, setFolder] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('card');
+  const [isEditingPreview, setIsEditingPreview] = useState(false);
+  const [draftHtml, setDraftHtml] = useState('');
+
+  useLayoutEffect(() => {
+    setIsEditingPreview(false);
+    setDraftHtml('');
+  }, [activeItemId]);
+
+  useEffect(() => {
+    if (writeDecisionKey > 0) {
+      setIsEditingPreview(false);
+      setDraftHtml('');
+    }
+  }, [writeDecisionKey]);
 
   const tags = useMemo(() => uniqueSorted(items.flatMap((item) => item.tags)), [items]);
   const sourceAgents = useMemo(() => uniqueSorted(items.flatMap((item) => (item.sourceAgent ? [item.sourceAgent] : []))), [items]);
@@ -99,9 +130,15 @@ export function VaultHome({
     setFolder('');
   }
 
+  function startPreviewEdit(): void {
+    setDraftHtml(previewHtml ?? '');
+    setIsEditingPreview(true);
+  }
+
   const canGenerateThumbnails = Boolean(onGenerateThumbnails && pendingThumbnailCount > 0);
   const thumbnailButtonLabel = thumbnailBusy ? 'Rendering thumbnails' : `Generate ${pendingThumbnailLabel(pendingThumbnailCount)}`;
   const thumbnailStatusText = thumbnailMessage ?? (pendingThumbnailCount > 0 ? pendingThumbnailLabel(pendingThumbnailCount) : 'Thumbnails ready');
+  const diffLines = writeReview?.diff ? writeReview.diff.split('\n') : [];
 
   return (
     <section className="vault-home" aria-label="Vault home">
@@ -252,11 +289,78 @@ export function VaultHome({
 
           {previewHtml ? (
             <aside className="vault-preview-panel" aria-label="HTML preview">
-              <header>
-                <p className="eyebrow">Read-only preview</p>
-                <h3>{previewTitle}</h3>
+              <header className="vault-preview-header">
+                <div>
+                  <p className="eyebrow">{isEditingPreview ? 'Editable draft' : 'Read-only preview'}</p>
+                  <h3>{previewTitle}</h3>
+                </div>
+                {onReviewEdit ? (
+                  <button type="button" className="vault-preview-tool" aria-label="Edit preview HTML" onClick={startPreviewEdit}>
+                    <Pencil size={14} aria-hidden="true" />
+                    <span>Edit</span>
+                  </button>
+                ) : null}
               </header>
-              <iframe className="vault-preview-frame" title="Vault HTML preview" srcDoc={previewHtml} sandbox="allow-same-origin" />
+              {isEditingPreview ? (
+                <div className="vault-edit-panel">
+                  <label className="vault-edit-label" htmlFor="vault-edit-draft">
+                    Editable HTML draft
+                  </label>
+                  <textarea
+                    id="vault-edit-draft"
+                    className="vault-edit-draft"
+                    value={draftHtml}
+                    onChange={(event) => setDraftHtml(event.target.value)}
+                    spellCheck={false}
+                  />
+                  <div className="vault-write-actions">
+                    <button type="button" disabled={writeBusy} onClick={() => onReviewEdit?.(draftHtml)}>
+                      <ShieldCheck size={14} aria-hidden="true" />
+                      <span>Review changes</span>
+                    </button>
+                    {writeMessage ? <span>{writeMessage}</span> : null}
+                  </div>
+
+                  {writeReview ? (
+                    <section className="vault-write-review" role="region" aria-label="Source Guard review">
+                      <div className="vault-write-review-head">
+                        <div>
+                          <p className="eyebrow">Source Guard review</p>
+                          <strong>{writeReview.status === 'changed' ? 'Changes detected' : 'No source changes'}</strong>
+                        </div>
+                        <small>{writeReview.sourcePath}</small>
+                      </div>
+                      <pre className="vault-diff" aria-label="Readable HTML diff">
+                        {diffLines.length ? (
+                          diffLines.map((line, index) => (
+                            <code
+                              key={`${index}-${line}`}
+                              data-diff={line.startsWith('+') ? 'add' : line.startsWith('-') ? 'remove' : 'same'}
+                            >
+                              {line}
+                            </code>
+                          ))
+                        ) : (
+                          <code data-diff="same">No textual diff</code>
+                        )}
+                      </pre>
+                      <div className="vault-write-decisions">
+                        <button type="button" disabled={writeBusy} onClick={onCancelWrite}>
+                          Cancel write
+                        </button>
+                        <button type="button" disabled={writeBusy} onClick={onSaveAs}>
+                          Save as copy
+                        </button>
+                        <button type="button" disabled={writeBusy} onClick={onWriteBack}>
+                          Write back to source
+                        </button>
+                      </div>
+                    </section>
+                  ) : null}
+                </div>
+              ) : (
+                <iframe className="vault-preview-frame" title="Vault HTML preview" srcDoc={previewHtml} sandbox="allow-same-origin" />
+              )}
             </aside>
           ) : null}
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AiPanel } from '../features/ai/AiPanel';
 import { HtmlEditor } from '../features/editor/HtmlEditor';
 import { NoteLibrary } from '../features/notes/NoteLibrary';
@@ -6,7 +6,16 @@ import { PreviewPane } from '../features/preview/PreviewPane';
 import { SettingsPanel } from '../features/settings/SettingsPanel';
 import { VaultHome } from '../features/vault/VaultHome';
 import { apiClient } from '../shared/api/client';
-import type { AiAction, NoteMeta, NoteRecord, SafeAiStatus, VaultAssetSourceResponse, VaultLibraryResponse } from '../shared/types';
+import type {
+  AiAction,
+  NoteMeta,
+  NoteRecord,
+  SafeAiStatus,
+  VaultAssetSourceResponse,
+  VaultLibraryResponse,
+  VaultWriteDecision,
+  VaultWriteReview,
+} from '../shared/types';
 
 const starterHtml = '<!doctype html><html><body><article><h1>新 HTML 笔记</h1><p>开始写你的内容。</p></article></body></html>';
 
@@ -19,11 +28,17 @@ export function App() {
   const [vaultLibrary, setVaultLibrary] = useState<VaultLibraryResponse>();
   const [vaultPreview, setVaultPreview] = useState<VaultAssetSourceResponse>();
   const [vaultPreviewBusy, setVaultPreviewBusy] = useState(false);
+  const [vaultWriteReview, setVaultWriteReview] = useState<VaultWriteReview>();
+  const [vaultWriteBusy, setVaultWriteBusy] = useState(false);
+  const [vaultWriteMessage, setVaultWriteMessage] = useState('');
+  const [vaultWriteDecisionKey, setVaultWriteDecisionKey] = useState(0);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const vaultReviewRequestIdRef = useRef(0);
+  const activeVaultPreviewIdRef = useRef<string | undefined>(undefined);
 
   const activeNoteId = activeNote?.id;
   const statusLine = useMemo(() => {
@@ -43,6 +58,10 @@ export function App() {
     void refreshVaultLibrary();
     void apiClient.aiStatus().then(setAiStatus).catch(() => setAiStatus({ configured: false, baseUrlSet: false }));
   }, []);
+
+  useEffect(() => {
+    activeVaultPreviewIdRef.current = vaultPreview?.assetId;
+  }, [vaultPreview?.assetId]);
 
   async function refresh(): Promise<void> {
     setNotes(await apiClient.listNotes());
@@ -152,7 +171,10 @@ export function App() {
   }
 
   async function openVaultItem(itemId: string): Promise<void> {
+    vaultReviewRequestIdRef.current += 1;
     setVaultPreviewBusy(true);
+    setVaultWriteReview(undefined);
+    setVaultWriteMessage('');
     setError('');
 
     try {
@@ -161,6 +183,74 @@ export function App() {
       setError(caught instanceof Error ? caught.message : '预览打开失败');
     } finally {
       setVaultPreviewBusy(false);
+    }
+  }
+
+  async function reviewVaultEdit(editedHtml: string): Promise<void> {
+    const preview = vaultPreview;
+    if (!preview) {
+      return;
+    }
+
+    const requestId = vaultReviewRequestIdRef.current + 1;
+    vaultReviewRequestIdRef.current = requestId;
+    setVaultWriteBusy(true);
+    setVaultWriteMessage('Reviewing changes');
+    setError('');
+
+    try {
+      const review = await apiClient.reviewVaultAssetWrite(preview.assetId, editedHtml);
+      if (vaultReviewRequestIdRef.current !== requestId || activeVaultPreviewIdRef.current !== preview.assetId) {
+        return;
+      }
+      setVaultWriteReview(review);
+      setVaultWriteMessage(review.status === 'changed' ? 'Review ready' : 'No changes detected');
+    } catch (caught) {
+      if (vaultReviewRequestIdRef.current !== requestId || activeVaultPreviewIdRef.current !== preview.assetId) {
+        return;
+      }
+      setError(caught instanceof Error ? caught.message : '写入审查失败');
+      setVaultWriteMessage('Review failed');
+    } finally {
+      if (vaultReviewRequestIdRef.current === requestId) {
+        setVaultWriteBusy(false);
+      }
+    }
+  }
+
+  function saveAsPathFor(sourcePath: string): string {
+    return sourcePath.match(/\.html?$/i) ? sourcePath.replace(/\.html?$/i, '.copy.html') : `${sourcePath}.copy.html`;
+  }
+
+  async function applyVaultDecision(decision: VaultWriteDecision): Promise<void> {
+    if (!vaultWriteReview || !vaultPreview) {
+      return;
+    }
+
+    const assetId = vaultPreview.assetId;
+    const editedHtml = vaultWriteReview.editedHtml;
+    setVaultWriteBusy(true);
+    setError('');
+
+    try {
+      const result = await apiClient.applyVaultWriteDecision(assetId, editedHtml, decision);
+      setVaultWriteMessage(
+        result.action === 'cancel'
+          ? 'Write cancelled'
+          : result.action === 'save-as'
+            ? 'Copy saved'
+            : 'Source updated',
+      );
+      if (result.action === 'write-back') {
+        setVaultPreview((current) => (current?.assetId === assetId ? { ...current, html: editedHtml } : current));
+      }
+      setVaultWriteReview(undefined);
+      setVaultWriteDecisionKey((current) => current + 1);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '写入决策失败');
+      setVaultWriteMessage('Decision failed');
+    } finally {
+      setVaultWriteBusy(false);
     }
   }
 
@@ -183,8 +273,20 @@ export function App() {
           previewTitle={vaultPreviewBusy ? 'Loading preview' : vaultPreview?.title}
           thumbnailBusy={thumbnailBusy}
           thumbnailMessage={thumbnailMessage || undefined}
+          writeReview={vaultWriteReview}
+          writeBusy={vaultWriteBusy}
+          writeMessage={vaultWriteMessage || undefined}
+          writeDecisionKey={vaultWriteDecisionKey}
           onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
+          onReviewEdit={(editedHtml) => void reviewVaultEdit(editedHtml)}
+          onCancelWrite={() => void applyVaultDecision({ action: 'cancel' })}
+          onSaveAs={() => {
+            if (vaultWriteReview) {
+              void applyVaultDecision({ action: 'save-as', saveAsPath: saveAsPathFor(vaultWriteReview.sourcePath) });
+            }
+          }}
+          onWriteBack={() => void applyVaultDecision({ action: 'write-back' })}
         />
         <div className={error ? 'status-bar error' : 'status-bar'}>{statusLine}</div>
       </main>

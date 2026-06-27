@@ -137,7 +137,7 @@ Date: 2026-06-27
 npm run test -- tests/integration/bridge/sourceGuardWriteGate.test.ts
 ```
 
-Result: PASS. 5 tests. This proves the initial write-gate contract can produce readable diffs without changing source files, cancel without writing, save edited HTML as a new file while preserving the source hash, write back only after source-hash verification, and reject stale write-back after external source changes. It does not yet prove the Rust Source Guard boundary, desktop diff UI, or page-in-place editing flow.
+Result: PASS. 5 tests. This proves the initial write-gate contract can produce readable diffs without changing source files, cancel without writing, save edited HTML as a new file while preserving the source hash, write back only after source-hash verification, and reject stale write-back after external source changes. It does not yet prove the Rust Source Guard boundary, native desktop flow, or page-in-place text-node editing.
 
 Vault Library contract evidence:
 
@@ -177,7 +177,7 @@ Date: 2026-06-27
 npm run test -- tests/unit/VaultHome.test.tsx
 ```
 
-Result: PASS. 5 tests. This proves the first React Vault home component renders an Obsidian-inspired dense desktop workspace with sidebar folders, search, card/list view toggle, tag/source/folder filters, card metadata, thumbnail ready/pending states, a compact toolbar action for generating pending thumbnails, and a read-only HTML preview pane for selected assets. It does not yet prove Tauri wiring, true native desktop launch, keyboard command palette, or native Vault data loading.
+Result: PASS. 7 tests. This proves the first React Vault home component renders an Obsidian-inspired dense desktop workspace with sidebar folders, search, card/list view toggle, tag/source/folder filters, card metadata, thumbnail ready/pending states, a compact toolbar action for generating pending thumbnails, a read-only HTML preview pane, and a Source Guard review panel for edited preview HTML drafts with cancel/save-as/write-back actions. It also proves switching preview items exits edit mode instead of carrying a stale draft forward. It does not yet prove Tauri wiring, true native desktop launch, keyboard command palette, native Vault data loading, or rendered-page text-node editing.
 
 Vault Library API evidence:
 
@@ -187,7 +187,7 @@ Date: 2026-06-27
 npm run test -- tests/integration/api.test.ts
 ```
 
-Result: PASS. 7 tests. The Vault tests prove `/api/vault/library` can read the configured local Vault directory, return AI-generated HTML already registered through bridge intake, and honor query/tag/source-agent filters. They also prove `POST /api/vault/thumbnails/generate` can generate missing thumbnails for the configured Vault and make the library return a ready thumbnail path, and `GET /api/vault/assets/:assetId/source` can read registered HTML source for read-only preview with current/source hash evidence. They do not yet prove Tauri command wiring or user-selected Vault persistence.
+Result: PASS. 11 tests. The Vault tests prove `/api/vault/library` can read the configured local Vault directory, return AI-generated HTML already registered through bridge intake, and honor query/tag/source-agent filters. They also prove `POST /api/vault/thumbnails/generate` can generate missing thumbnails for the configured Vault and make the library return a ready thumbnail path, `GET /api/vault/assets/:assetId/source` can read registered HTML source for read-only preview with current/source hash evidence, `POST /api/vault/assets/:assetId/write-review` can produce a Source Guard diff without mutating the source, and `POST /api/vault/write-decision` can cancel, save-as, and hash-checked write-back from a server-recomputed review. Additional Source Guard API coverage rejects symlink escapes outside the Vault, refuses save-as collisions, and proves fabricated client reviews cannot redirect a write to another in-Vault file. They do not yet prove Tauri command wiring or user-selected Vault persistence.
 
 App Vault loading evidence:
 
@@ -197,7 +197,17 @@ Date: 2026-06-27
 npm run test -- tests/unit/App.test.tsx
 ```
 
-Result: PASS. 6 tests. The App tests prove the renderer calls the Vault Library API, shows VaultHome with an agent-generated HTML asset when the configured Vault has items, calls `POST /api/vault/thumbnails/generate` from the desktop toolbar, refreshes the library after thumbnails become ready, and opens a selected registered HTML file in the read-only preview pane. They do not yet prove native Tauri launch or real user-selected Vault loading.
+Result: PASS. 8 tests. The App tests prove the renderer calls the Vault Library API, shows VaultHome with an agent-generated HTML asset when the configured Vault has items, calls `POST /api/vault/thumbnails/generate` from the desktop toolbar, refreshes the library after thumbnails become ready, opens a selected registered HTML file in the read-only preview pane, posts edited preview HTML to the Source Guard write-review API, renders the diff panel, submits an explicit cancel decision with `assetId + editedHtml`, and ignores a late review response after the user opens a different preview asset. They do not yet prove native Tauri launch or real user-selected Vault loading.
+
+Vault Source Guard preview edit evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx tests/unit/App.test.tsx
+```
+
+Result: PASS. 26 tests. This proves the current preview-source edit flow from three angles: the local API creates a review without changing source files, applies cancel/save-as/write-back decisions from server-recomputed review data, rejects symlink escapes, rejects save-as overwrite, and ignores fabricated review redirection; the VaultHome component exposes an editable HTML draft, a Source Guard diff region, explicit decision buttons, and stale-draft reset on preview switch; the App shell calls the review API, submits the cancel decision, and drops late reviews from previously active assets. This is not yet direct text editing inside the rendered iframe.
 
 Runtime VaultHome browser evidence:
 
@@ -247,13 +257,14 @@ npm run typecheck
 npm run test
 npm run lint
 npm run test:bridge
+npm run build
 ```
 
-Result: PASS. Full test run: 22 files, 83 tests. Bridge test run: 13 files, 44 tests.
+Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 
 Additional security check:
 
-Result: targeted secret scan for the supplied DeepSeek key and provider key assignment patterns returned one expected hit in ignored `.env.local`; no committed source, docs, tests, or config files contain the supplied key.
+Result: targeted secret scan with hidden and ignored files included returned one expected real-key hit in ignored `.env.local`; committed files only contain placeholder/example AI key strings or test fake keys.
 
 During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 
@@ -268,9 +279,9 @@ Result: `rustc not found`, `cargo not found`.
 
 The Tauri app has not been built or opened yet because Rust is not installed in PATH and user confirmation is required before installing the Rust toolchain.
 
-## Summary
+## Historical Web Prototype Summary
 
-The current local application passed unit tests, integration tests, browser E2E tests, production build, dependency audit, and a live DeepSeek connectivity check.
+The following commands describe the earlier web-prototype validation before the PRD desktop reset. For current evidence, use the non-Rust validation section above.
 
 ## Commands Run
 

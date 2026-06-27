@@ -7,6 +7,9 @@ import type {
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultThumbnailGenerationResponse,
+  VaultWriteDecision,
+  VaultWriteDecisionResult,
+  VaultWriteReview,
 } from '../types';
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -41,6 +44,26 @@ export const apiClient = {
 
   async getVaultAssetSource(assetId: string): Promise<VaultAssetSourceResponse> {
     return parseResponse<VaultAssetSourceResponse>(await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/source`));
+  },
+
+  async reviewVaultAssetWrite(assetId: string, editedHtml: string): Promise<VaultWriteReview> {
+    return parseResponse<VaultWriteReview>(
+      await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/write-review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editedHtml }),
+      }),
+    );
+  },
+
+  async applyVaultWriteDecision(assetId: string, editedHtml: string, decision: VaultWriteDecision): Promise<VaultWriteDecisionResult> {
+    return parseResponse<VaultWriteDecisionResult>(
+      await fetch('/api/vault/write-decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assetId, editedHtml, decision }),
+      }),
+    );
   },
 
   async listNotes(): Promise<NoteMeta[]> {

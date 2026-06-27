@@ -35,6 +35,7 @@ The current prototype includes the following web-only capabilities. They are use
 - User-configured OpenAI-compatible AI provider.
 - AI actions: summarize, rewrite, outline, generate section, and clean HTML.
 - Secret-safe AI status API.
+- Prototype Vault home for bridge-registered HTML assets, including search/filter/list/card views, thumbnail generation, read-only preview, and a Source Guard preview-source edit review panel.
 - Unit, integration, and Playwright E2E tests.
 
 ## Requirements
@@ -112,9 +113,10 @@ npx playwright install chromium
 ```text
 src/
   app/              React app shell
-  features/         Notes, editor, preview, AI, settings UI
+  features/         Notes, editor, preview, Vault, AI, settings UI
   server/           Fastify server, routes, storage, AI client
   shared/           Shared API client and TypeScript types
+bridge/             Agent Bridge, Vault intake, Source Guard, thumbnails, services
 tests/
   unit/             Unit and component tests
   integration/      Fastify API tests

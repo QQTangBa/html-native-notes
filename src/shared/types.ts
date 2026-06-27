@@ -91,6 +91,25 @@ export interface VaultAssetSourceResponse {
   html: string;
 }
 
+export interface VaultWriteReview {
+  sourcePath: string;
+  expectedSourceHash: string;
+  originalHtml: string;
+  editedHtml: string;
+  status: 'unchanged' | 'changed';
+  diff: string;
+}
+
+export type VaultWriteDecision =
+  | { action: 'cancel'; saveAsPath?: string }
+  | { action: 'save-as'; saveAsPath: string }
+  | { action: 'write-back' };
+
+export interface VaultWriteDecisionResult {
+  action: VaultWriteDecision['action'];
+  outputPath?: string;
+}
+
 export interface ApiErrorBody {
   error: {
     code: string;

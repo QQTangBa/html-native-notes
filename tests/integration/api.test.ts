@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
@@ -15,6 +15,10 @@ let app: Awaited<ReturnType<typeof createServer>>;
 
 function sha256(content: string): string {
   return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function rawSha256(content: string): string {
+  return createHash('sha256').update(content).digest('hex');
 }
 
 beforeEach(async () => {
@@ -204,5 +208,187 @@ describe('local API', () => {
       sourceHashMatches: true,
       html,
     });
+  });
+
+  it('reviews Vault HTML edits and applies explicit Source Guard decisions', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'api-write-gate.html');
+    const originalHtml = '<html><body><h1>Original</h1><p>Alpha</p></body></html>';
+    const editedHtml = '<html><body><h1>Original</h1><p>Beta</p></body></html>';
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, originalHtml, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_write_gate',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(originalHtml),
+        title: 'API Write Gate',
+      },
+    });
+
+    const reviewResponse = await request(app.server)
+      .post(`/api/vault/assets/${intake.asset.id}/write-review`)
+      .send({ editedHtml })
+      .expect(200);
+
+    expect(reviewResponse.body).toMatchObject({
+      sourcePath: htmlPath,
+      originalHtml,
+      editedHtml,
+      status: 'changed',
+    });
+    expect(reviewResponse.body.diff).toContain('-<html><body><h1>Original</h1><p>Alpha</p></body></html>');
+    expect(reviewResponse.body.diff).toContain('+<html><body><h1>Original</h1><p>Beta</p></body></html>');
+    expect(await readFile(htmlPath, 'utf8')).toBe(originalHtml);
+
+    const cancelResponse = await request(app.server)
+      .post('/api/vault/write-decision')
+      .send({ assetId: intake.asset.id, editedHtml, decision: { action: 'cancel' } })
+      .expect(200);
+    expect(cancelResponse.body).toEqual({ action: 'cancel' });
+    expect(await readFile(htmlPath, 'utf8')).toBe(originalHtml);
+
+    const saveAsPath = path.join(vaultDir, 'exports', 'api-write-gate-copy.html');
+    const saveAsResponse = await request(app.server)
+      .post('/api/vault/write-decision')
+      .send({ assetId: intake.asset.id, editedHtml, decision: { action: 'save-as', saveAsPath } })
+      .expect(200);
+    expect(saveAsResponse.body).toEqual({ action: 'save-as', outputPath: saveAsPath });
+    expect(await readFile(saveAsPath, 'utf8')).toBe(editedHtml);
+    expect(await readFile(htmlPath, 'utf8')).toBe(originalHtml);
+
+    const writeBackResponse = await request(app.server)
+      .post('/api/vault/write-decision')
+      .send({ assetId: intake.asset.id, editedHtml, decision: { action: 'write-back' } })
+      .expect(200);
+    expect(writeBackResponse.body).toEqual({ action: 'write-back', outputPath: htmlPath });
+    expect(await readFile(htmlPath, 'utf8')).toBe(editedHtml);
+  });
+
+  it('recomputes write decisions server-side instead of trusting a client-supplied review', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'api-write-gate.html');
+    const otherPath = path.join(aiDir, 'other.html');
+    const originalHtml = '<html><body><h1>Original</h1><p>Alpha</p></body></html>';
+    const editedHtml = '<html><body><h1>Original</h1><p>Beta</p></body></html>';
+    const otherHtml = '<html><body><h1>Other</h1></body></html>';
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, originalHtml, 'utf8');
+    await writeFile(otherPath, otherHtml, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_review_recompute',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(originalHtml),
+        title: 'API Review Recompute',
+      },
+    });
+
+    await request(app.server)
+      .post('/api/vault/write-decision')
+      .send({
+        assetId: intake.asset.id,
+        editedHtml,
+        decision: { action: 'write-back' },
+        review: {
+          sourcePath: otherPath,
+          expectedSourceHash: rawSha256(otherHtml),
+          originalHtml: otherHtml,
+          editedHtml: '<html><body><h1>Forged</h1></body></html>',
+          status: 'changed',
+          diff: '-other\n+forged',
+        },
+      })
+      .expect(200);
+
+    expect(await readFile(htmlPath, 'utf8')).toBe(editedHtml);
+    expect(await readFile(otherPath, 'utf8')).toBe(otherHtml);
+  });
+
+  it('rejects Source Guard source paths that resolve outside the configured Vault', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const importsDir = path.join(vaultDir, 'imports');
+    const outsideDir = path.join(tempDir, 'outside');
+    const linkedDir = path.join(importsDir, 'linked');
+    const htmlPath = path.join(linkedDir, 'outside.html');
+    const originalHtml = '<html><body><h1>Outside</h1></body></html>';
+    await mkdir(importsDir, { recursive: true });
+    await mkdir(outsideDir, { recursive: true });
+    await symlink(outsideDir, linkedDir, 'dir');
+    await writeFile(path.join(outsideDir, 'outside.html'), originalHtml, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_symlink_source',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(originalHtml),
+        title: 'API Symlink Source',
+      },
+    });
+
+    await request(app.server)
+      .post(`/api/vault/assets/${intake.asset.id}/write-review`)
+      .send({ editedHtml: '<html><body><h1>Edited Outside</h1></body></html>' })
+      .expect(400);
+
+    expect(await readFile(path.join(outsideDir, 'outside.html'), 'utf8')).toBe(originalHtml);
+  });
+
+  it('rejects save-as collisions and symlink targets outside the configured Vault', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const outsideDir = path.join(tempDir, 'outside-save-as');
+    const linkedDir = path.join(vaultDir, 'exports-link');
+    const htmlPath = path.join(aiDir, 'api-save-as.html');
+    const originalHtml = '<html><body><h1>Original</h1><p>Alpha</p></body></html>';
+    const editedHtml = '<html><body><h1>Original</h1><p>Beta</p></body></html>';
+    await mkdir(aiDir, { recursive: true });
+    await mkdir(outsideDir, { recursive: true });
+    await symlink(outsideDir, linkedDir, 'dir');
+    await writeFile(htmlPath, originalHtml, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_save_as_guard',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(originalHtml),
+        title: 'API Save As Guard',
+      },
+    });
+    const existingCopy = path.join(vaultDir, 'exports', 'api-save-as-copy.html');
+    await mkdir(path.dirname(existingCopy), { recursive: true });
+    await writeFile(existingCopy, '<html><body><h1>Existing Copy</h1></body></html>', 'utf8');
+
+    await request(app.server)
+      .post('/api/vault/write-decision')
+      .send({ assetId: intake.asset.id, editedHtml, decision: { action: 'save-as', saveAsPath: existingCopy } })
+      .expect(409);
+    expect(await readFile(existingCopy, 'utf8')).toContain('Existing Copy');
+
+    await request(app.server)
+      .post('/api/vault/write-decision')
+      .send({
+        assetId: intake.asset.id,
+        editedHtml,
+        decision: { action: 'save-as', saveAsPath: path.join(linkedDir, 'escaped-copy.html') },
+      })
+      .expect(400);
+    await expect(access(path.join(outsideDir, 'escaped-copy.html'))).rejects.toThrow();
   });
 });

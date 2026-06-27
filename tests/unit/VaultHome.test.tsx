@@ -122,4 +122,78 @@ describe('VaultHome', () => {
     expect(screen.getByRole('complementary', { name: 'HTML preview' })).toBeInTheDocument();
     expect(screen.getByTitle('Vault HTML preview')).toHaveAttribute('srcdoc', '<html><body><h1>Preview Me</h1></body></html>');
   });
+
+  it('reviews preview edits through a Source Guard diff panel', () => {
+    const onReviewEdit = vi.fn();
+    const onCancelWrite = vi.fn();
+    const onSaveAs = vi.fn();
+    const onWriteBack = vi.fn();
+    const editedHtml = '<html><body><h1>Preview Me</h1><p>Edited</p></body></html>';
+    render(
+      <VaultHome
+        items={items}
+        activeItemId="asset_gut"
+        previewHtml="<html><body><h1>Preview Me</h1><p>Original</p></body></html>"
+        previewTitle="Gut Market Research"
+        writeReview={{
+          sourcePath: '/Vault/imports/ai-agent/gut-report.html',
+          expectedSourceHash: 'abc123',
+          originalHtml: '<html><body><h1>Preview Me</h1><p>Original</p></body></html>',
+          editedHtml,
+          status: 'changed',
+          diff: ' <html><body><h1>Preview Me</h1>\n-<p>Original</p>\n+<p>Edited</p>',
+        }}
+        onReviewEdit={onReviewEdit}
+        onCancelWrite={onCancelWrite}
+        onSaveAs={onSaveAs}
+        onWriteBack={onWriteBack}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit preview HTML' }));
+    fireEvent.change(screen.getByLabelText('Editable HTML draft'), { target: { value: editedHtml } });
+    fireEvent.click(screen.getByRole('button', { name: 'Review changes' }));
+
+    expect(onReviewEdit).toHaveBeenCalledWith(editedHtml);
+    expect(screen.getByRole('region', { name: 'Source Guard review' })).toBeInTheDocument();
+    expect(screen.getByText('+<p>Edited</p>')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel write' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save as copy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write back to source' }));
+
+    expect(onCancelWrite).toHaveBeenCalledTimes(1);
+    expect(onSaveAs).toHaveBeenCalledTimes(1);
+    expect(onWriteBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves edit mode when a different preview item opens', () => {
+    const { rerender } = render(
+      <VaultHome
+        items={items}
+        activeItemId="asset_gut"
+        previewHtml="<html><body><h1>First Preview</h1></body></html>"
+        previewTitle="Gut Market Research"
+        onReviewEdit={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit preview HTML' }));
+    fireEvent.change(screen.getByLabelText('Editable HTML draft'), {
+      target: { value: '<html><body><h1>Stale Draft</h1></body></html>' },
+    });
+
+    rerender(
+      <VaultHome
+        items={items}
+        activeItemId="asset_dashboard"
+        previewHtml="<html><body><h1>Second Preview</h1></body></html>"
+        previewTitle="Revenue Dashboard"
+        onReviewEdit={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Editable HTML draft')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Vault HTML preview')).toHaveAttribute('srcdoc', '<html><body><h1>Second Preview</h1></body></html>');
+  });
 });
