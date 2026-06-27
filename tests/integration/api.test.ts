@@ -2,10 +2,12 @@
 
 import { createHash } from 'node:crypto';
 import { access, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { registerWebService } from '../../bridge/service/runtime';
 import { intakeBridgeRequestToVault } from '../../bridge/vault/intake';
 import { loadConfig } from '../../src/server/config';
 import { createServer } from '../../src/server/index';
@@ -19,6 +21,53 @@ function sha256(content: string): string {
 
 function rawSha256(content: string): string {
   return createHash('sha256').update(content).digest('hex');
+}
+
+async function getAvailablePort(): Promise<number> {
+  const server = createNetServer();
+
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      server.close(() => {
+        if (address && typeof address === 'object') {
+          resolve(address.port);
+          return;
+        }
+
+        reject(new Error('Unable to reserve test port'));
+      });
+    });
+  });
+}
+
+async function createFixtureService(port: number): Promise<{ cwd: string; logPath: string }> {
+  const cwd = path.join(tempDir, `fixture-service-${port}`);
+  const logPath = path.join(cwd, 'service.log');
+  const serverPath = path.join(cwd, 'server.mjs');
+
+  await mkdir(cwd, { recursive: true });
+  await writeFile(
+    serverPath,
+    [
+      "import http from 'node:http';",
+      `const port = ${port};`,
+      "const server = http.createServer((req, res) => {",
+      "  if (req.url === '/health') {",
+      "    res.writeHead(200, { 'content-type': 'application/json' });",
+      "    res.end(JSON.stringify({ ok: true }));",
+      '    return;',
+      '  }',
+      "  res.end('dashboard');",
+      '});',
+      "server.listen(port, '127.0.0.1', () => console.log(`ready:${port}`));",
+      "process.on('SIGTERM', () => server.close(() => process.exit(0)));",
+    ].join('\n'),
+    'utf8',
+  );
+
+  return { cwd, logPath };
 }
 
 beforeEach(async () => {
@@ -463,5 +512,56 @@ describe('local API', () => {
   it('rejects unsafe Vault version asset IDs before reading version files', async () => {
     await request(app.server).get('/api/vault/assets/..%2Foutside/versions').expect(400);
     await request(app.server).get('/api/vault/assets/..%2Foutside/versions/diff?from=snap_a&to=snap_b').expect(400);
+  });
+
+  it('checks, starts, and stops registered local services by Vault asset id', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const port = await getAvailablePort();
+    const fixture = await createFixtureService(port);
+    await registerWebService(path.join(vaultDir, '.htmlvault', 'services.json'), {
+      id: 'svc_api_fixture',
+      title: 'API Fixture Service',
+      cwd: fixture.cwd,
+      startCommand: `node ${path.join(fixture.cwd, 'server.mjs')}`,
+      url: `http://127.0.0.1:${port}`,
+      port,
+      healthCheckUrl: `http://127.0.0.1:${port}/health`,
+      envHints: [],
+      logPath: fixture.logPath,
+    });
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_service_runtime',
+        type: 'registerWebService',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        service: {
+          title: 'API Fixture Service',
+          cwd: fixture.cwd,
+          startCommand: `node ${path.join(fixture.cwd, 'server.mjs')}`,
+          url: `http://127.0.0.1:${port}`,
+          healthCheckUrl: `http://127.0.0.1:${port}/health`,
+          logPath: fixture.logPath,
+          envHints: [],
+        },
+      },
+    });
+
+    const health = await request(app.server).get(`/api/services/${intake.asset.id}/health`).expect(200);
+    expect(health.body).toMatchObject({
+      status: 'stopped',
+      serviceId: 'svc_api_fixture',
+      cwd: fixture.cwd,
+      logPath: fixture.logPath,
+    });
+
+    const started = await request(app.server).post(`/api/services/${intake.asset.id}/start`).expect(200);
+    expect(started.body.status).toBe('running');
+
+    const running = await request(app.server).get(`/api/services/${intake.asset.id}/health`).expect(200);
+    expect(running.body.status).toBe('running');
+
+    const stopped = await request(app.server).post(`/api/services/${intake.asset.id}/stop`).expect(200);
+    expect(stopped.body.status).toBe('stopped');
   });
 });

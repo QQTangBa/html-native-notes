@@ -109,6 +109,16 @@ Result: PASS. 13 files, 44 tests. This proves the shared protocol, local HTTP fa
 
 This still does not prove MCP, desktop Vault UI insertion, desktop thumbnail queue wiring, asset localization/package UI, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
 
+Service runtime App API and UI evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx tests/unit/App.test.tsx
+```
+
+Result: PASS. 34 focused tests. The added service tests prove a registry service can be mapped from a Vault service asset by cwd, checked through `GET /api/services/:assetId/health`, started through `POST /api/services/:assetId/start`, stopped through `POST /api/services/:assetId/stop`, and rendered on Vault service cards with status, cwd, health/start/stop controls, and App state updates. This is still local App API/web-renderer evidence; native Tauri process-boundary hardening and desktop launch verification remain pending.
+
 Markdown import contract evidence:
 
 Date: 2026-06-27
@@ -276,7 +286,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 23 test files and 99 tests, then Vite built `dist/index.html`, `dist/assets/index-DnbUwHWW.css`, and `dist/assets/index-DjgJYvyc.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 23 test files and 102 tests, then Vite built `dist/index.html`, `dist/assets/index-9dhOZhEj.css`, and `dist/assets/index-C3UZsGiL.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

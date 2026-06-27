@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/app/App';
 import type { VaultLibraryResponse } from '../../src/shared/types';
@@ -223,6 +223,103 @@ describe('App workspace', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith('/api/vault/thumbnails/generate', { method: 'POST' });
       expect(screen.getByText('Thumbnail ready')).toBeInTheDocument();
+    });
+  });
+
+  it('checks, starts, and stops Vault services from the service card', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_service',
+          kind: 'service',
+          title: 'Local Dashboard',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/services/local-dashboard',
+          relativeSourcePath: 'services/local-dashboard',
+          folderPath: 'services',
+          tags: ['service'],
+          summary: 'Local service',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'ready',
+            path: '/Vault/.htmlvault/thumbnails/asset_service.png',
+          },
+        },
+      ],
+      folders: [{ path: 'services', itemCount: 1 }],
+      availableFilters: {
+        tags: ['service'],
+        sourceAgents: ['codex'],
+        kinds: ['service'],
+      },
+    };
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/services/asset_service/health') {
+        return jsonResponse({
+          status: 'stopped',
+          serviceId: 'svc_local',
+          cwd: '/Vault/services/local-dashboard',
+          command: 'npm run dev',
+          logPath: '/Vault/services/local-dashboard/service.log',
+          startedByApp: false,
+        });
+      }
+
+      if (url === '/api/services/asset_service/start' && method === 'POST') {
+        return jsonResponse({
+          status: 'running',
+          serviceId: 'svc_local',
+          cwd: '/Vault/services/local-dashboard',
+          command: 'npm run dev',
+          logPath: '/Vault/services/local-dashboard/service.log',
+          startedByApp: true,
+        });
+      }
+
+      if (url === '/api/services/asset_service/stop' && method === 'POST') {
+        return jsonResponse({
+          status: 'stopped',
+          serviceId: 'svc_local',
+          cwd: '/Vault/services/local-dashboard',
+          command: 'npm run dev',
+          logPath: '/Vault/services/local-dashboard/service.log',
+          startedByApp: false,
+        });
+      }
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    const serviceCard = await screen.findByTestId('vault-item-asset_service');
+    fireEvent.click(within(serviceCard).getByRole('button', { name: 'Check service Local Dashboard' }));
+    expect(await within(serviceCard).findByText('stopped')).toBeInTheDocument();
+
+    fireEvent.click(within(serviceCard).getByRole('button', { name: 'Start service Local Dashboard' }));
+    expect(await within(serviceCard).findByText('running')).toBeInTheDocument();
+
+    fireEvent.click(within(serviceCard).getByRole('button', { name: 'Stop service Local Dashboard' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/services/asset_service/stop', { method: 'POST' });
+      expect(within(serviceCard).getByText('stopped')).toBeInTheDocument();
     });
   });
 

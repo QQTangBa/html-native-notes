@@ -13,6 +13,7 @@ import type {
   SafeAiStatus,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
+  VaultServiceRuntimeState,
   VaultVersionDiff,
   VaultVersionSnapshot,
   VaultWriteDecision,
@@ -38,6 +39,8 @@ export function App() {
   const [vaultVersionDiff, setVaultVersionDiff] = useState<VaultVersionDiff>();
   const [vaultVersionBusy, setVaultVersionBusy] = useState(false);
   const [vaultVersionMessage, setVaultVersionMessage] = useState('');
+  const [vaultServiceStates, setVaultServiceStates] = useState<Record<string, VaultServiceRuntimeState>>({});
+  const [vaultServiceBusyIds, setVaultServiceBusyIds] = useState<string[]>([]);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
@@ -295,6 +298,24 @@ export function App() {
     }
   }
 
+  async function runVaultServiceAction(
+    assetId: string,
+    action: (id: string) => Promise<VaultServiceRuntimeState>,
+    failureMessage: string,
+  ): Promise<void> {
+    setVaultServiceBusyIds((current) => [...new Set([...current, assetId])]);
+    setError('');
+
+    try {
+      const result = await action(assetId);
+      setVaultServiceStates((current) => ({ ...current, [assetId]: result }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : failureMessage);
+    } finally {
+      setVaultServiceBusyIds((current) => current.filter((id) => id !== assetId));
+    }
+  }
+
   async function reviewVaultEdit(editedHtml: string): Promise<void> {
     const preview = vaultPreview;
     if (!preview) {
@@ -390,8 +411,13 @@ export function App() {
           versionDiff={vaultVersionDiff}
           versionBusy={vaultVersionBusy}
           versionMessage={vaultVersionMessage || undefined}
+          serviceStates={vaultServiceStates}
+          serviceBusyIds={vaultServiceBusyIds}
           onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
+          onServiceHealth={(itemId) => void runVaultServiceAction(itemId, apiClient.checkVaultService, '服务状态检查失败')}
+          onServiceStart={(itemId) => void runVaultServiceAction(itemId, apiClient.startVaultService, '服务启动失败')}
+          onServiceStop={(itemId) => void runVaultServiceAction(itemId, apiClient.stopVaultService, '服务停止失败')}
           onCompareLatestVersions={() => void compareLatestVaultVersions()}
           onRollbackSnapshot={(snapshotId) => void rollbackVaultVersion(snapshotId)}
           onReviewEdit={(editedHtml) => void reviewVaultEdit(editedHtml)}

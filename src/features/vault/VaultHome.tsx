@@ -7,14 +7,17 @@ import {
   History,
   List,
   Pencil,
+  Play,
   RefreshCw,
   RotateCcw,
   Search,
   ShieldCheck,
   SlidersHorizontal,
+  Square,
+  Activity,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import type { VaultVersionDiff, VaultVersionSnapshot, VaultWriteReview } from '../../shared/types';
+import type { VaultServiceRuntimeState, VaultVersionDiff, VaultVersionSnapshot, VaultWriteReview } from '../../shared/types';
 
 export interface VaultHomeItem {
   id: string;
@@ -46,10 +49,15 @@ export interface VaultHomeProps {
   versionDiff?: VaultVersionDiff;
   versionBusy?: boolean;
   versionMessage?: string;
+  serviceStates?: Record<string, VaultServiceRuntimeState>;
+  serviceBusyIds?: string[];
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
   onOpenItem?: (itemId: string) => void;
   onGenerateThumbnails?: () => void;
+  onServiceHealth?: (itemId: string) => void;
+  onServiceStart?: (itemId: string) => void;
+  onServiceStop?: (itemId: string) => void;
   onCompareLatestVersions?: () => void;
   onRollbackSnapshot?: (snapshotId: string) => void;
   onReviewEdit?: (editedHtml: string) => void;
@@ -103,10 +111,15 @@ export function VaultHome({
   versionDiff,
   versionBusy = false,
   versionMessage,
+  serviceStates,
+  serviceBusyIds = [],
   thumbnailBusy = false,
   thumbnailMessage,
   onOpenItem,
   onGenerateThumbnails,
+  onServiceHealth,
+  onServiceStart,
+  onServiceStop,
   onCompareLatestVersions,
   onRollbackSnapshot,
   onReviewEdit,
@@ -304,6 +317,41 @@ export function VaultHome({
                       <span key={itemTag}>{itemTag}</span>
                     ))}
                   </div>
+                  {item.kind === 'service' ? (
+                    <div className="vault-service-panel">
+                      <div className="vault-service-state" data-status={serviceStates?.[item.id]?.status ?? 'unknown'}>
+                        <Activity size={13} aria-hidden="true" />
+                        <strong>{serviceStates?.[item.id]?.status ?? 'unknown'}</strong>
+                        <span>{serviceStates?.[item.id]?.cwd ?? item.sourcePath ?? 'No cwd'}</span>
+                      </div>
+                      <div className="vault-service-actions">
+                        <button
+                          type="button"
+                          aria-label={`Check service ${item.title}`}
+                          disabled={serviceBusyIds.includes(item.id)}
+                          onClick={() => onServiceHealth?.(item.id)}
+                        >
+                          <Activity size={13} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Start service ${item.title}`}
+                          disabled={serviceBusyIds.includes(item.id)}
+                          onClick={() => onServiceStart?.(item.id)}
+                        >
+                          <Play size={13} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Stop service ${item.title}`}
+                          disabled={serviceBusyIds.includes(item.id)}
+                          onClick={() => onServiceStop?.(item.id)}
+                        >
+                          <Square size={13} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                   {onOpenItem && item.kind === 'html-note' ? (
                     <button type="button" className="vault-preview-button" aria-label={`Preview ${item.title}`} onClick={() => onOpenItem(item.id)}>
                       <Eye size={14} aria-hidden="true" />

@@ -717,6 +717,58 @@ code {
   font-size: 12px;
 }
 
+.vault-service-panel {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #303b42;
+  border-radius: 6px;
+  background: #12181c;
+  padding: 8px;
+}
+
+.vault-service-state {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 16px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  color: #9fa9a2;
+  font-size: 11px;
+}
+
+.vault-service-state strong {
+  color: #dfe6dc;
+  font-size: 12px;
+}
+
+.vault-service-state[data-status="running"] strong {
+  color: #9fd59b;
+}
+
+.vault-service-state[data-status="failed"] strong {
+  color: #e6a09a;
+}
+
+.vault-service-state span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-service-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.vault-service-actions button {
+  width: 30px;
+  min-height: 28px;
+  padding: 0;
+  border-color: #3a474e;
+  background: #10161a;
+  color: #d8d09d;
+}
+
 .vault-preview-panel {
   min-width: 0;
   min-height: 0;

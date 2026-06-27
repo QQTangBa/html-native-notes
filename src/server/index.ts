@@ -13,6 +13,7 @@ import { registerAiRoutes } from './routes/ai';
 import { registerConfigRoutes } from './routes/config';
 import { registerHealthRoutes } from './routes/health';
 import { registerNoteRoutes } from './routes/notes';
+import { registerServiceRoutes } from './routes/services';
 import { registerVaultRoutes } from './routes/vault';
 
 interface CreateServerOptions {
@@ -70,6 +71,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
   await registerConfigRoutes(app, config);
   await registerNoteRoutes(app, store);
   await registerVaultRoutes(app, config);
+  await registerServiceRoutes(app, config);
   await registerAiRoutes(app, config);
 
   if (options.enableVite ?? config.env === 'development') {

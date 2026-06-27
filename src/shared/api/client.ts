@@ -6,6 +6,7 @@ import type {
   SafeAiStatus,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
+  VaultServiceRuntimeState,
   VaultThumbnailGenerationResponse,
   VaultVersionDiff,
   VaultVersionRollbackResponse,
@@ -77,6 +78,18 @@ export const apiClient = {
         body: JSON.stringify({ snapshotId }),
       }),
     );
+  },
+
+  async checkVaultService(assetId: string): Promise<VaultServiceRuntimeState> {
+    return parseResponse<VaultServiceRuntimeState>(await fetch(`/api/services/${encodeURIComponent(assetId)}/health`));
+  },
+
+  async startVaultService(assetId: string): Promise<VaultServiceRuntimeState> {
+    return parseResponse<VaultServiceRuntimeState>(await fetch(`/api/services/${encodeURIComponent(assetId)}/start`, { method: 'POST' }));
+  },
+
+  async stopVaultService(assetId: string): Promise<VaultServiceRuntimeState> {
+    return parseResponse<VaultServiceRuntimeState>(await fetch(`/api/services/${encodeURIComponent(assetId)}/stop`, { method: 'POST' }));
   },
 
   async reviewVaultAssetWrite(assetId: string, editedHtml: string): Promise<VaultWriteReview> {

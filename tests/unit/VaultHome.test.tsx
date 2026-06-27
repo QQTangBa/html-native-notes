@@ -98,6 +98,42 @@ describe('VaultHome', () => {
     expect(onGenerateThumbnails).toHaveBeenCalledTimes(1);
   });
 
+  it('shows service runtime status and actions on service cards', () => {
+    const onServiceHealth = vi.fn();
+    const onServiceStart = vi.fn();
+    const onServiceStop = vi.fn();
+    render(
+      <VaultHome
+        items={items}
+        serviceStates={{
+          asset_dashboard: {
+            status: 'stopped',
+            serviceId: 'svc_revenue',
+            cwd: '/Vault/services/revenue-dashboard',
+            command: 'npm run dev',
+            logPath: '/Vault/services/revenue-dashboard/service.log',
+            startedByApp: false,
+          },
+        }}
+        onServiceHealth={onServiceHealth}
+        onServiceStart={onServiceStart}
+        onServiceStop={onServiceStop}
+      />,
+    );
+
+    const dashboardCard = screen.getByTestId('vault-item-asset_dashboard');
+    expect(within(dashboardCard).getByText('stopped')).toBeInTheDocument();
+    expect(within(dashboardCard).getByText('/Vault/services/revenue-dashboard')).toBeInTheDocument();
+
+    fireEvent.click(within(dashboardCard).getByRole('button', { name: 'Check service Revenue Dashboard' }));
+    fireEvent.click(within(dashboardCard).getByRole('button', { name: 'Start service Revenue Dashboard' }));
+    fireEvent.click(within(dashboardCard).getByRole('button', { name: 'Stop service Revenue Dashboard' }));
+
+    expect(onServiceHealth).toHaveBeenCalledWith('asset_dashboard');
+    expect(onServiceStart).toHaveBeenCalledWith('asset_dashboard');
+    expect(onServiceStop).toHaveBeenCalledWith('asset_dashboard');
+  });
+
   it('disables thumbnail generation while a run is in progress', () => {
     render(<VaultHome items={items} thumbnailBusy thumbnailMessage="Rendering thumbnails" onGenerateThumbnails={vi.fn()} />);
 

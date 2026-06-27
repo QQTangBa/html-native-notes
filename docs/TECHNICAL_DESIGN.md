@@ -475,6 +475,24 @@ Implementation files:
 
 This is the first F7 foundation. It does not replace the planned Markdown-first rich editor, slash command, quick-open modal, or full backlink index.
 
+### 7.8 Current Service Runtime App Contract
+
+The current non-Rust app server exposes the existing TypeScript Service Registry/Runtime Manager to the renderer by Vault service asset id:
+
+- `GET /api/services/:assetId/health`
+- `POST /api/services/:assetId/start`
+- `POST /api/services/:assetId/stop`
+
+Implementation files:
+
+- `bridge/service/runtime.ts`: registry persistence, health check, start, stop, log capture.
+- `src/server/routes/services.ts`: maps Vault service assets to registry services by asset id or cwd, then delegates to runtime manager.
+- `src/shared/api/client.ts`: renderer service health/start/stop methods.
+- `src/app/App.tsx`: service state and busy handling.
+- `src/features/vault/VaultHome.tsx`: compact service status and action controls on service cards.
+
+This proves the service workflow through the local web renderer. It still needs Rust/Tauri process boundary hardening and native desktop verification.
+
 ## 8. Data Flows
 
 ### 8.1 Agent HTML Enters Vault

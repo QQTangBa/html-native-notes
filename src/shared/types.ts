@@ -130,6 +130,15 @@ export interface VaultVersionRollbackResponse {
   restoredHash: string;
 }
 
+export interface VaultServiceRuntimeState {
+  status: 'running' | 'stopped' | 'failed';
+  serviceId: string;
+  cwd: string;
+  command: string;
+  logPath: string;
+  startedByApp: boolean;
+}
+
 export interface VaultWriteReview {
   sourcePath: string;
   expectedSourceHash: string;
