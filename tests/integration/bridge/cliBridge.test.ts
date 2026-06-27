@@ -1,11 +1,14 @@
 // @vitest-environment node
 
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
+import { intakeBridgeRequestToVault } from '../../../bridge/vault/intake';
+import { createTempVault } from './helpers/tempVault';
 
 const execFileAsync = promisify(execFile);
 const projectRoot = path.resolve(__dirname, '../../..');
@@ -18,6 +21,10 @@ async function runCli(args: string[]) {
   });
 
   return JSON.parse(result.stdout) as Record<string, unknown>;
+}
+
+function sha256(content: string): string {
+  return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
 
 describe('agent bridge CLI fallback', () => {
@@ -126,6 +133,46 @@ describe('agent bridge CLI fallback', () => {
       });
     } finally {
       await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('generates missing Vault thumbnails from the CLI', async () => {
+    const fixture = await createTempVault('html-native-cli-thumbnails-');
+
+    try {
+      const htmlDir = path.join(fixture.vaultDir, 'imports', 'ai');
+      const htmlPath = path.join(htmlDir, 'cli-thumbnail.html');
+      const html =
+        '<html><head><title>CLI Thumbnail</title></head><body><main style="padding:48px;font-family:sans-serif"><h1>CLI Thumbnail</h1></main></body></html>';
+      await mkdir(htmlDir, { recursive: true });
+      await writeFile(htmlPath, html, 'utf8');
+
+      const intake = await intakeBridgeRequestToVault({
+        vaultDir: fixture.vaultDir,
+        request: {
+          requestId: 'cli-thumbnail-001',
+          type: 'registerHtmlAsset',
+          createdAt: '2026-06-27T00:00:00.000Z',
+          sourceAgent: 'codex',
+          sourcePath: htmlPath,
+          sourceHash: sha256(html),
+          title: 'CLI Thumbnail',
+        },
+      });
+
+      const result = await runCli(['thumbnail', 'generate', '--vault-dir', fixture.vaultDir]);
+      const expectedPath = path.join(fixture.vaultDir, '.htmlvault', 'thumbnails', `${intake.asset.id}.png`);
+
+      expect(result).toMatchObject({
+        ok: true,
+        type: 'generateVaultThumbnails',
+        generatedCount: 1,
+        skippedCount: 0,
+        generated: [{ assetId: intake.asset.id, path: expectedPath }],
+      });
+      expect((await stat(expectedPath)).size).toBeGreaterThan(1000);
+    } finally {
+      await fixture.cleanup();
     }
   });
 });

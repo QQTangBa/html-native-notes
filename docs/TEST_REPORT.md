@@ -60,13 +60,14 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 13 files, 43 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Vault Library data contract, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, the initial Source Guard write-gate contract, and the initial Vault thumbnail generation contract:
+Result: PASS. 13 files, 44 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Vault Library data contract, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, the initial Source Guard write-gate contract, and the initial Vault thumbnail generation contract:
 
 - `GET /health`
 - `POST /api/agent/register-html`
 - `POST /api/agent/register-service`
 - `htmlvault register` equivalent through `tsx bridge/cli/index.ts register`
 - `htmlvault service register` equivalent through `tsx bridge/cli/index.ts service register`
+- `htmlvault thumbnail generate` equivalent through `tsx bridge/cli/index.ts thumbnail generate --vault-dir <path>`
 - `--offline-inbox <path>` JSONL append for software-not-running fallback
 - inbox read with duplicate dedupe-key skipping
 - inbox invalid-line isolation
@@ -102,6 +103,7 @@ Result: PASS. 13 files, 43 tests. This proves the shared protocol, local HTTP fa
 - Source Guard write gate rejects stale write-back when the source changed after review
 - Vault thumbnail generator renders missing HTML thumbnails to `.htmlvault/thumbnails/<asset-id>.png`
 - Vault thumbnail generator leaves the original HTML source hash unchanged
+- Vault thumbnail generator is reachable through the CLI fallback
 - Vault Library reports thumbnail status as ready after thumbnail generation
 - stable validation errors for invalid registrations
 
@@ -157,6 +159,16 @@ npm run test -- tests/integration/bridge/thumbnailGenerator.test.ts
 
 Result: PASS. 1 test. This proves the initial thumbnail worker can render a registered HTML note through Playwright Chromium, write a real PNG under `.htmlvault/thumbnails/<asset-id>.png`, preserve the original source hash, and make Vault Library report the thumbnail as ready. It does not yet prove native Rust/Tauri worker wiring, background queue behavior, desktop refresh, or 100-fixture thumbnail coverage.
 
+CLI thumbnail boundary evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/bridge/cliBridge.test.ts
+```
+
+Result: PASS. 5 tests. The added CLI test proves `thumbnail generate --vault-dir <path>` can be called by an external agent/script, generate a real PNG thumbnail for a registered HTML asset, and return generated/skipped counts plus generated paths.
+
 VaultHome React component evidence:
 
 Date: 2026-06-27
@@ -175,7 +187,7 @@ Date: 2026-06-27
 npm run test -- tests/integration/api.test.ts
 ```
 
-Result: PASS. 5 tests. The added Vault test proves `/api/vault/library` can read the configured local Vault directory, return AI-generated HTML already registered through bridge intake, and honor query/tag/source-agent filters. It does not yet prove Tauri command wiring or user-selected Vault persistence.
+Result: PASS. 6 tests. The Vault tests prove `/api/vault/library` can read the configured local Vault directory, return AI-generated HTML already registered through bridge intake, and honor query/tag/source-agent filters. They also prove `POST /api/vault/thumbnails/generate` can generate missing thumbnails for the configured Vault and make the library return a ready thumbnail path. They do not yet prove Tauri command wiring or user-selected Vault persistence.
 
 App Vault loading evidence:
 
@@ -211,7 +223,7 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 22 files, 75 tests. Bridge test run: 13 files, 43 tests.
+Result: PASS. Full test run: 22 files, 77 tests. Bridge test run: 13 files, 44 tests.
 
 Additional security check:
 

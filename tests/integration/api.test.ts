@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
@@ -135,5 +135,41 @@ describe('local API', () => {
       summary: 'Agent generated market map',
     });
     expect(response.body.availableFilters.tags).toEqual(['agent', 'ai', 'market']);
+  });
+
+  it('generates missing Vault thumbnails through the local API', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'api-thumbnail.html');
+    const html =
+      '<html><head><title>API Thumbnail</title></head><body><main style="padding:48px;font-family:sans-serif"><h1>API Thumbnail</h1></main></body></html>';
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, html, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_thumbnail',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(html),
+        title: 'API Thumbnail',
+      },
+    });
+
+    const response = await request(app.server).post('/api/vault/thumbnails/generate').expect(200);
+    const expectedPath = path.join(vaultDir, '.htmlvault', 'thumbnails', `${intake.asset.id}.png`);
+
+    expect(response.body).toMatchObject({
+      ok: true,
+      generatedCount: 1,
+      skippedCount: 0,
+      generated: [{ assetId: intake.asset.id, path: expectedPath }],
+    });
+    expect((await stat(expectedPath)).size).toBeGreaterThan(1000);
+
+    const library = await request(app.server).get('/api/vault/library?q=api').expect(200);
+    expect(library.body.items[0].thumbnail).toMatchObject({ status: 'ready', path: expectedPath });
   });
 });

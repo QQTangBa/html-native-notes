@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { buildVaultLibrary } from '../../../bridge/vault/library';
+import { generateMissingVaultThumbnails } from '../../../bridge/vault/thumbnails';
 import type { AppConfig } from '../../shared/types';
 
 const libraryQuerySchema = z.object({
@@ -31,5 +32,16 @@ export async function registerVaultRoutes(app: FastifyInstance, config: AppConfi
       kinds: asArray(query.kind),
       folders: asArray(query.folder),
     });
+  });
+
+  app.post('/api/vault/thumbnails/generate', async () => {
+    const result = await generateMissingVaultThumbnails({ vaultDir: config.vaultDir });
+
+    return {
+      ok: true,
+      generatedCount: result.generated.length,
+      skippedCount: result.skipped.length,
+      ...result,
+    };
   });
 }

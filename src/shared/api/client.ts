@@ -1,4 +1,12 @@
-import type { AiActionRequest, AiActionResponse, NoteMeta, NoteRecord, SafeAiStatus, VaultLibraryResponse } from '../types';
+import type {
+  AiActionRequest,
+  AiActionResponse,
+  NoteMeta,
+  NoteRecord,
+  SafeAiStatus,
+  VaultLibraryResponse,
+  VaultThumbnailGenerationResponse,
+} from '../types';
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as T | { error?: { message?: string } } | null;
@@ -24,6 +32,10 @@ export const apiClient = {
     }
     const suffix = params.size ? `?${params.toString()}` : '';
     return parseResponse<VaultLibraryResponse>(await fetch(`/api/vault/library${suffix}`));
+  },
+
+  async generateVaultThumbnails(): Promise<VaultThumbnailGenerationResponse> {
+    return parseResponse<VaultThumbnailGenerationResponse>(await fetch('/api/vault/thumbnails/generate', { method: 'POST' }));
   },
 
   async listNotes(): Promise<NoteMeta[]> {

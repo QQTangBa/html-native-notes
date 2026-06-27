@@ -67,6 +67,20 @@ export interface VaultLibraryResponse {
   };
 }
 
+export interface VaultThumbnailGenerationResponse {
+  ok: true;
+  generatedCount: number;
+  skippedCount: number;
+  generated: Array<{
+    assetId: string;
+    path: string;
+  }>;
+  skipped: Array<{
+    assetId: string;
+    reason: 'not-html' | 'missing-source' | 'already-exists';
+  }>;
+}
+
 export interface ApiErrorBody {
   error: {
     code: string;

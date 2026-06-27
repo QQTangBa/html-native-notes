@@ -6,6 +6,7 @@ import {
   webServiceRegistrationSchema,
 } from '../shared/protocol';
 import { appendInboxRequest } from '../inbox/jsonlInbox';
+import { generateMissingVaultThumbnails } from '../vault/thumbnails';
 
 type CliFlags = Record<string, string | string[]>;
 
@@ -150,6 +151,22 @@ async function runServiceRegister(flags: CliFlags): Promise<void> {
   });
 }
 
+async function runThumbnailGenerate(flags: CliFlags): Promise<void> {
+  const vaultDir = getFlag(flags, 'vault-dir');
+  if (!vaultDir) {
+    throw new Error('--vault-dir is required');
+  }
+
+  const result = await generateMissingVaultThumbnails({ vaultDir });
+  printJson({
+    ok: true,
+    type: 'generateVaultThumbnails',
+    generatedCount: result.generated.length,
+    skippedCount: result.skipped.length,
+    ...result,
+  });
+}
+
 async function main(args: string[]): Promise<void> {
   const [command, subcommand, ...rest] = args;
 
@@ -160,6 +177,11 @@ async function main(args: string[]): Promise<void> {
 
   if (command === 'service' && subcommand === 'register') {
     await runServiceRegister(parseFlags(rest));
+    return;
+  }
+
+  if (command === 'thumbnail' && subcommand === 'generate') {
+    await runThumbnailGenerate(parseFlags(rest));
     return;
   }
 
