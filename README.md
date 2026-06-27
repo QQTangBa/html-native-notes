@@ -1,6 +1,6 @@
 # HTML Native Notes
 
-[English](#english) | [中文](#中文)
+默认中文说明。For English, see [English Version](#english).
 
 ## 中文
 
