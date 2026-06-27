@@ -345,6 +345,8 @@ git commit -m "feat: snapshot external html edits"
 
 ## Task 9: Asset Localization and Repair
 
+Checkpoint evidence before localization work: Rust source now includes `src-tauri/src/core/asset_scan.rs` and `src-tauri/src/commands/asset_scan.rs` for native read-only asset integrity scanning. The source covers missing local assets, external resources, `file://` unpublishable resources, dangerous inline script markers, source hash reporting, Vault boundary checks, and no scanner-core writes. `npm run test:desktop:contract` covers this source/registration contract; Cargo verification and launched Tauri flow remain pending until Rust is available.
+
 **Files:**
 - Modify: `bridge/assets/scanner.ts`
 - Create: `bridge/assets/localizer.ts`

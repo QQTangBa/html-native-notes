@@ -26,6 +26,7 @@ pub fn run() {
             commands::version_store::vault_create_version_snapshot,
             commands::version_store::vault_diff_versions,
             commands::version_store::vault_rollback_version,
+            commands::asset_scan::asset_scan_integrity,
             commands::source_guard::source_guard_review_write,
             commands::source_guard::source_guard_apply_write_decision,
             commands::inbox::inbox_list_requests,

@@ -431,13 +431,26 @@ npm run test:desktop:contract
 
 Result: PASS. `tests/unit/desktopNativeVersionStore.test.ts` passed 3 tests covering Rust Version Engine core source for list/create/diff/rollback, `vault_list_versions`, `vault_create_version_snapshot`, `vault_diff_versions`, and `vault_rollback_version` command registration, safe `asset_*` ID checks, snapshot content realpath boundary checks, source path Vault boundary checks, readable source/content diff markers, DOM summary, and rollback response shape. `npm run test:desktop:contract` passed 5 files and 14 tests, now including the Version Engine native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
 
+Native desktop asset integrity command source evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run test -- tests/unit/desktopNativeAssetScan.test.ts
+npm run test:desktop:contract
+```
+
+Result: PASS. `tests/unit/desktopNativeAssetScan.test.ts` passed 3 tests covering Rust asset scanner source for read-only HTML integrity checks, `asset_scan_integrity` command registration, source hash reporting, dangerous inline script collection, Vault boundary checks before scan, and absence of `fs::write` in the scanner core. `npm run test:desktop:contract` passed 6 files and 17 tests, now including the asset scan native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
+
 Latest full non-Rust validation:
 
 ```bash
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 35 test files and 146 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 36 test files and 149 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Additional security check:
 
