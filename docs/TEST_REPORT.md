@@ -405,15 +405,26 @@ node --input-type=module "<open VaultHome with Playwright, click Preview, verify
 
 Result: PASS. The local VaultHome page opened `data/vault/imports/ai/codex-generated-market.html` through `GET /api/vault/assets/asset_b7281069949f6c6e/source`, rendered it in the right-side read-only iframe, and kept the selected card highlighted. Screenshot saved locally at `test-results/desktop-launch/vault-readonly-preview.png`. This is still web-renderer evidence, not native Tauri `.app` evidence.
 
+Native desktop Source Guard command source evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run test -- tests/unit/desktopNativeSourceGuard.test.ts
+npm run test:desktop:contract
+```
+
+Result: PASS. `tests/unit/desktopNativeSourceGuard.test.ts` passed 3 tests covering the Rust Source Guard core source, `source_guard_review_write` and `source_guard_apply_write_decision` command registration, readable diff/write decision markers, source hash write-back checks, and canonical Vault boundary checks for source/save-as paths. `npm run test:desktop:contract` passed 4 files and 11 tests, now including the Source Guard native command source contract. This is source/contract evidence only; Cargo build and launched Tauri flow remain pending because Rust is not installed in PATH.
+
 Latest full non-Rust validation:
 
 ```bash
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 33 test files and 140 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
-
-Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 34 test files and 143 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Additional security check:
 

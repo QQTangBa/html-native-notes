@@ -132,6 +132,8 @@ vault_read_asset_source
 vault_generate_thumbnails
 ```
 
+Checkpoint evidence: Rust source now includes native Vault list/source commands plus Source Guard review/apply commands. Source Guard source has readable diff generation, explicit cancel/save-as/write-back decisions, source hash checks, and canonical Vault boundary checks for source/save-as paths. `npm run test:desktop:contract` covers this source/registration contract; Cargo verification remains pending until Rust is available.
+
 - [ ] **Step 4: Verify**
 
 Run:

@@ -22,6 +22,8 @@ pub fn run() {
             app_health,
             commands::vault::vault_list_library,
             commands::vault::vault_get_asset_source,
+            commands::source_guard::source_guard_review_write,
+            commands::source_guard::source_guard_apply_write_decision,
             commands::inbox::inbox_list_requests,
             commands::inbox::inbox_confirm_request,
             commands::inbox::inbox_dismiss_request
