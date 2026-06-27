@@ -1,4 +1,4 @@
-import type { AiActionRequest, AiActionResponse, NoteMeta, NoteRecord, SafeAiStatus } from '../types';
+import type { AiActionRequest, AiActionResponse, NoteMeta, NoteRecord, SafeAiStatus, VaultLibraryResponse } from '../types';
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as T | { error?: { message?: string } } | null;
@@ -15,6 +15,17 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export const apiClient = {
+  async listVaultLibrary(filters: { q?: string; tag?: string; sourceAgent?: string; kind?: string; folder?: string } = {}): Promise<VaultLibraryResponse> {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) {
+        params.set(key, value);
+      }
+    }
+    const suffix = params.size ? `?${params.toString()}` : '';
+    return parseResponse<VaultLibraryResponse>(await fetch(`/api/vault/library${suffix}`));
+  },
+
   async listNotes(): Promise<NoteMeta[]> {
     return parseResponse<NoteMeta[]>(await fetch('/api/notes'));
   },

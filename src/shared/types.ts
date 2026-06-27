@@ -32,7 +32,39 @@ export interface AppConfig {
   host: string;
   port: number;
   dataDir: string;
+  vaultDir: string;
   ai: AiRuntimeConfig;
+}
+
+export interface VaultLibraryItem {
+  id: string;
+  kind: 'html-note' | 'service' | 'project';
+  title: string;
+  source: 'bridge';
+  sourceAgent?: string;
+  sourcePath?: string;
+  relativeSourcePath?: string;
+  folderPath: string;
+  tags: string[];
+  summary: string;
+  updatedAt: string;
+  thumbnail: {
+    status: 'ready' | 'pending';
+    path: string;
+  };
+}
+
+export interface VaultLibraryResponse {
+  items: VaultLibraryItem[];
+  folders: Array<{
+    path: string;
+    itemCount: number;
+  }>;
+  availableFilters: {
+    tags: string[];
+    sourceAgents: string[];
+    kinds: VaultLibraryItem['kind'][];
+  };
 }
 
 export interface ApiErrorBody {

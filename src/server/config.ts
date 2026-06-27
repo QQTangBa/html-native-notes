@@ -32,12 +32,14 @@ function parseInteger(name: string, value: string | undefined, fallback: number)
 
 export function loadConfig(env: EnvMap = process.env): AppConfig {
   const appEnv = env.APP_ENV === 'production' || env.APP_ENV === 'test' ? env.APP_ENV : 'development';
+  const dataDir = env.DATA_DIR?.trim() || './data';
 
   return {
     env: appEnv,
     host: env.APP_HOST?.trim() || '127.0.0.1',
     port: parseInteger('APP_PORT', env.APP_PORT, 5178),
-    dataDir: env.DATA_DIR?.trim() || './data',
+    dataDir,
+    vaultDir: env.VAULT_DIR?.trim() || path.join(dataDir, 'vault'),
     ai: {
       baseUrl: env.AI_BASE_URL?.trim() || '',
       model: env.AI_MODEL?.trim() || '',

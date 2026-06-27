@@ -7,6 +7,7 @@ const configured: AppConfig = {
   host: '127.0.0.1',
   port: 5178,
   dataDir: './data',
+  vaultDir: './data/vault',
   ai: {
     baseUrl: 'https://api.example.com',
     model: 'model-a',
