@@ -29,6 +29,7 @@ pub fn run() {
             commands::asset_scan::asset_scan_integrity,
             commands::exporter::export_static_package,
             commands::exporter::export_markdown,
+            commands::publish::publish_static,
             commands::service_runtime::service_check_health,
             commands::service_runtime::service_start,
             commands::service_runtime::service_stop,

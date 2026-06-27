@@ -406,7 +406,7 @@ Tests must package HTML, call configured provider adapter, return public URL, an
 
 - [ ] **Step 3: Implement adapter and UI**
 
-Checkpoint evidence: `bridge/publish/staticProvider.ts`, `src/server/routes/publish.ts`, config parsing, API client, and renderer desktop bridge now implement the provider-neutral command publish adapter. Tests cover static package handoff, provider HTTP(S) URL parsing, disabled-provider rejection, secret redaction, `/api/publish/:assetId/static`, and `publish_static` bridge mapping. Publish UI, native Tauri publish command source, and real provider reachability remain pending.
+Checkpoint evidence: `bridge/publish/staticProvider.ts`, `src/server/routes/publish.ts`, config parsing, API client, renderer desktop bridge, `src-tauri/src/core/publish.rs`, and `src-tauri/src/commands/publish.rs` now implement the provider-neutral command publish adapter and native command source. Tests cover static package handoff, provider HTTP(S) URL parsing, disabled-provider rejection, secret redaction, `/api/publish/:assetId/static`, `publish_static` bridge mapping, native command registration, and user-configured `PUBLISH_*` env handling. Publish UI, Cargo verification, launched Tauri publish flow, and real provider reachability remain pending.
 
 Support local dry-run and provider command mode. Store only safe status in UI.
 

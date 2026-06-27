@@ -14,7 +14,7 @@ describe('desktop app scaffold contract', () => {
     expect(packageJson.scripts['tauri:dev']).toBe('tauri dev');
     expect(packageJson.scripts['tauri:build']).toBe('tauri build');
     expect(packageJson.scripts['test:desktop:contract']).toBe(
-      'vitest run tests/unit/desktopScaffold.test.ts tests/unit/desktopNativeInbox.test.ts tests/unit/desktopNativeVault.test.ts tests/unit/desktopNativeSourceGuard.test.ts tests/unit/desktopNativeVersionStore.test.ts tests/unit/desktopNativeAssetScan.test.ts tests/unit/desktopNativeServiceRuntime.test.ts tests/unit/desktopNativeExporter.test.ts tests/unit/desktopNativeNotes.test.ts',
+      'vitest run tests/unit/desktopScaffold.test.ts tests/unit/desktopNativeInbox.test.ts tests/unit/desktopNativeVault.test.ts tests/unit/desktopNativeSourceGuard.test.ts tests/unit/desktopNativeVersionStore.test.ts tests/unit/desktopNativeAssetScan.test.ts tests/unit/desktopNativeServiceRuntime.test.ts tests/unit/desktopNativeExporter.test.ts tests/unit/desktopNativePublish.test.ts tests/unit/desktopNativeNotes.test.ts',
     );
   });
 

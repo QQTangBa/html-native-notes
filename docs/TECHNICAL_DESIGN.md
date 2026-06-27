@@ -638,7 +638,9 @@ Implementation files:
 - `src/server/config.ts`: parses `PUBLISH_PROVIDER_MODE`, `PUBLISH_COMMAND`, `PUBLISH_COMMAND_ARGS`, and `PUBLISH_REQUIRED_ENV`; secrets are read from local env and are not hardcoded.
 - `src/shared/api/client.ts` and `src/shared/desktopBridge.ts`: renderer-facing publish method with transitional Tauri command fallback.
 
-This starts F14/A13 by proving the adapter boundary and command-provider contract. It does not yet prove a real provider upload, a public URL reachable outside the local network, native Tauri publish commands, or a polished publish UI.
+Native source now mirrors this boundary in `src-tauri/src/core/publish.rs` and `src-tauri/src/commands/publish.rs` with a `publish_static` command registered in `src-tauri/src/main.rs`. The source contract packages through the native exporter, reads `PUBLISH_*` env configuration, runs the provider command without a shell, passes the `HTML_NATIVE_NOTES_*` package env vars, validates HTTP(S) `publicUrl`, and returns generic provider command failures without command output.
+
+This starts F14/A13 by proving the adapter boundary and command-provider contract. It does not yet prove a real provider upload, a public URL reachable outside the local network, Cargo build, launched Tauri publish flow, or a polished publish UI.
 
 ### 7.13 Current BYOK Settings Visibility Contract
 
