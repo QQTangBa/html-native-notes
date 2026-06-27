@@ -13,6 +13,7 @@ import type {
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultServiceRuntimeState,
+  VaultStaticPublishResponse,
   VaultStaticPackageExportResponse,
   VaultThumbnailGenerationResponse,
   VaultVersionDiff,
@@ -111,6 +112,10 @@ export const desktopBridge = {
 
   exportVaultMarkdown(assetId: string): Promise<VaultMarkdownExportResponse> {
     return invokeOrFallback('export_markdown', { assetId }, () => apiClient.exportVaultMarkdown(assetId));
+  },
+
+  publishVaultStatic(assetId: string): Promise<VaultStaticPublishResponse> {
+    return invokeOrFallback('publish_static', { assetId }, () => apiClient.publishVaultStatic(assetId));
   },
 
   reviewVaultAssetWrite(assetId: string, editedHtml: string): Promise<VaultWriteReview> {

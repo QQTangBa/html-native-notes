@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig, SafeAiStatus } from '../shared/types';
+import type { AppConfig, PublishProviderConfig, SafeAiStatus } from '../shared/types';
 
 type EnvMap = Record<string, string | undefined>;
 
@@ -30,6 +30,68 @@ function parseInteger(name: string, value: string | undefined, fallback: number)
   return parsed;
 }
 
+function parseStringArray(name: string, value: string | undefined): string[] {
+  if (value === undefined || value.trim() === '') {
+    return [];
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error(`${name} must be a JSON string array`);
+  }
+
+  if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== 'string')) {
+    throw new Error(`${name} must be a JSON string array`);
+  }
+
+  return parsed;
+}
+
+function parseCsv(value: string | undefined): string[] {
+  if (value === undefined || value.trim() === '') {
+    return [];
+  }
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function loadPublishConfig(env: EnvMap): PublishProviderConfig {
+  const mode = env.PUBLISH_PROVIDER_MODE?.trim() || 'disabled';
+  if (mode === 'disabled') {
+    return { mode: 'disabled' };
+  }
+
+  if (mode !== 'command') {
+    throw new Error('PUBLISH_PROVIDER_MODE must be disabled or command');
+  }
+
+  const command = env.PUBLISH_COMMAND?.trim();
+  if (!command) {
+    throw new Error('PUBLISH_COMMAND is required when PUBLISH_PROVIDER_MODE=command');
+  }
+
+  const requiredEnv = parseCsv(env.PUBLISH_REQUIRED_ENV);
+  const providerEnv = Object.fromEntries(
+    requiredEnv.flatMap((name) => {
+      const value = env[name];
+      return value === undefined ? [] : [[name, value]];
+    }),
+  );
+
+  return {
+    mode: 'command',
+    command,
+    args: parseStringArray('PUBLISH_COMMAND_ARGS', env.PUBLISH_COMMAND_ARGS),
+    requiredEnv,
+    ...(Object.keys(providerEnv).length > 0 ? { env: providerEnv } : {}),
+  };
+}
+
 export function loadConfig(env: EnvMap = process.env): AppConfig {
   const appEnv = env.APP_ENV === 'production' || env.APP_ENV === 'test' ? env.APP_ENV : 'development';
   const dataDir = env.DATA_DIR?.trim() || './data';
@@ -47,6 +109,7 @@ export function loadConfig(env: EnvMap = process.env): AppConfig {
       temperature: parseNumber('AI_TEMPERATURE', env.AI_TEMPERATURE, 0.2),
       maxTokens: parseInteger('AI_MAX_TOKENS', env.AI_MAX_TOKENS, 2048),
     },
+    publish: loadPublishConfig(env),
   };
 }
 

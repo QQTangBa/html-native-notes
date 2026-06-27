@@ -69,6 +69,20 @@ AI_MAX_TOKENS=2048
 
 `.env.local` is gitignored. Do not commit real API keys.
 
+## Configure Static Publish
+
+Static publish is provider-neutral. The app creates a local static package first, then calls a user-configured command. Store provider tokens in `.env.local`, never in source code:
+
+```text
+PUBLISH_PROVIDER_MODE=command
+PUBLISH_COMMAND=/absolute/path/to/your-publish-script
+PUBLISH_COMMAND_ARGS=["--site","notes"]
+PUBLISH_REQUIRED_ENV=PUBLISH_TOKEN
+PUBLISH_TOKEN=replace-with-provider-token
+```
+
+The command receives `HTML_NATIVE_NOTES_PACKAGE_DIR`, `HTML_NATIVE_NOTES_PUBLISH_MANIFEST`, and `HTML_NATIVE_NOTES_ASSET_ID`, and must print JSON such as `{"publicUrl":"https://example.com/note/"}`.
+
 ## Run
 
 ```bash

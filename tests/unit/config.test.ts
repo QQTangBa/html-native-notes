@@ -10,6 +10,7 @@ describe('server config', () => {
     expect(config.dataDir).toBe('./data');
     expect(config.ai.temperature).toBe(0.2);
     expect(config.ai.maxTokens).toBe(2048);
+    expect(config.publish).toEqual({ mode: 'disabled' });
   });
 
   it('reports AI readiness without exposing the API key', () => {
@@ -46,5 +47,43 @@ describe('server config', () => {
         APP_PORT: 'nope',
       }),
     ).toThrow(/APP_PORT must be an integer/);
+  });
+
+  it('loads command publish provider configuration without embedding secrets in source defaults', () => {
+    const config = loadConfig({
+      PUBLISH_PROVIDER_MODE: 'command',
+      PUBLISH_COMMAND: '/usr/local/bin/publish-static',
+      PUBLISH_COMMAND_ARGS: '["--site","notes"]',
+      PUBLISH_REQUIRED_ENV: 'PUBLISH_TOKEN, PUBLISH_TEAM',
+      PUBLISH_TOKEN: 'sk-publish-secret',
+      PUBLISH_TEAM: 'desktop-notes',
+    });
+
+    expect(config.publish).toEqual({
+      mode: 'command',
+      command: '/usr/local/bin/publish-static',
+      args: ['--site', 'notes'],
+      requiredEnv: ['PUBLISH_TOKEN', 'PUBLISH_TEAM'],
+      env: {
+        PUBLISH_TOKEN: 'sk-publish-secret',
+        PUBLISH_TEAM: 'desktop-notes',
+      },
+    });
+  });
+
+  it('rejects incomplete publish provider configuration', () => {
+    expect(() =>
+      loadConfig({
+        PUBLISH_PROVIDER_MODE: 'command',
+      }),
+    ).toThrow(/PUBLISH_COMMAND is required/);
+
+    expect(() =>
+      loadConfig({
+        PUBLISH_PROVIDER_MODE: 'command',
+        PUBLISH_COMMAND: '/usr/local/bin/publish-static',
+        PUBLISH_COMMAND_ARGS: 'not json',
+      }),
+    ).toThrow(/PUBLISH_COMMAND_ARGS must be a JSON string array/);
   });
 });

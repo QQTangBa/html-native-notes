@@ -15,6 +15,7 @@ const configured: AppConfig = {
     temperature: 0.2,
     maxTokens: 1024,
   },
+  publish: { mode: 'disabled' },
 };
 
 describe('diary organizer AI adapter', () => {

@@ -214,6 +214,16 @@ npm run test -- tests/integration/bridge/exporter.test.ts tests/integration/api.
 
 Result: PASS. 44 focused tests. The added export tests prove a registered Vault HTML asset can be exported to `.htmlvault/exports/<assetId>/latest/index.html`, local relative image/stylesheet assets are copied into the package, external resources are recorded as skipped, `manifest.json` is written, source hash remains unchanged, a readable Markdown copy can be generated, `POST /api/export/:assetId/package` and `POST /api/export/:assetId/markdown` return export metadata, and Vault HTML note cards render package/Markdown export actions plus the latest output path. This does not yet prove PDF export, zipped package inspection, provider upload, public link generation, native save dialogs, or native desktop verification.
 
+Static Publish Adapter evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/bridge/publish.test.ts tests/integration/api.test.ts tests/unit/config.test.ts tests/unit/desktopBridge.test.ts
+```
+
+Result: PASS. The added publish tests prove a registered Vault HTML asset can be packaged and passed to a configured command provider, provider stdout can return a validated HTTP(S) `publicUrl`, disabled providers fail before publish, provider command failures do not leak configured secret values, publish provider configuration is loaded from local env variables, `POST /api/publish/:assetId/static` returns publish metadata, and the renderer bridge maps to `publish_static` with HTTP fallback. This does not yet prove a real cloud/static-hosting upload, outside-network reachability, native Tauri publish commands, or publish UI.
+
 BYOK Settings Visibility evidence:
 
 Date: 2026-06-27

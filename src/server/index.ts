@@ -17,6 +17,7 @@ import { registerExportRoutes } from './routes/export';
 import { registerHealthRoutes } from './routes/health';
 import { registerInboxRoutes } from './routes/inbox';
 import { registerNoteRoutes } from './routes/notes';
+import { registerPublishRoutes } from './routes/publish';
 import { registerServiceRoutes } from './routes/services';
 import { registerVaultRoutes } from './routes/vault';
 
@@ -80,6 +81,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
   await registerAssetRoutes(app, config);
   await registerDiaryRoutes(app, config);
   await registerExportRoutes(app, config);
+  await registerPublishRoutes(app, config);
   await registerAiRoutes(app, config);
 
   if (options.enableVite ?? config.env === 'development') {

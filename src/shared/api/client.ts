@@ -13,6 +13,7 @@ import type {
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultServiceRuntimeState,
+  VaultStaticPublishResponse,
   VaultStaticPackageExportResponse,
   VaultThumbnailGenerationResponse,
   VaultVersionDiff,
@@ -109,6 +110,10 @@ export const apiClient = {
 
   async exportVaultMarkdown(assetId: string): Promise<VaultMarkdownExportResponse> {
     return parseResponse<VaultMarkdownExportResponse>(await fetch(`/api/export/${encodeURIComponent(assetId)}/markdown`, { method: 'POST' }));
+  },
+
+  async publishVaultStatic(assetId: string): Promise<VaultStaticPublishResponse> {
+    return parseResponse<VaultStaticPublishResponse>(await fetch(`/api/publish/${encodeURIComponent(assetId)}/static`, { method: 'POST' }));
   },
 
   async reviewVaultAssetWrite(assetId: string, editedHtml: string): Promise<VaultWriteReview> {

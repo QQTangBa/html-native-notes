@@ -40,6 +40,23 @@ const fallbackApi = vi.hoisted(() => ({
     sourceHash: 'sha256:test',
   })),
   exportVaultMarkdown: vi.fn(async () => ({ assetId: 'asset_1', exportType: 'markdown', outputPath: '/Vault/export/Asset.md', sourceHash: 'sha256:test' })),
+  publishVaultStatic: vi.fn(async () => ({
+    assetId: 'asset_1',
+    publishType: 'static-provider',
+    provider: 'command',
+    publicUrl: 'https://notes.example.com/asset_1/',
+    package: {
+      assetId: 'asset_1',
+      exportType: 'static-package',
+      outputDir: '/Vault/export',
+      indexPath: '/Vault/export/index.html',
+      manifestPath: '/Vault/export/manifest.json',
+      copiedAssets: [],
+      skippedExternal: [],
+      sourceHash: 'sha256:test',
+    },
+    publishedAt: '2026-06-27T00:00:00.000Z',
+  })),
   reviewVaultAssetWrite: vi.fn(async () => ({
     assetId: 'asset_1',
     status: 'changed',
@@ -155,6 +172,9 @@ describe('desktopBridge', () => {
     await desktopBridge.exportVaultPackage('asset_1');
     expect(invoke).toHaveBeenLastCalledWith('export_static_package', { assetId: 'asset_1' });
 
+    await desktopBridge.publishVaultStatic('asset_1');
+    expect(invoke).toHaveBeenLastCalledWith('publish_static', { assetId: 'asset_1' });
+
     await desktopBridge.reviewVaultAssetWrite('asset_1', '<h1>Edit</h1>');
     expect(invoke).toHaveBeenLastCalledWith('source_guard_review_write', { assetId: 'asset_1', editedHtml: '<h1>Edit</h1>' });
 
@@ -193,6 +213,11 @@ describe('desktopBridge', () => {
 
     await expect(desktopBridge.listAgentInbox()).resolves.toBe(fallbackInbox);
     expect(fallbackApi.listAgentInbox).toHaveBeenCalledTimes(1);
+
+    await expect(desktopBridge.publishVaultStatic('asset_1')).resolves.toMatchObject({
+      publicUrl: 'https://notes.example.com/asset_1/',
+    });
+    expect(fallbackApi.publishVaultStatic).toHaveBeenCalledWith('asset_1');
   });
 
   it('falls back to the HTTP API client when a transitional Tauri shell lacks a command', async () => {

@@ -396,15 +396,17 @@ Checkpoint evidence before publish adapter work: Rust source now includes `src-t
 - Create: `src/server/routes/publish.ts`
 - Test: `tests/integration/publish.test.ts`, `tests/unit/PublishPanel.test.tsx`
 
-- [ ] **Step 1: Choose V1 provider contract**
+- [x] **Step 1: Choose V1 provider contract**
 
 Use a provider-neutral static hosting adapter with user-configured command/webhook. No hardcoded credentials.
 
-- [ ] **Step 2: Write failing publish tests**
+- [x] **Step 2: Write failing publish tests**
 
 Tests must package HTML, call configured provider adapter, return public URL, and reject missing credentials without leaking secrets.
 
 - [ ] **Step 3: Implement adapter and UI**
+
+Checkpoint evidence: `bridge/publish/staticProvider.ts`, `src/server/routes/publish.ts`, config parsing, API client, and renderer desktop bridge now implement the provider-neutral command publish adapter. Tests cover static package handoff, provider HTTP(S) URL parsing, disabled-provider rejection, secret redaction, `/api/publish/:assetId/static`, and `publish_static` bridge mapping. Publish UI, native Tauri publish command source, and real provider reachability remain pending.
 
 Support local dry-run and provider command mode. Store only safe status in UI.
 

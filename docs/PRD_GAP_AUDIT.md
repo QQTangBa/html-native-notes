@@ -32,7 +32,7 @@ The current Tauri Rust side is only a shell command:
 | Diary organizer | BYOK AI endpoint and compact UI. | Partial; no 300-1000 word timed live smoke or four PRD styles. |
 | BYOK settings | Safe status display. | Partial; no in-app persistence or native secure storage. |
 | Asset management | Integrity scan and local export package. | Partial; no localization/repair UI or PDF/publish. |
-| Export/publish | Local static package and Markdown export. | Partial; no PDF, zipped package, provider upload, or public link. |
+| Export/publish | Local static package, Markdown export, and command-provider publish adapter. | Partial; no PDF, zipped package, real provider upload proof, or reachable public-link evidence. |
 | Full self-test | `npm run verify` passed for TS/Web scope. | Insufficient; no opened desktop app and no end-to-end PRD acceptance run. |
 
 ## PRD Acceptance Audit
@@ -51,7 +51,7 @@ The current Tauri Rust side is only a shell command:
 | A10 | Two HTML versions show source diff, content diff, DOM summary, screenshot hint. | Source/content/DOM partial. | Screenshot hint/visual-change evidence in desktop UI. |
 | A11 | 300-1000 word diary generates two styles within 30 seconds and preserves original. | Mocked short-text flow only. | Timed DeepSeek/local provider smoke with long fixture and preserved original. |
 | A12 | Preview edit button allows direct text edit, then diff/write/save-as/cancel. | Source textarea edit only. | Runtime page text-node overlay and diff gate. |
-| A13 | Local HTML upload generates public link reachable outside local network. | Missing. | Provider adapter or explicit V1 scope decision plus reachable URL test. |
+| A13 | Local HTML upload generates public link reachable outside local network. | Partial adapter only. | Run with approved real provider credentials and verify reachable public URL outside local network. |
 | A14 | Import 30 Markdown notes preserving links/images/frontmatter/folders/code blocks and 3 templates. | One Markdown fixture only. | 30-note fixture, template selection, generated HTML inspection. |
 | A15 | User can create/edit HTML notes with Markdown syntax and `[[page]]` backlinks. | Metadata extraction only. | Real Markdown-first editor, shortcuts, quick open, backlink creation. |
 | A16 | Asset integrity reports missing images, external scripts, unpublishable resources. | TS scan/API/UI exists. | Native desktop asset panel and repair/localization flow. |

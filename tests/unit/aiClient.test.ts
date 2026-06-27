@@ -15,6 +15,7 @@ const configured: AppConfig = {
     temperature: 0.2,
     maxTokens: 512,
   },
+  publish: { mode: 'disabled' },
 };
 
 describe('AI client', () => {

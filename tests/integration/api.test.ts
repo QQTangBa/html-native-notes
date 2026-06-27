@@ -754,4 +754,86 @@ describe('local API', () => {
     expect(await readFile(markdownResponse.body.outputPath, 'utf8')).toContain('# Exportable');
     expect(await readFile(htmlPath, 'utf8')).toBe(html);
   });
+
+  it('publishes registered Vault HTML assets through the configured command provider', async () => {
+    await app.close();
+    const scriptPath = path.join(tempDir, 'api-publisher.mjs');
+    await writeFile(
+      scriptPath,
+      [
+        "import { readFile } from 'node:fs/promises';",
+        "const manifest = JSON.parse(await readFile(process.env.HTML_NATIVE_NOTES_PUBLISH_MANIFEST, 'utf8'));",
+        "console.log(JSON.stringify({ publicUrl: `https://publish.example.com/${manifest.assetId}/` }));",
+      ].join('\n'),
+      'utf8',
+    );
+    app = await createServer({
+      config: loadConfig({
+        APP_ENV: 'test',
+        DATA_DIR: tempDir,
+        PUBLISH_PROVIDER_MODE: 'command',
+        PUBLISH_COMMAND: process.execPath,
+        PUBLISH_COMMAND_ARGS: JSON.stringify([scriptPath]),
+      }),
+    });
+    await app.ready();
+
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'publish-api.html');
+    const html = '<html><head><title>Publish API</title></head><body><h1>Publish API</h1></body></html>';
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, html, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_publish',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(html),
+        title: 'Publish API',
+      },
+    });
+
+    const response = await request(app.server).post(`/api/publish/${intake.asset.id}/static`).expect(200);
+
+    expect(response.body).toMatchObject({
+      assetId: intake.asset.id,
+      publishType: 'static-provider',
+      provider: 'command',
+      publicUrl: `https://publish.example.com/${intake.asset.id}/`,
+      package: {
+        assetId: intake.asset.id,
+        exportType: 'static-package',
+      },
+    });
+    expect(await readFile(response.body.package.indexPath, 'utf8')).toBe(html);
+  });
+
+  it('rejects static publish when no provider is configured', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'publish-disabled.html');
+    const html = '<html><head><title>Publish Disabled</title></head><body><h1>Disabled</h1></body></html>';
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, html, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_publish_disabled',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(html),
+        title: 'Publish Disabled',
+      },
+    });
+
+    const response = await request(app.server).post(`/api/publish/${intake.asset.id}/static`).expect(400);
+
+    expect(response.body.error.message).toContain('Publish provider is not configured');
+  });
 });

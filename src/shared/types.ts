@@ -43,6 +43,7 @@ export interface AppConfig {
   dataDir: string;
   vaultDir: string;
   ai: AiRuntimeConfig;
+  publish: PublishProviderConfig;
 }
 
 export interface VaultLibraryItem {
@@ -186,6 +187,25 @@ export interface VaultStaticPackageExportResponse {
     reference: string;
   }>;
   sourceHash: string;
+}
+
+export type PublishProviderConfig =
+  | { mode: 'disabled' }
+  | {
+      mode: 'command';
+      command: string;
+      args: string[];
+      requiredEnv: string[];
+      env?: Record<string, string>;
+    };
+
+export interface VaultStaticPublishResponse {
+  assetId: string;
+  publishType: 'static-provider';
+  provider: PublishProviderConfig['mode'];
+  publicUrl: string;
+  package: VaultStaticPackageExportResponse;
+  publishedAt: string;
 }
 
 export interface VaultMarkdownExportResponse {

@@ -588,9 +588,59 @@ Implementation files:
 - `src/app/App.tsx`: export busy/result state and action dispatch.
 - `src/features/vault/VaultHome.tsx`: compact package/Markdown export actions and latest exported path on HTML note cards.
 
-This starts F14/A17 in the main App surface. PDF export, provider-backed publish/static hosting, zipped package generation, native file-save dialogs, and native desktop verification remain pending.
+This starts F14/A17 in the main App surface. PDF export, zipped package generation, native file-save dialogs, and native desktop verification remain pending.
 
-### 7.12 Current BYOK Settings Visibility Contract
+### 7.12 Current Static Publish Adapter Contract
+
+The current non-Rust app server exposes a provider-neutral static publish boundary:
+
+- `POST /api/publish/:assetId/static`
+
+Publish response:
+
+```ts
+interface VaultStaticPublishResponse {
+  assetId: string;
+  publishType: "static-provider";
+  provider: "command";
+  publicUrl: string;
+  package: VaultStaticPackageExportResponse;
+  publishedAt: string;
+}
+```
+
+Configuration is user supplied through local env only:
+
+```text
+PUBLISH_PROVIDER_MODE=command
+PUBLISH_COMMAND=/absolute/path/to/publish-script
+PUBLISH_COMMAND_ARGS=["--site","notes"]
+PUBLISH_REQUIRED_ENV=PUBLISH_TOKEN
+PUBLISH_TOKEN=replace-with-provider-token
+```
+
+The command receives:
+
+- `HTML_NATIVE_NOTES_PACKAGE_DIR`
+- `HTML_NATIVE_NOTES_PUBLISH_MANIFEST`
+- `HTML_NATIVE_NOTES_ASSET_ID`
+
+It must print JSON with a public HTTP(S) URL, for example:
+
+```json
+{"publicUrl":"https://example.com/asset_123/"}
+```
+
+Implementation files:
+
+- `bridge/publish/staticProvider.ts`: packages the Vault asset through `bridge/exporter/staticPackage.ts`, invokes the configured command provider, validates the returned HTTP(S) URL, and redacts provider command failure details.
+- `src/server/routes/publish.ts`: local App API route with safe `asset_*` id validation and publish-specific 400/502 errors.
+- `src/server/config.ts`: parses `PUBLISH_PROVIDER_MODE`, `PUBLISH_COMMAND`, `PUBLISH_COMMAND_ARGS`, and `PUBLISH_REQUIRED_ENV`; secrets are read from local env and are not hardcoded.
+- `src/shared/api/client.ts` and `src/shared/desktopBridge.ts`: renderer-facing publish method with transitional Tauri command fallback.
+
+This starts F14/A13 by proving the adapter boundary and command-provider contract. It does not yet prove a real provider upload, a public URL reachable outside the local network, native Tauri publish commands, or a polished publish UI.
+
+### 7.13 Current BYOK Settings Visibility Contract
 
 The current non-Rust app server exposes AI configuration readiness without returning secrets:
 
