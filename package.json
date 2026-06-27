@@ -1,6 +1,6 @@
 {
   "name": "html-native-notes",
-  "version": "0.1.0",
+  "version": "0.0.2",
   "description": "Local-first HTML-native note editor with user-configured AI actions.",
   "type": "module",
   "private": false,
