@@ -1,4 +1,5 @@
 pub mod asset_scan;
+pub mod exporter;
 pub mod inbox;
 pub mod service_runtime;
 pub mod source_guard;

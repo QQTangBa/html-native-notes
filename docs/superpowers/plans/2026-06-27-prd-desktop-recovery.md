@@ -386,6 +386,8 @@ git commit -m "feat: add asset localization workflow"
 
 ## Task 10: Publish/Public Link Adapter
 
+Checkpoint evidence before publish adapter work: Rust source now includes `src-tauri/src/core/exporter.rs` and `src-tauri/src/commands/exporter.rs` for native `export_static_package` and `export_markdown` command boundaries. The source covers managed `.htmlvault/exports/<assetId>/latest` package output, `manifest.json`, local asset copying, skipped external resources, Markdown conversion, and source hash reporting. `npm run test:desktop:contract` covers this source/registration contract; Cargo verification, provider upload, and public URL proof remain pending.
+
 **Files:**
 - Create: `bridge/publish/staticProvider.ts`
 - Create: `src/features/publish/PublishPanel.tsx`
