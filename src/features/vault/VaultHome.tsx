@@ -1,4 +1,4 @@
-import { FileText, Folder, Grid2X2, List, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import { Eye, FileText, Folder, Grid2X2, List, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export interface VaultHomeItem {
@@ -20,8 +20,12 @@ export interface VaultHomeItem {
 
 export interface VaultHomeProps {
   items: VaultHomeItem[];
+  activeItemId?: string;
+  previewHtml?: string;
+  previewTitle?: string;
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
+  onOpenItem?: (itemId: string) => void;
   onGenerateThumbnails?: () => void;
 }
 
@@ -57,7 +61,16 @@ function pendingThumbnailLabel(count: number): string {
   return `${count} pending thumbnail${count === 1 ? '' : 's'}`;
 }
 
-export function VaultHome({ items, thumbnailBusy = false, thumbnailMessage, onGenerateThumbnails }: VaultHomeProps) {
+export function VaultHome({
+  items,
+  activeItemId,
+  previewHtml,
+  previewTitle,
+  thumbnailBusy = false,
+  thumbnailMessage,
+  onOpenItem,
+  onGenerateThumbnails,
+}: VaultHomeProps) {
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
   const [sourceAgent, setSourceAgent] = useState('');
@@ -198,32 +211,54 @@ export function VaultHome({ items, thumbnailBusy = false, thumbnailMessage, onGe
           </div>
         </header>
 
-        <div className="vault-items" data-testid="vault-items" data-view={viewMode}>
-          {visibleItems.map((item) => (
-            <article className="vault-item" key={item.id} data-testid={`vault-item-${item.id}`}>
-              <div className="vault-thumb" data-status={item.thumbnail.status}>
-                <FileText size={22} aria-hidden="true" />
-                <span>Thumbnail {item.thumbnail.status}</span>
-              </div>
-              <div className="vault-item-body">
-                <div className="vault-item-heading">
-                  <h3>{item.title}</h3>
-                  <time dateTime={item.updatedAt}>{formatTime(item.updatedAt)}</time>
+        <div className={previewHtml ? 'vault-main-body with-preview' : 'vault-main-body'}>
+          <div className="vault-items" data-testid="vault-items" data-view={viewMode}>
+            {visibleItems.map((item) => (
+              <article
+                className={activeItemId === item.id ? 'vault-item active' : 'vault-item'}
+                key={item.id}
+                data-testid={`vault-item-${item.id}`}
+              >
+                <div className="vault-thumb" data-status={item.thumbnail.status}>
+                  <FileText size={22} aria-hidden="true" />
+                  <span>Thumbnail {item.thumbnail.status}</span>
                 </div>
-                <p>{item.summary || item.relativeSourcePath}</p>
-                <div className="vault-meta-row">
-                  <span>{item.kind}</span>
-                  {item.sourceAgent ? <span>{item.sourceAgent}</span> : null}
-                  <span>{item.folderPath}</span>
+                <div className="vault-item-body">
+                  <div className="vault-item-heading">
+                    <h3>{item.title}</h3>
+                    <time dateTime={item.updatedAt}>{formatTime(item.updatedAt)}</time>
+                  </div>
+                  <p>{item.summary || item.relativeSourcePath}</p>
+                  <div className="vault-meta-row">
+                    <span>{item.kind}</span>
+                    {item.sourceAgent ? <span>{item.sourceAgent}</span> : null}
+                    <span>{item.folderPath}</span>
+                  </div>
+                  <div className="vault-tags">
+                    {item.tags.map((itemTag) => (
+                      <span key={itemTag}>{itemTag}</span>
+                    ))}
+                  </div>
+                  {onOpenItem && item.kind === 'html-note' ? (
+                    <button type="button" className="vault-preview-button" aria-label={`Preview ${item.title}`} onClick={() => onOpenItem(item.id)}>
+                      <Eye size={14} aria-hidden="true" />
+                      <span>Preview</span>
+                    </button>
+                  ) : null}
                 </div>
-                <div className="vault-tags">
-                  {item.tags.map((itemTag) => (
-                    <span key={itemTag}>{itemTag}</span>
-                  ))}
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
+
+          {previewHtml ? (
+            <aside className="vault-preview-panel" aria-label="HTML preview">
+              <header>
+                <p className="eyebrow">Read-only preview</p>
+                <h3>{previewTitle}</h3>
+              </header>
+              <iframe className="vault-preview-frame" title="Vault HTML preview" srcDoc={previewHtml} sandbox="allow-same-origin" />
+            </aside>
+          ) : null}
         </div>
       </div>
     </section>

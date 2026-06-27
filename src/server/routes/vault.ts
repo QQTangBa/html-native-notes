@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { buildVaultLibrary } from '../../../bridge/vault/library';
+import { readVaultAssetSource } from '../../../bridge/vault/source';
 import { generateMissingVaultThumbnails } from '../../../bridge/vault/thumbnails';
 import type { AppConfig } from '../../shared/types';
 
@@ -10,6 +11,10 @@ const libraryQuerySchema = z.object({
   sourceAgent: z.union([z.string(), z.array(z.string())]).optional(),
   kind: z.union([z.enum(['html-note', 'service', 'project']), z.array(z.enum(['html-note', 'service', 'project']))]).optional(),
   folder: z.union([z.string(), z.array(z.string())]).optional(),
+});
+
+const assetParamsSchema = z.object({
+  assetId: z.string().min(1),
 });
 
 function asArray<T extends string>(value: T | T[] | undefined): T[] | undefined {
@@ -43,5 +48,14 @@ export async function registerVaultRoutes(app: FastifyInstance, config: AppConfi
       skippedCount: result.skipped.length,
       ...result,
     };
+  });
+
+  app.get('/api/vault/assets/:assetId/source', async (request) => {
+    const params = assetParamsSchema.parse(request.params);
+
+    return readVaultAssetSource({
+      vaultDir: config.vaultDir,
+      assetId: params.assetId,
+    });
   });
 }

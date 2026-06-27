@@ -172,4 +172,37 @@ describe('local API', () => {
     const library = await request(app.server).get('/api/vault/library?q=api').expect(200);
     expect(library.body.items[0].thumbnail).toMatchObject({ status: 'ready', path: expectedPath });
   });
+
+  it('returns registered Vault HTML source for read-only preview', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'api-preview.html');
+    const html = '<html><head><title>API Preview</title></head><body><h1>Preview Me</h1></body></html>';
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, html, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_preview',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(html),
+        title: 'API Preview',
+      },
+    });
+
+    const response = await request(app.server).get(`/api/vault/assets/${intake.asset.id}/source`).expect(200);
+
+    expect(response.body).toMatchObject({
+      assetId: intake.asset.id,
+      title: 'API Preview',
+      sourcePath: htmlPath,
+      sourceHash: sha256(html),
+      currentHash: sha256(html),
+      sourceHashMatches: true,
+      html,
+    });
+  });
 });

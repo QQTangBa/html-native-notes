@@ -217,4 +217,73 @@ describe('App workspace', () => {
       expect(screen.getByText('Thumbnail ready')).toBeInTheDocument();
     });
   });
+
+  it('opens a Vault HTML asset in the read-only preview pane', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/market.html',
+          relativeSourcePath: 'imports/ai/market.html',
+          folderPath: 'imports/ai',
+          tags: ['market', 'ai'],
+          summary: 'Agent generated market map',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'ready',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports/ai', itemCount: 1 }],
+      availableFilters: {
+        tags: ['ai', 'market'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/vault/assets/asset_market/source') {
+        return jsonResponse({
+          assetId: 'asset_market',
+          title: 'Agent Market Map',
+          sourcePath: '/Vault/imports/ai/market.html',
+          sourceHashMatches: true,
+          html: '<html><body><h1>Agent Preview</h1></body></html>',
+        });
+      }
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview Agent Market Map' }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/vault/assets/asset_market/source');
+      expect(screen.getByTitle('Vault HTML preview')).toHaveAttribute('srcdoc', '<html><body><h1>Agent Preview</h1></body></html>');
+    });
+  });
 });

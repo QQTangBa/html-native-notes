@@ -104,4 +104,22 @@ describe('VaultHome', () => {
     expect(screen.getByRole('button', { name: 'Rendering thumbnails' })).toBeDisabled();
     expect(screen.getByText('Rendering thumbnails')).toBeInTheDocument();
   });
+
+  it('opens a selected HTML item in the preview pane', () => {
+    const onOpenItem = vi.fn();
+    render(
+      <VaultHome
+        items={items}
+        activeItemId="asset_gut"
+        previewHtml="<html><body><h1>Preview Me</h1></body></html>"
+        previewTitle="Gut Market Research"
+        onOpenItem={onOpenItem}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Gut Market Research' }));
+    expect(onOpenItem).toHaveBeenCalledWith('asset_gut');
+    expect(screen.getByRole('complementary', { name: 'HTML preview' })).toBeInTheDocument();
+    expect(screen.getByTitle('Vault HTML preview')).toHaveAttribute('srcdoc', '<html><body><h1>Preview Me</h1></body></html>');
+  });
 });

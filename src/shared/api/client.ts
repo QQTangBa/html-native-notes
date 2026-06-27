@@ -4,6 +4,7 @@ import type {
   NoteMeta,
   NoteRecord,
   SafeAiStatus,
+  VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultThumbnailGenerationResponse,
 } from '../types';
@@ -36,6 +37,10 @@ export const apiClient = {
 
   async generateVaultThumbnails(): Promise<VaultThumbnailGenerationResponse> {
     return parseResponse<VaultThumbnailGenerationResponse>(await fetch('/api/vault/thumbnails/generate', { method: 'POST' }));
+  },
+
+  async getVaultAssetSource(assetId: string): Promise<VaultAssetSourceResponse> {
+    return parseResponse<VaultAssetSourceResponse>(await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/source`));
   },
 
   async listNotes(): Promise<NoteMeta[]> {

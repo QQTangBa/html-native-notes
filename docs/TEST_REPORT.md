@@ -177,7 +177,7 @@ Date: 2026-06-27
 npm run test -- tests/unit/VaultHome.test.tsx
 ```
 
-Result: PASS. 4 tests. This proves the first React Vault home component renders an Obsidian-inspired dense desktop workspace with sidebar folders, search, card/list view toggle, tag/source/folder filters, card metadata, thumbnail ready/pending states, and a compact toolbar action for generating pending thumbnails. It does not yet prove Tauri wiring, true native desktop launch, keyboard command palette, or native Vault data loading.
+Result: PASS. 5 tests. This proves the first React Vault home component renders an Obsidian-inspired dense desktop workspace with sidebar folders, search, card/list view toggle, tag/source/folder filters, card metadata, thumbnail ready/pending states, a compact toolbar action for generating pending thumbnails, and a read-only HTML preview pane for selected assets. It does not yet prove Tauri wiring, true native desktop launch, keyboard command palette, or native Vault data loading.
 
 Vault Library API evidence:
 
@@ -187,7 +187,7 @@ Date: 2026-06-27
 npm run test -- tests/integration/api.test.ts
 ```
 
-Result: PASS. 6 tests. The Vault tests prove `/api/vault/library` can read the configured local Vault directory, return AI-generated HTML already registered through bridge intake, and honor query/tag/source-agent filters. They also prove `POST /api/vault/thumbnails/generate` can generate missing thumbnails for the configured Vault and make the library return a ready thumbnail path. They do not yet prove Tauri command wiring or user-selected Vault persistence.
+Result: PASS. 7 tests. The Vault tests prove `/api/vault/library` can read the configured local Vault directory, return AI-generated HTML already registered through bridge intake, and honor query/tag/source-agent filters. They also prove `POST /api/vault/thumbnails/generate` can generate missing thumbnails for the configured Vault and make the library return a ready thumbnail path, and `GET /api/vault/assets/:assetId/source` can read registered HTML source for read-only preview with current/source hash evidence. They do not yet prove Tauri command wiring or user-selected Vault persistence.
 
 App Vault loading evidence:
 
@@ -197,7 +197,7 @@ Date: 2026-06-27
 npm run test -- tests/unit/App.test.tsx
 ```
 
-Result: PASS. 5 tests. The App tests prove the renderer calls the Vault Library API, shows VaultHome with an agent-generated HTML asset when the configured Vault has items, calls `POST /api/vault/thumbnails/generate` from the desktop toolbar, and refreshes the library after thumbnails become ready. They do not yet prove native Tauri launch or real user-selected Vault loading.
+Result: PASS. 6 tests. The App tests prove the renderer calls the Vault Library API, shows VaultHome with an agent-generated HTML asset when the configured Vault has items, calls `POST /api/vault/thumbnails/generate` from the desktop toolbar, refreshes the library after thumbnails become ready, and opens a selected registered HTML file in the read-only preview pane. They do not yet prove native Tauri launch or real user-selected Vault loading.
 
 Runtime VaultHome browser evidence:
 
@@ -227,6 +227,19 @@ node --input-type=module "<open VaultHome with Playwright, screenshot pending st
 
 Result: PASS. The local VaultHome page showed the pending thumbnail toolbar action for `data/vault/imports/ai/codex-generated-market.html`; after clicking it, `POST /api/vault/thumbnails/generate` produced `data/vault/.htmlvault/thumbnails/asset_b7281069949f6c6e.png`, the card changed to `Thumbnail ready`, and the toolbar showed `Thumbnails ready`. Screenshots saved locally at `test-results/desktop-launch/vault-thumbnail-action-pending.png` and `test-results/desktop-launch/vault-thumbnail-action-ready.png`. This is still web-renderer evidence, not native Tauri `.app` evidence.
 
+Runtime read-only preview evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run dev -- --host 127.0.0.1 --port 5178
+node --input-type=module "<open VaultHome with Playwright, click Preview, verify iframe srcDoc, screenshot>"
+```
+
+Result: PASS. The local VaultHome page opened `data/vault/imports/ai/codex-generated-market.html` through `GET /api/vault/assets/asset_b7281069949f6c6e/source`, rendered it in the right-side read-only iframe, and kept the selected card highlighted. Screenshot saved locally at `test-results/desktop-launch/vault-readonly-preview.png`. This is still web-renderer evidence, not native Tauri `.app` evidence.
+
 Latest full non-Rust validation:
 
 ```bash
@@ -236,7 +249,7 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 22 files, 80 tests. Bridge test run: 13 files, 44 tests.
+Result: PASS. Full test run: 22 files, 83 tests. Bridge test run: 13 files, 44 tests.
 
 Additional security check:
 

@@ -494,6 +494,17 @@ code {
   flex-direction: column;
 }
 
+.vault-main-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+}
+
+.vault-main-body.with-preview {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 42vw);
+}
+
 .vault-toolbar {
   min-height: 66px;
   display: flex;
@@ -572,6 +583,11 @@ code {
   border: 1px solid #2e363c;
   border-radius: 8px;
   background: #1d2428;
+}
+
+.vault-item.active {
+  border-color: #d6c98d;
+  box-shadow: inset 0 0 0 1px rgba(214, 201, 141, 0.2);
 }
 
 .vault-items[data-view="card"] .vault-item {
@@ -665,6 +681,46 @@ code {
   color: #cbd9c6;
 }
 
+.vault-preview-button {
+  align-self: flex-start;
+  min-height: 30px;
+  border-color: #394348;
+  background: #12181c;
+  color: #cdd6cf;
+  font-size: 12px;
+}
+
+.vault-preview-panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #2b3136;
+  background: #101519;
+}
+
+.vault-preview-panel header {
+  padding: 12px 14px;
+  border-bottom: 1px solid #2b3136;
+}
+
+.vault-preview-panel h3 {
+  margin: 0;
+  overflow: hidden;
+  color: #f0f5ec;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vault-preview-frame {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #ffffff;
+}
+
 @media (max-width: 980px) {
   .workspace-shell {
     grid-template-columns: 1fr;
@@ -673,6 +729,16 @@ code {
 
   .vault-home {
     grid-template-columns: 1fr;
+  }
+
+  .vault-main-body.with-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .vault-preview-panel {
+    min-height: 420px;
+    border-left: 0;
+    border-top: 1px solid #2b3136;
   }
 
   .vault-sidebar {

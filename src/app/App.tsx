@@ -6,7 +6,7 @@ import { PreviewPane } from '../features/preview/PreviewPane';
 import { SettingsPanel } from '../features/settings/SettingsPanel';
 import { VaultHome } from '../features/vault/VaultHome';
 import { apiClient } from '../shared/api/client';
-import type { AiAction, NoteMeta, NoteRecord, SafeAiStatus, VaultLibraryResponse } from '../shared/types';
+import type { AiAction, NoteMeta, NoteRecord, SafeAiStatus, VaultAssetSourceResponse, VaultLibraryResponse } from '../shared/types';
 
 const starterHtml = '<!doctype html><html><body><article><h1>新 HTML 笔记</h1><p>开始写你的内容。</p></article></body></html>';
 
@@ -17,6 +17,8 @@ export function App() {
   const [source, setSource] = useState(starterHtml);
   const [aiStatus, setAiStatus] = useState<SafeAiStatus>();
   const [vaultLibrary, setVaultLibrary] = useState<VaultLibraryResponse>();
+  const [vaultPreview, setVaultPreview] = useState<VaultAssetSourceResponse>();
+  const [vaultPreviewBusy, setVaultPreviewBusy] = useState(false);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
@@ -149,6 +151,19 @@ export function App() {
     }
   }
 
+  async function openVaultItem(itemId: string): Promise<void> {
+    setVaultPreviewBusy(true);
+    setError('');
+
+    try {
+      setVaultPreview(await apiClient.getVaultAssetSource(itemId));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '预览打开失败');
+    } finally {
+      setVaultPreviewBusy(false);
+    }
+  }
+
   function insertAiResult(): void {
     if (!aiResult) {
       return;
@@ -163,8 +178,12 @@ export function App() {
       <main className="desktop-vault-shell" data-testid="workspace-shell">
         <VaultHome
           items={vaultLibrary.items}
+          activeItemId={vaultPreview?.assetId}
+          previewHtml={vaultPreview?.html}
+          previewTitle={vaultPreviewBusy ? 'Loading preview' : vaultPreview?.title}
           thumbnailBusy={thumbnailBusy}
           thumbnailMessage={thumbnailMessage || undefined}
+          onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
         />
         <div className={error ? 'status-bar error' : 'status-bar'}>{statusLine}</div>

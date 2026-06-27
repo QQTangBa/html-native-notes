@@ -81,6 +81,16 @@ export interface VaultThumbnailGenerationResponse {
   }>;
 }
 
+export interface VaultAssetSourceResponse {
+  assetId: string;
+  title: string;
+  sourcePath: string;
+  sourceHash?: string;
+  currentHash: string;
+  sourceHashMatches: boolean;
+  html: string;
+}
+
 export interface ApiErrorBody {
   error: {
     code: string;
