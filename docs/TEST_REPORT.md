@@ -129,6 +129,16 @@ npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx test
 
 Result: PASS. 37 focused tests. The added asset tests prove `GET /api/assets/:assetId/integrity` scans a registered Vault HTML note without modifying source content, reports missing local images, external resources, dangerous inline scripts, unpublishable `file://` resources, and `safeModeRequired`, and renders a compact risk summary plus scan action on Vault HTML note cards. This does not yet prove asset localization, repair/package flow, or native desktop asset-panel verification.
 
+Diary Organization App API and UI evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/diaryOrganizer.test.ts tests/integration/api.test.ts tests/unit/App.test.tsx
+```
+
+Result: PASS. 31 focused tests. The added diary tests prove the BYOK AI adapter prompts for timeline and themes organization styles, parses JSON output, preserves the caller-supplied original text instead of trusting model echo, exposes `POST /api/diary/organize`, avoids returning AI secrets, renders the Diary panel in the main App, shows `原文已保留`, and inserts a selected organization style without replacing the original editor source. This does not yet prove live provider timing, 300-1000 word diary acceptance, persistent diary-note save flow, or native desktop verification.
+
 Markdown import contract evidence:
 
 Date: 2026-06-27
@@ -296,7 +306,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 23 test files and 105 tests, then Vite built `dist/index.html`, `dist/assets/index-DA-1-C-3.css`, and `dist/assets/index-CxSKyacs.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 24 test files and 109 tests, then Vite built `dist/index.html`, `dist/assets/index-BWDUX3XJ.css`, and `dist/assets/index-YxUEmzRq.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

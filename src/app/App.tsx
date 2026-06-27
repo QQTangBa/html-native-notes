@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AiPanel } from '../features/ai/AiPanel';
+import { DiaryPanel } from '../features/diary/DiaryPanel';
 import { HtmlEditor } from '../features/editor/HtmlEditor';
 import { NoteLibrary } from '../features/notes/NoteLibrary';
 import { PreviewPane } from '../features/preview/PreviewPane';
@@ -8,6 +9,8 @@ import { VaultHome } from '../features/vault/VaultHome';
 import { apiClient } from '../shared/api/client';
 import type {
   AiAction,
+  DiaryOrganizationResponse,
+  DiaryOrganizationStyle,
   NoteMeta,
   NoteRecord,
   SafeAiStatus,
@@ -47,6 +50,8 @@ export function App() {
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
+  const [diaryResult, setDiaryResult] = useState<DiaryOrganizationResponse>();
+  const [diaryBusy, setDiaryBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const vaultReviewRequestIdRef = useRef(0);
@@ -161,6 +166,19 @@ export function App() {
       const response = await apiClient.runAiAction({ action, content: source });
       setAiResult(response.result);
     });
+  }
+
+  async function organizeDiary(): Promise<void> {
+    setDiaryBusy(true);
+    setError('');
+
+    try {
+      setDiaryResult(await apiClient.organizeDiary({ originalText: source }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '日记整理失败');
+    } finally {
+      setDiaryBusy(false);
+    }
   }
 
   async function generateVaultThumbnails(): Promise<void> {
@@ -410,6 +428,10 @@ export function App() {
     setAiResult('');
   }
 
+  function insertDiaryStyle(style: DiaryOrganizationStyle): void {
+    setSource((current) => `${current}\n${style.html}`);
+  }
+
   if (vaultLibrary?.items.length) {
     return (
       <main className="desktop-vault-shell" data-testid="workspace-shell">
@@ -474,6 +496,14 @@ export function App() {
       <aside className="panel side-panel">
         <SettingsPanel status={aiStatus} />
         <PreviewPane html={source} />
+        <DiaryPanel
+          status={aiStatus}
+          source={source}
+          busy={diaryBusy}
+          result={diaryResult}
+          onOrganize={() => void organizeDiary()}
+          onInsertStyle={insertDiaryStyle}
+        />
         <AiPanel status={aiStatus} busy={busy} result={aiResult} onRun={(action) => void runAi(action)} onInsert={insertAiResult} />
       </aside>
 

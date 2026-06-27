@@ -115,6 +115,63 @@ describe('App workspace', () => {
     });
   });
 
+  it('organizes diary text into two styles and inserts the selected result without replacing the original', async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: true, baseUrlSet: true, model: 'deepseek-v4-flash' });
+      }
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/diary/organize' && method === 'POST') {
+        return jsonResponse({
+          originalText: '<p>今天状态很乱，但下午把项目推进了一点。</p>',
+          styles: [
+            {
+              style: 'timeline',
+              title: '按时间线整理',
+              summary: '下午恢复执行。',
+              html: '<section><h2>按时间线整理</h2><p>下午推进项目。</p></section>',
+            },
+            {
+              style: 'themes',
+              title: '按主题整理',
+              summary: '情绪、行动、明日提醒。',
+              html: '<section><h2>按主题整理</h2><p>明天继续收尾。</p></section>',
+            },
+          ],
+        });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    const editor = (await screen.findByLabelText('HTML source')) as HTMLTextAreaElement;
+    fireEvent.change(editor, { target: { value: '<p>今天状态很乱，但下午把项目推进了一点。</p>' } });
+    fireEvent.click(await screen.findByRole('button', { name: /organize diary/i }));
+
+    expect(await screen.findByText('按时间线整理')).toBeInTheDocument();
+    expect(screen.getByText('按主题整理')).toBeInTheDocument();
+    expect(screen.getByText('原文已保留')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Insert 按时间线整理' }));
+
+    expect(editor.value).toContain('今天状态很乱');
+    expect(editor.value).toContain('<section><h2>按时间线整理</h2>');
+  });
+
   it('loads Vault assets into the desktop Vault home', async () => {
     vaultLibrary = {
       items: [

@@ -12,6 +12,7 @@ import { FileNoteStore } from './storage/noteStore';
 import { registerAiRoutes } from './routes/ai';
 import { registerAssetRoutes } from './routes/assets';
 import { registerConfigRoutes } from './routes/config';
+import { registerDiaryRoutes } from './routes/diary';
 import { registerHealthRoutes } from './routes/health';
 import { registerNoteRoutes } from './routes/notes';
 import { registerServiceRoutes } from './routes/services';
@@ -74,6 +75,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
   await registerVaultRoutes(app, config);
   await registerServiceRoutes(app, config);
   await registerAssetRoutes(app, config);
+  await registerDiaryRoutes(app, config);
   await registerAiRoutes(app, config);
 
   if (options.enableVite ?? config.env === 'development') {

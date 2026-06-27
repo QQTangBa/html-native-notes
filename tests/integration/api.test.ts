@@ -6,7 +6,7 @@ import { createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerWebService } from '../../bridge/service/runtime';
 import { intakeBridgeRequestToVault } from '../../bridge/vault/intake';
 import { loadConfig } from '../../src/server/config';
@@ -153,6 +153,56 @@ describe('local API', () => {
 
     expect(response.body.error.code).toBe('AI_CONFIG_ERROR');
     expect(response.body.error.message).toContain('AI_API_KEY');
+  });
+
+  it('organizes diary text into two styles without exposing AI secrets', async () => {
+    const providerFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  styles: [
+                    {
+                      style: 'timeline',
+                      title: '按时间线整理',
+                      summary: '先记录情绪，再记录行动。',
+                      html: '<section><h2>按时间线整理</h2><p>下午完成了项目推进。</p></section>',
+                    },
+                    {
+                      style: 'themes',
+                      title: '按主题整理',
+                      summary: '情绪、行动、明日提醒。',
+                      html: '<section><h2>按主题整理</h2><p>明天继续收尾。</p></section>',
+                    },
+                  ],
+                }),
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', providerFetch);
+
+    try {
+      const response = await request(app.server)
+        .post('/api/diary/organize')
+        .send({ originalText: '今天状态很乱，但下午把项目推进了一点。晚上需要早点休息。' })
+        .expect(200);
+
+      expect(response.body.originalText).toBe('今天状态很乱，但下午把项目推进了一点。晚上需要早点休息。');
+      expect(response.body.styles).toHaveLength(2);
+      expect(response.body.styles[0]).toMatchObject({
+        style: 'timeline',
+        title: '按时间线整理',
+      });
+      expect(JSON.stringify(response.body)).not.toContain('sk-test-hidden');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('returns the configured Vault Library for desktop home loading', async () => {

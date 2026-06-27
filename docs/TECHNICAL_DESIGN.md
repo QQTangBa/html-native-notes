@@ -509,6 +509,44 @@ Implementation files:
 
 This starts F13/A16 in the main App surface. Localization/package repair and native desktop verification remain pending.
 
+### 7.10 Current Diary Organization Contract
+
+The current non-Rust app server exposes a dedicated BYOK AI diary organization endpoint:
+
+- `POST /api/diary/organize`
+
+Request:
+
+```ts
+interface DiaryOrganizationRequest {
+  originalText: string;
+}
+```
+
+Response:
+
+```ts
+interface DiaryOrganizationResponse {
+  originalText: string;
+  styles: Array<{
+    style: "timeline" | "themes";
+    title: string;
+    summary: string;
+    html: string;
+  }>;
+}
+```
+
+Implementation files:
+
+- `src/server/ai/diaryOrganizer.ts`: OpenAI-compatible chat-completions adapter, JSON prompt, response parsing, and caller-original preservation.
+- `src/server/routes/diary.ts`: local App API route with validation and secret-safe AI error handling.
+- `src/shared/api/client.ts`: renderer diary organization method.
+- `src/app/App.tsx`: diary busy/result state and insert-selected-style behavior.
+- `src/features/diary/DiaryPanel.tsx`: compact two-style result panel with original-preserved review area.
+
+This starts F11/A11 in the main App surface. Live provider timing, 300-1000 word fixture timing, persistent diary note creation, and native desktop verification remain pending.
+
 ## 8. Data Flows
 
 ### 8.1 Agent HTML Enters Vault

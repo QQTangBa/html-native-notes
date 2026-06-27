@@ -1,6 +1,8 @@
 import type {
   AiActionRequest,
   AiActionResponse,
+  DiaryOrganizationRequest,
+  DiaryOrganizationResponse,
   NoteMeta,
   NoteRecord,
   SafeAiStatus,
@@ -164,6 +166,16 @@ export const apiClient = {
   async runAiAction(input: AiActionRequest): Promise<AiActionResponse> {
     return parseResponse<AiActionResponse>(
       await fetch('/api/ai/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+
+  async organizeDiary(input: DiaryOrganizationRequest): Promise<DiaryOrganizationResponse> {
+    return parseResponse<DiaryOrganizationResponse>(
+      await fetch('/api/diary/organize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),

@@ -209,3 +209,19 @@ export interface AiActionResponse {
   action: AiAction;
   result: string;
 }
+
+export interface DiaryOrganizationRequest {
+  originalText: string;
+}
+
+export interface DiaryOrganizationStyle {
+  style: 'timeline' | 'themes';
+  title: string;
+  summary: string;
+  html: string;
+}
+
+export interface DiaryOrganizationResponse {
+  originalText: string;
+  styles: DiaryOrganizationStyle[];
+}
