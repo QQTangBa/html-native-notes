@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { VaultLibraryResponse } from '../../src/shared/types';
+import type { InboxReadResult } from '../../bridge/inbox/jsonlInbox';
 
 const fallbackLibrary: VaultLibraryResponse = {
   items: [],
@@ -9,6 +10,12 @@ const fallbackLibrary: VaultLibraryResponse = {
     sourceAgents: [],
     kinds: [],
   },
+};
+
+const fallbackInbox: InboxReadResult = {
+  requests: [],
+  invalidLines: [],
+  skippedDuplicates: [],
 };
 
 const fallbackApi = vi.hoisted(() => ({
@@ -43,6 +50,9 @@ const fallbackApi = vi.hoisted(() => ({
     diff: '',
   })),
   applyVaultWriteDecision: vi.fn(async () => ({ assetId: 'asset_1', action: 'cancel', sourceHashAfter: 'sha256:before' })),
+  listAgentInbox: vi.fn(async () => fallbackInbox),
+  confirmAgentInboxRequest: vi.fn(async () => fallbackInbox),
+  dismissAgentInboxRequest: vi.fn(async () => fallbackInbox),
   listNotes: vi.fn(async () => []),
   createNote: vi.fn(async () => ({
     id: 'note_1',
@@ -155,6 +165,15 @@ describe('desktopBridge', () => {
       decision: { action: 'cancel' },
     });
 
+    await desktopBridge.listAgentInbox();
+    expect(invoke).toHaveBeenLastCalledWith('inbox_list_requests', undefined);
+
+    await desktopBridge.confirmAgentInboxRequest('inbox_1');
+    expect(invoke).toHaveBeenLastCalledWith('inbox_confirm_request', { requestId: 'inbox_1' });
+
+    await desktopBridge.dismissAgentInboxRequest('inbox_1');
+    expect(invoke).toHaveBeenLastCalledWith('inbox_dismiss_request', { requestId: 'inbox_1' });
+
     await desktopBridge.createNote({ title: 'Note', content: '<h1>Note</h1>' });
     expect(invoke).toHaveBeenLastCalledWith('note_create', { input: { title: 'Note', content: '<h1>Note</h1>' } });
 
@@ -171,6 +190,9 @@ describe('desktopBridge', () => {
 
     await expect(desktopBridge.listVaultLibrary(filters)).resolves.toBe(fallbackLibrary);
     expect(fallbackApi.listVaultLibrary).toHaveBeenCalledWith(filters);
+
+    await expect(desktopBridge.listAgentInbox()).resolves.toBe(fallbackInbox);
+    expect(fallbackApi.listAgentInbox).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to the HTTP API client when a transitional Tauri shell lacks a command', async () => {

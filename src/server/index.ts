@@ -15,6 +15,7 @@ import { registerConfigRoutes } from './routes/config';
 import { registerDiaryRoutes } from './routes/diary';
 import { registerExportRoutes } from './routes/export';
 import { registerHealthRoutes } from './routes/health';
+import { registerInboxRoutes } from './routes/inbox';
 import { registerNoteRoutes } from './routes/notes';
 import { registerServiceRoutes } from './routes/services';
 import { registerVaultRoutes } from './routes/vault';
@@ -73,6 +74,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
   await registerHealthRoutes(app);
   await registerConfigRoutes(app, config);
   await registerNoteRoutes(app, store);
+  await registerInboxRoutes(app, config);
   await registerVaultRoutes(app, config);
   await registerServiceRoutes(app, config);
   await registerAssetRoutes(app, config);

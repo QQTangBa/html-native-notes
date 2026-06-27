@@ -1,5 +1,6 @@
 import { apiClient } from './api/client';
 import type {
+  AgentInboxResponse,
   AiActionRequest,
   AiActionResponse,
   DiaryOrganizationRequest,
@@ -120,6 +121,18 @@ export const desktopBridge = {
     return invokeOrFallback('source_guard_apply_write_decision', { assetId, editedHtml, decision }, () =>
       apiClient.applyVaultWriteDecision(assetId, editedHtml, decision),
     );
+  },
+
+  listAgentInbox(): Promise<AgentInboxResponse> {
+    return invokeOrFallback('inbox_list_requests', undefined, () => apiClient.listAgentInbox());
+  },
+
+  confirmAgentInboxRequest(requestId: string): Promise<AgentInboxResponse> {
+    return invokeOrFallback('inbox_confirm_request', { requestId }, () => apiClient.confirmAgentInboxRequest(requestId));
+  },
+
+  dismissAgentInboxRequest(requestId: string): Promise<AgentInboxResponse> {
+    return invokeOrFallback('inbox_dismiss_request', { requestId }, () => apiClient.dismissAgentInboxRequest(requestId));
   },
 
   listNotes(): Promise<NoteMeta[]> {

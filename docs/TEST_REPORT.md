@@ -40,7 +40,7 @@ Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` 
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, MCP bridge foundation, and Agent Inbox React UI changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 134 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-DY4sOvVL.js`.
+Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, MCP bridge foundation, Agent Inbox React UI, and App startup inbox wiring changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 136 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 PRD fixture-scale import foundation:
 
@@ -87,6 +87,16 @@ npm run test -- tests/unit/InboxPanel.test.tsx tests/unit/VaultHome.test.tsx
 ```
 
 Result: PASS. 2 files, 15 tests. This proves the React Agent Inbox review panel renders pending offline inbox requests, duplicate and invalid-line counters, request tags/source metadata, busy disabled states, an empty state, and confirm/dismiss actions. It also proves VaultHome can place that panel in the dense desktop sidebar and forward confirm/dismiss callbacks by request id. This does not yet prove app startup loading from app-support/Vault inbox JSONL files, Rust/Tauri inbox commands, or a launched native desktop prompt.
+
+Agent Inbox API, desktopBridge, and App startup evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/desktopBridge.test.ts tests/integration/api.test.ts tests/unit/App.test.tsx
+```
+
+Result: PASS. 3 files, 39 tests. This proves the renderer bridge exposes `inbox_list_requests`, `inbox_confirm_request`, and `inbox_dismiss_request` command boundaries with HTTP fallback; the local API reads Vault `.htmlvault/inbox/requests.jsonl`, isolates invalid lines, reports duplicate dedupe keys, confirms by registering the request into the Vault manifest and acking it, and dismisses by acking it; and the App startup path renders pending inbox requests in VaultHome, then refreshes inbox/library state after confirm or dismiss. This does not yet prove native app-support inbox path merging, Rust/Tauri command implementations, or a launched macOS desktop prompt.
 
 Agent Bridge fallback evidence:
 
@@ -381,7 +391,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 134 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-DY4sOvVL.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 31 test files and 136 tests, then Vite built `dist/index.html`, `dist/assets/index-Df_w2Mi7.css`, and `dist/assets/index-Crg9pgKq.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

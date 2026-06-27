@@ -8,6 +8,7 @@ import { SettingsPanel } from '../features/settings/SettingsPanel';
 import { VaultHome } from '../features/vault/VaultHome';
 import { desktopBridge } from '../shared/desktopBridge';
 import type {
+  AgentInboxResponse,
   AiAction,
   DiaryOrganizationResponse,
   DiaryOrganizationStyle,
@@ -26,6 +27,11 @@ import type {
 } from '../shared/types';
 
 const starterHtml = '<!doctype html><html><body><article><h1>新 HTML 笔记</h1><p>开始写你的内容。</p></article></body></html>';
+const emptyAgentInbox: AgentInboxResponse = {
+  requests: [],
+  invalidLines: [],
+  skippedDuplicates: [],
+};
 
 export function App() {
   const [notes, setNotes] = useState<NoteMeta[]>([]);
@@ -50,6 +56,8 @@ export function App() {
   const [vaultAssetBusyIds, setVaultAssetBusyIds] = useState<string[]>([]);
   const [vaultExportResults, setVaultExportResults] = useState<Record<string, VaultExportResponse>>({});
   const [vaultExportBusyIds, setVaultExportBusyIds] = useState<string[]>([]);
+  const [vaultInbox, setVaultInbox] = useState<AgentInboxResponse>(emptyAgentInbox);
+  const [vaultInboxBusyIds, setVaultInboxBusyIds] = useState<string[]>([]);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
@@ -78,6 +86,7 @@ export function App() {
   useEffect(() => {
     void refresh();
     void refreshVaultLibrary();
+    void refreshAgentInbox();
     void desktopBridge.aiStatus().then(setAiStatus).catch(() => setAiStatus({ configured: false, baseUrlSet: false }));
   }, []);
 
@@ -91,6 +100,10 @@ export function App() {
 
   async function refreshVaultLibrary(): Promise<void> {
     await desktopBridge.listVaultLibrary().then(setVaultLibrary).catch(() => setVaultLibrary(undefined));
+  }
+
+  async function refreshAgentInbox(): Promise<void> {
+    await desktopBridge.listAgentInbox().then(setVaultInbox).catch(() => setVaultInbox(emptyAgentInbox));
   }
 
   async function runTask(task: () => Promise<void>): Promise<void> {
@@ -368,6 +381,26 @@ export function App() {
     }
   }
 
+  async function runAgentInboxAction(
+    requestId: string,
+    action: (id: string) => Promise<AgentInboxResponse>,
+    options: { refreshLibrary?: boolean; failureMessage: string },
+  ): Promise<void> {
+    setVaultInboxBusyIds((current) => [...new Set([...current, requestId])]);
+    setError('');
+
+    try {
+      setVaultInbox(await action(requestId));
+      if (options.refreshLibrary) {
+        await refreshVaultLibrary();
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : options.failureMessage);
+    } finally {
+      setVaultInboxBusyIds((current) => current.filter((id) => id !== requestId));
+    }
+  }
+
   async function reviewVaultEdit(editedHtml: string): Promise<void> {
     const preview = vaultPreview;
     if (!preview) {
@@ -473,6 +506,10 @@ export function App() {
           assetBusyIds={vaultAssetBusyIds}
           exportResults={vaultExportResults}
           exportBusyIds={vaultExportBusyIds}
+          inboxRequests={vaultInbox.requests}
+          inboxInvalidLines={vaultInbox.invalidLines}
+          inboxSkippedDuplicates={vaultInbox.skippedDuplicates}
+          inboxBusyRequestIds={vaultInboxBusyIds}
           onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
           onServiceHealth={(itemId) => void runVaultServiceAction(itemId, desktopBridge.checkVaultService, '服务状态检查失败')}
@@ -491,6 +528,17 @@ export function App() {
             }
           }}
           onWriteBack={() => void applyVaultDecision({ action: 'write-back' })}
+          onConfirmInboxRequest={(requestId) =>
+            void runAgentInboxAction(requestId, desktopBridge.confirmAgentInboxRequest, {
+              refreshLibrary: true,
+              failureMessage: 'Inbox 确认失败',
+            })
+          }
+          onDismissInboxRequest={(requestId) =>
+            void runAgentInboxAction(requestId, desktopBridge.dismissAgentInboxRequest, {
+              failureMessage: 'Inbox 忽略失败',
+            })
+          }
         />
         <div className={error ? 'status-bar error' : 'status-bar'}>{statusLine}</div>
       </main>

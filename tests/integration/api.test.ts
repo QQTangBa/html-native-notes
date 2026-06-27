@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { appendInboxRequest } from '../../bridge/inbox/jsonlInbox';
 import { registerWebService } from '../../bridge/service/runtime';
 import { intakeBridgeRequestToVault } from '../../bridge/vault/intake';
 import { loadConfig } from '../../src/server/config';
@@ -157,6 +158,59 @@ describe('local API', () => {
 
     expect(response.body.error.code).toBe('AI_CONFIG_ERROR');
     expect(response.body.error.message).toContain('AI_API_KEY');
+  });
+
+  it('lists, confirms, and dismisses offline agent inbox requests through the local API', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const htmlPath = path.join(vaultDir, 'inbox-report.html');
+    const html = '<!doctype html><html><head><title>Inbox Report</title></head><body><h1>Inbox</h1></body></html>';
+    await mkdir(vaultDir, { recursive: true });
+    await writeFile(htmlPath, html, 'utf8');
+    const inboxPath = path.join(vaultDir, '.htmlvault', 'inbox', 'requests.jsonl');
+    const normalized = await appendInboxRequest(inboxPath, {
+      requestId: 'inbox-html-001',
+      type: 'registerHtmlAsset',
+      createdAt: '2026-06-27T00:00:00.000Z',
+      sourceAgent: 'codex',
+      sourcePath: htmlPath,
+      sourceHash: sha256(html),
+      title: 'Inbox Report',
+      tags: ['inbox'],
+    });
+    await appendInboxRequest(inboxPath, {
+      ...normalized,
+      requestId: 'inbox-html-duplicate',
+    });
+    await writeFile(inboxPath, '{bad json}\n', { flag: 'a' });
+
+    const listed = await request(app.server).get('/api/agent/inbox').expect(200);
+    expect(listed.body.requests).toHaveLength(1);
+    expect(listed.body.requests[0].requestId).toBe('inbox-html-001');
+    expect(listed.body.skippedDuplicates).toEqual(['inbox-html-duplicate']);
+    expect(listed.body.invalidLines).toEqual([{ lineNumber: 3, reason: 'Invalid JSON' }]);
+
+    const confirmed = await request(app.server).post('/api/agent/inbox/inbox-html-001/confirm').expect(200);
+    expect(confirmed.body.inbox.requests).toHaveLength(0);
+    expect(confirmed.body.intake.asset.title).toBe('Inbox Report');
+
+    const library = await request(app.server).get('/api/vault/library').expect(200);
+    expect(library.body.items.map((item: { title: string }) => item.title)).toContain('Inbox Report');
+
+    const serviceRequest = await appendInboxRequest(inboxPath, {
+      requestId: 'inbox-service-001',
+      type: 'registerWebService',
+      createdAt: '2026-06-27T00:05:00.000Z',
+      service: {
+        title: 'Dismiss Me',
+        cwd: tempDir,
+        startCommand: 'npm run dev',
+      },
+      tags: [],
+    });
+
+    expect(serviceRequest.requestId).toBe('inbox-service-001');
+    const dismissed = await request(app.server).post('/api/agent/inbox/inbox-service-001/dismiss').expect(200);
+    expect(dismissed.body.requests).toHaveLength(0);
   });
 
   it('organizes diary text into two styles without exposing AI secrets', async () => {

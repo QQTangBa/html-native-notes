@@ -1,4 +1,6 @@
 import type {
+  AgentInboxConfirmResponse,
+  AgentInboxResponse,
   AiActionRequest,
   AiActionResponse,
   DiaryOrganizationRequest,
@@ -126,6 +128,23 @@ export const apiClient = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assetId, editedHtml, decision }),
       }),
+    );
+  },
+
+  async listAgentInbox(): Promise<AgentInboxResponse> {
+    return parseResponse<AgentInboxResponse>(await fetch('/api/agent/inbox'));
+  },
+
+  async confirmAgentInboxRequest(requestId: string): Promise<AgentInboxResponse> {
+    const response = await parseResponse<AgentInboxConfirmResponse>(
+      await fetch(`/api/agent/inbox/${encodeURIComponent(requestId)}/confirm`, { method: 'POST' }),
+    );
+    return response.inbox;
+  },
+
+  async dismissAgentInboxRequest(requestId: string): Promise<AgentInboxResponse> {
+    return parseResponse<AgentInboxResponse>(
+      await fetch(`/api/agent/inbox/${encodeURIComponent(requestId)}/dismiss`, { method: 'POST' }),
     );
   },
 

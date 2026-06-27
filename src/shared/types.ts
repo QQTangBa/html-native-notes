@@ -1,3 +1,6 @@
+import type { InboxReadResult } from '../../bridge/inbox/jsonlInbox';
+import type { IntakeResult } from '../../bridge/vault/intake';
+
 export interface NoteMeta {
   id: string;
   title: string;
@@ -211,6 +214,13 @@ export type VaultWriteDecision =
 export interface VaultWriteDecisionResult {
   action: VaultWriteDecision['action'];
   outputPath?: string;
+}
+
+export type AgentInboxResponse = InboxReadResult;
+
+export interface AgentInboxConfirmResponse {
+  intake: IntakeResult;
+  inbox: AgentInboxResponse;
 }
 
 export interface ApiErrorBody {

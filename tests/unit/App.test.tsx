@@ -207,6 +207,119 @@ describe('App workspace', () => {
     expect(screen.getByRole('searchbox', { name: 'Search Vault' })).toBeInTheDocument();
   });
 
+  it('loads agent inbox requests into the Vault home and handles confirm and dismiss', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/agent-output/market.html',
+          relativeSourcePath: 'agent-output/market.html',
+          folderPath: 'agent-output',
+          tags: ['agent'],
+          summary: 'Agent generated report',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'pending',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+      ],
+      folders: [{ path: 'agent-output', itemCount: 1 }],
+      availableFilters: {
+        tags: ['agent'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+    const fetchMock = vi.mocked(fetch);
+    const inboxHtml = {
+      requestId: 'inbox-html-001',
+      type: 'registerHtmlAsset',
+      createdAt: '2026-06-27T00:00:00.000Z',
+      sourceAgent: 'codex',
+      sourcePath: '/Vault/inbox-report.html',
+      sourceHash: 'sha256:inbox',
+      title: 'Inbox Report',
+      tags: ['inbox'],
+      dedupeKey: 'registerHtmlAsset:sha256:inbox',
+    };
+    const inboxService = {
+      requestId: 'inbox-service-001',
+      type: 'registerWebService',
+      createdAt: '2026-06-27T00:05:00.000Z',
+      title: 'Inbox Service',
+      service: {
+        title: 'Inbox Service',
+        cwd: '/Vault/service',
+        startCommand: 'npm run dev',
+      },
+      tags: [],
+      dedupeKey: 'registerWebService:inbox-service-001',
+    };
+    let inboxBody = {
+      requests: [inboxHtml, inboxService],
+      invalidLines: [{ lineNumber: 4, reason: 'Invalid JSON' }],
+      skippedDuplicates: ['inbox-html-duplicate'],
+    };
+
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/agent/inbox') {
+        return jsonResponse(inboxBody);
+      }
+
+      if (url === '/api/agent/inbox/inbox-html-001/confirm' && method === 'POST') {
+        inboxBody = { requests: [inboxService], invalidLines: [], skippedDuplicates: [] };
+        return jsonResponse({ intake: { created: true, asset: { title: 'Inbox Report' } }, inbox: inboxBody });
+      }
+
+      if (url === '/api/agent/inbox/inbox-service-001/dismiss' && method === 'POST') {
+        inboxBody = { requests: [], invalidLines: [], skippedDuplicates: [] };
+        return jsonResponse(inboxBody);
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    const inbox = await screen.findByRole('region', { name: 'Agent Inbox' });
+    expect(within(inbox).getByText('Inbox Report')).toBeInTheDocument();
+    expect(within(inbox).getByText('Inbox Service')).toBeInTheDocument();
+    expect(within(inbox).getByText('1 duplicate')).toBeInTheDocument();
+    expect(within(inbox).getByText('1 invalid')).toBeInTheDocument();
+
+    fireEvent.click(within(inbox).getByRole('button', { name: 'Confirm Inbox Report' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/agent/inbox/inbox-html-001/confirm', { method: 'POST' });
+    });
+    expect(await screen.findByText('Inbox Service')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss Inbox Service' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/agent/inbox/inbox-service-001/dismiss', { method: 'POST' });
+    });
+    expect(await screen.findByText('Inbox clear')).toBeInTheDocument();
+  });
+
   it('loads Vault assets through the desktop bridge when Tauri commands are available', async () => {
     const desktopVaultLibrary: VaultLibraryResponse = {
       items: [
