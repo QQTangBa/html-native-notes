@@ -60,7 +60,7 @@ Agent Bridge fallback evidence:
 npm run test:bridge
 ```
 
-Result: PASS. 12 files, 42 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Vault Library data contract, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, and the initial Source Guard write-gate contract:
+Result: PASS. 13 files, 43 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Vault Library data contract, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, the initial Source Guard write-gate contract, and the initial Vault thumbnail generation contract:
 
 - `GET /health`
 - `POST /api/agent/register-html`
@@ -100,9 +100,12 @@ Result: PASS. 12 files, 42 tests. This proves the shared protocol, local HTTP fa
 - Source Guard write gate reviews readable diffs without changing source files
 - Source Guard write gate supports cancel, save-as, and hash-checked write-back
 - Source Guard write gate rejects stale write-back when the source changed after review
+- Vault thumbnail generator renders missing HTML thumbnails to `.htmlvault/thumbnails/<asset-id>.png`
+- Vault thumbnail generator leaves the original HTML source hash unchanged
+- Vault Library reports thumbnail status as ready after thumbnail generation
 - stable validation errors for invalid registrations
 
-This still does not prove MCP, desktop Vault UI insertion, thumbnail generation, asset localization/package UI, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
+This still does not prove MCP, desktop Vault UI insertion, desktop thumbnail queue wiring, asset localization/package UI, visual diff, full external-edit workflow, native Rust process boundary, or 10-second desktop acceptance.
 
 Markdown import contract evidence:
 
@@ -143,6 +146,16 @@ npm run test -- tests/integration/bridge/vaultLibrary.test.ts
 ```
 
 Result: PASS. 2 tests. This proves an AI-generated HTML file can be registered into the Vault manifest and then surfaced as a searchable/filterable Vault Library item with title, tags, summary, source agent, relative source path, folder summary, and thumbnail pending path. It does not yet prove the React Vault home UI, true screenshot thumbnail generation, 100 mixed fixture import, preview/open flow, or native Rust Vault core.
+
+Vault thumbnail generation evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/bridge/thumbnailGenerator.test.ts
+```
+
+Result: PASS. 1 test. This proves the initial thumbnail worker can render a registered HTML note through Playwright Chromium, write a real PNG under `.htmlvault/thumbnails/<asset-id>.png`, preserve the original source hash, and make Vault Library report the thumbnail as ready. It does not yet prove native Rust/Tauri worker wiring, background queue behavior, desktop refresh, or 100-fixture thumbnail coverage.
 
 VaultHome React component evidence:
 
@@ -198,7 +211,11 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 21 files, 74 tests. Bridge test run: 12 files, 42 tests.
+Result: PASS. Full test run: 22 files, 75 tests. Bridge test run: 13 files, 43 tests.
+
+Additional security check:
+
+Result: targeted secret scan for the supplied DeepSeek key and provider key assignment patterns returned one expected hit in ignored `.env.local`; no committed source, docs, tests, or config files contain the supplied key.
 
 During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 
