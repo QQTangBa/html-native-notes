@@ -158,7 +158,7 @@ git commit -m "feat: add native vault command core"
 - Modify: `src/features/vault/VaultHome.tsx`
 - Test: `tests/integration/bridge/mcpServer.test.ts`, `tests/unit/InboxPanel.test.tsx`
 
-- [ ] **Step 1: Add failing MCP server tests**
+- [x] **Step 1: Add failing MCP server tests**
 
 Tests must cover `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, and `importExisting` tool schemas.
 
@@ -169,6 +169,8 @@ Tests must render pending offline requests, dedupe by request id/source hash, co
 - [ ] **Step 3: Implement MCP server**
 
 Use the official MCP TypeScript SDK pattern already planned by the PRD. Keep stdio transport first.
+
+Checkpoint evidence: `bridge/mcp/server.ts` now exposes the seven PRD V1 tool definitions and a tested local tool-call dispatcher for `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, and `importExisting`. Official MCP SDK stdio transport remains pending because adding the SDK is a project dependency change.
 
 - [ ] **Step 4: Implement desktop inbox commands**
 

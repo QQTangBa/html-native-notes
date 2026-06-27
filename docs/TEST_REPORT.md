@@ -40,7 +40,7 @@ Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` 
 npm run verify
 ```
 
-Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, and external edit watcher changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 29 test files and 126 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
+Result: PASS on 2026-06-27 after the desktop bridge, fixture-scale import foundation, external edit watcher, and MCP bridge foundation changes. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 30 test files and 130 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
 
 PRD fixture-scale import foundation:
 
@@ -70,17 +70,26 @@ npm run test -- tests/unit/agentBridgeProtocol.test.ts
 
 Result: PASS. 6 tests. This proves the shared request validation contract for HTML asset registration, web service registration, generic inbox requests, tag normalization, dedupe keys, and basic invalid input rejection. It does not yet prove MCP, HTTP, CLI, file watching, or desktop intake behavior.
 
+MCP bridge foundation evidence:
+
+```bash
+npm run test -- tests/integration/bridge/mcpServer.test.ts
+```
+
+Result: PASS. 4 tests. This proves the MCP bridge foundation exposes the seven PRD V1 tool definitions: `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, and `importExisting`. It also proves local tool calls can register/search HTML assets, create an HTML note, create a version snapshot, export a local static package, register a service, and accept a read-only `importExisting` request without mutating external source files. This does not yet prove official MCP SDK stdio transport or desktop inbox UI.
+
 Agent Bridge fallback evidence:
 
 ```bash
 npm run test:bridge
 ```
 
-Result: PASS. 13 files, 44 tests. This proves the shared protocol, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, minimal bridge-to-Vault manifest intake, a minimal Vault Library data contract, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, the initial Source Guard write-gate contract, and the initial Vault thumbnail generation contract:
+Result: PASS. 16 files, 53 tests. This proves the shared protocol, MCP bridge tool foundation, local HTTP fallback server, scriptable CLI fallback, offline inbox JSONL support, file watcher request generation, external edit watcher snapshot pipeline, minimal bridge-to-Vault manifest intake, a minimal Vault Library data contract, a minimal Version Engine contract, a minimal Service Registry/Runtime Manager contract, a minimal asset integrity scanner, the initial Markdown import contract, the initial Source Guard write-gate contract, and the initial Vault thumbnail generation contract:
 
 - `GET /health`
 - `POST /api/agent/register-html`
 - `POST /api/agent/register-service`
+- MCP `registerHtmlAsset`, `registerWebService`, `searchVault`, `createNote`, `snapshot`, `publish`, and `importExisting` local tool calls
 - `htmlvault register` equivalent through `tsx bridge/cli/index.ts register`
 - `htmlvault service register` equivalent through `tsx bridge/cli/index.ts service register`
 - `htmlvault thumbnail generate` equivalent through `tsx bridge/cli/index.ts thumbnail generate --vault-dir <path>`
