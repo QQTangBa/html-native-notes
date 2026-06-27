@@ -196,4 +196,65 @@ describe('VaultHome', () => {
     expect(screen.queryByLabelText('Editable HTML draft')).not.toBeInTheDocument();
     expect(screen.getByTitle('Vault HTML preview')).toHaveAttribute('srcdoc', '<html><body><h1>Second Preview</h1></body></html>');
   });
+
+  it('shows a version timeline with source, content, and DOM diff actions', () => {
+    const onCompareLatestVersions = vi.fn();
+    const onRollbackSnapshot = vi.fn();
+    render(
+      <VaultHome
+        items={items}
+        activeItemId="asset_gut"
+        previewHtml="<html><head><title>V2</title></head><body><h1>Preview Me</h1><p>Beta</p><section>New</section></body></html>"
+        previewTitle="Gut Market Research"
+        versionSnapshots={[
+          {
+            snapshotId: 'snap_base',
+            assetId: 'asset_gut',
+            reason: 'baseline',
+            createdAt: '2026-06-27T00:00:00.000Z',
+            contentHash: 'sha256:base',
+          },
+          {
+            snapshotId: 'snap_external',
+            assetId: 'asset_gut',
+            reason: 'external-agent-edit',
+            createdAt: '2026-06-27T00:05:00.000Z',
+            contentHash: 'sha256:external',
+          },
+        ]}
+        versionDiff={{
+          source: {
+            added: ['<p>Beta</p>'],
+            removed: ['<p>Alpha</p>'],
+          },
+          content: {
+            added: ['Beta'],
+            removed: ['Alpha'],
+          },
+          domSummary: {
+            addedTags: ['section'],
+            removedTags: [],
+            changedTitle: { from: 'V1', to: 'V2' },
+          },
+        }}
+        onCompareLatestVersions={onCompareLatestVersions}
+        onRollbackSnapshot={onRollbackSnapshot}
+      />,
+    );
+
+    const timeline = screen.getByRole('region', { name: 'Version timeline' });
+    expect(within(timeline).getByText('baseline')).toBeInTheDocument();
+    expect(within(timeline).getByText('external-agent-edit')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compare latest versions' }));
+    expect(onCompareLatestVersions).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('region', { name: 'Version diff' })).toBeInTheDocument();
+    expect(screen.getByText('+<p>Beta</p>')).toBeInTheDocument();
+    expect(screen.getByText('+Beta')).toBeInTheDocument();
+    expect(screen.getByText('section')).toBeInTheDocument();
+    expect(screen.getByText('V1 -> V2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rollback to baseline' }));
+    expect(onRollbackSnapshot).toHaveBeenCalledWith('snap_base');
+  });
 });

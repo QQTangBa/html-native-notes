@@ -7,6 +7,10 @@ import type {
   VaultAssetSourceResponse,
   VaultLibraryResponse,
   VaultThumbnailGenerationResponse,
+  VaultVersionDiff,
+  VaultVersionRollbackResponse,
+  VaultVersionSnapshot,
+  VaultVersionsResponse,
   VaultWriteDecision,
   VaultWriteDecisionResult,
   VaultWriteReview,
@@ -44,6 +48,35 @@ export const apiClient = {
 
   async getVaultAssetSource(assetId: string): Promise<VaultAssetSourceResponse> {
     return parseResponse<VaultAssetSourceResponse>(await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/source`));
+  },
+
+  async listVaultVersions(assetId: string): Promise<VaultVersionsResponse> {
+    return parseResponse<VaultVersionsResponse>(await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/versions`));
+  },
+
+  async createVaultVersionSnapshot(assetId: string, reason: string): Promise<VaultVersionSnapshot> {
+    return parseResponse<VaultVersionSnapshot>(
+      await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/versions/snapshot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      }),
+    );
+  },
+
+  async diffVaultVersions(assetId: string, fromSnapshotId: string, toSnapshotId: string): Promise<VaultVersionDiff> {
+    const params = new URLSearchParams({ from: fromSnapshotId, to: toSnapshotId });
+    return parseResponse<VaultVersionDiff>(await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/versions/diff?${params.toString()}`));
+  },
+
+  async rollbackVaultVersion(assetId: string, snapshotId: string): Promise<VaultVersionRollbackResponse> {
+    return parseResponse<VaultVersionRollbackResponse>(
+      await fetch(`/api/vault/assets/${encodeURIComponent(assetId)}/versions/rollback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ snapshotId }),
+      }),
+    );
   },
 
   async reviewVaultAssetWrite(assetId: string, editedHtml: string): Promise<VaultWriteReview> {

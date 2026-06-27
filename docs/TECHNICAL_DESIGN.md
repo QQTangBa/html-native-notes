@@ -416,6 +416,46 @@ interface AgentInboxRequest {
 }
 ```
 
+### 7.6 Current TypeScript Version API Contract
+
+The current non-Rust implementation exposes the first usable Version Engine boundary through the local Fastify API and React shell:
+
+```ts
+interface VaultVersionSnapshot {
+  snapshotId: string;
+  assetId: string;
+  reason: string;
+  createdAt: string;
+  contentHash: string;
+  contentPath: string;
+}
+
+interface VaultVersionDiff {
+  source: { added: string[]; removed: string[] };
+  content: { added: string[]; removed: string[] };
+  domSummary: {
+    addedTags: string[];
+    removedTags: string[];
+    changedTitle?: { from: string; to: string };
+  };
+}
+```
+
+Implementation files:
+
+- `bridge/vault/versionStore.ts`: snapshot list/create, source diff, readable content diff, DOM summary, rollback.
+- `src/server/routes/vault.ts`: local API wrappers with Vault source boundary checks before snapshot and rollback writes.
+- `src/shared/api/client.ts`: renderer API client methods for list/diff/rollback.
+- `src/app/App.tsx`: loads versions with preview, compares latest two snapshots, rolls back and refreshes preview.
+- `src/features/vault/VaultHome.tsx`: compact timeline, compare action, rollback action, source/content/DOM diff panel.
+
+Security notes:
+
+- Version `assetId` values are restricted to safe `asset_*` path segments before they can reach the version store.
+- Snapshot content is read only after `realpath` proves it is still inside `.htmlvault/versions/<assetId>/`.
+- API responses omit internal snapshot `contentPath` values from renderer-facing version metadata.
+- Renderer version operations use request tokens so late compare/rollback responses cannot update the UI after the user starts opening another asset.
+
 ## 8. Data Flows
 
 ### 8.1 Agent HTML Enters Vault
@@ -471,6 +511,14 @@ interface AgentInboxRequest {
 4. UI shows timeline entry and diff.
 5. Rollback restores the managed Vault copy or prepares explicit source write-back through diff gate.
 
+Current TypeScript flow:
+
+1. Bridge intake creates a baseline snapshot for registered HTML assets.
+2. `POST /api/vault/assets/:assetId/versions/snapshot` creates an explicit snapshot from the current registered source.
+3. Opening a Vault preview loads `GET /source` and `GET /versions`.
+4. The timeline compares the latest two snapshots through `GET /versions/diff?from=...&to=...`.
+5. Rollback calls `POST /versions/rollback`, writes the selected snapshot back to the registered source path after Vault boundary checks, then refreshes preview source and timeline.
+
 ## 9. Interface Design
 
 ### 9.1 Tauri Commands
@@ -514,8 +562,18 @@ Local-only, bound to `127.0.0.1`:
 - `POST /api/agent/import-existing`
 - `GET /api/vault/search?q=...`
 - `GET /api/vault/resources`
+- `GET /api/vault/library`
+- `GET /api/vault/assets/:assetId/source`
+- `GET /api/vault/assets/:assetId/versions`
+- `POST /api/vault/assets/:assetId/versions/snapshot`
+- `GET /api/vault/assets/:assetId/versions/diff?from=<snapshotId>&to=<snapshotId>`
+- `POST /api/vault/assets/:assetId/versions/rollback`
+- `POST /api/vault/assets/:assetId/write-review`
+- `POST /api/vault/write-decision`
 
 Every mutating endpoint validates path, source hash, request ID, and Vault scope. It does not modify original source files.
+
+Current exception: rollback is an explicit user write path. It validates the registered source path stays inside the configured Vault before restoring snapshot content.
 
 ### 9.3 CLI
 

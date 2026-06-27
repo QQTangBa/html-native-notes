@@ -91,6 +91,43 @@ export interface VaultAssetSourceResponse {
   html: string;
 }
 
+export interface VaultVersionSnapshot {
+  snapshotId: string;
+  assetId: string;
+  reason: string;
+  createdAt: string;
+  contentHash: string;
+}
+
+export interface VaultVersionDiff {
+  source: {
+    added: string[];
+    removed: string[];
+  };
+  content: {
+    added: string[];
+    removed: string[];
+  };
+  domSummary: {
+    addedTags: string[];
+    removedTags: string[];
+    changedTitle?: {
+      from: string;
+      to: string;
+    };
+  };
+}
+
+export interface VaultVersionsResponse {
+  snapshots: VaultVersionSnapshot[];
+}
+
+export interface VaultVersionRollbackResponse {
+  assetId: string;
+  snapshotId: string;
+  restoredHash: string;
+}
+
 export interface VaultWriteReview {
   sourcePath: string;
   expectedSourceHash: string;

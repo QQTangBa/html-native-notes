@@ -6,6 +6,13 @@ import { applyWriteDecision, hashFile, reviewHtmlWrite } from '../../../bridge/s
 import { buildVaultLibrary } from '../../../bridge/vault/library';
 import { readVaultAssetSource } from '../../../bridge/vault/source';
 import { generateMissingVaultThumbnails } from '../../../bridge/vault/thumbnails';
+import {
+  createVersionSnapshot,
+  diffVersionSnapshots,
+  listVersionSnapshots,
+  rollbackToSnapshot,
+  type VersionSnapshot,
+} from '../../../bridge/vault/versionStore';
 import type { AppConfig } from '../../shared/types';
 
 const libraryQuerySchema = z.object({
@@ -17,11 +24,24 @@ const libraryQuerySchema = z.object({
 });
 
 const assetParamsSchema = z.object({
-  assetId: z.string().min(1),
+  assetId: z.string().regex(/^asset_[A-Za-z0-9_-]+$/, 'Invalid asset id'),
 });
 
 const writeReviewBodySchema = z.object({
   editedHtml: z.string(),
+});
+
+const versionSnapshotBodySchema = z.object({
+  reason: z.string().min(1).default('manual-snapshot'),
+});
+
+const versionDiffQuerySchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+});
+
+const versionRollbackBodySchema = z.object({
+  snapshotId: z.string().min(1),
 });
 
 const writeDecisionSchema = z.discriminatedUnion('action', [
@@ -39,7 +59,7 @@ const writeDecisionSchema = z.discriminatedUnion('action', [
 ]);
 
 const writeDecisionBodySchema = z.object({
-  assetId: z.string().min(1),
+  assetId: z.string().regex(/^asset_[A-Za-z0-9_-]+$/, 'Invalid asset id'),
   editedHtml: z.string(),
   decision: writeDecisionSchema,
 });
@@ -108,6 +128,16 @@ async function assertWritableNewFileInsideVault(vaultDir: string, filePath: stri
   }
 }
 
+function toPublicVersionSnapshot(snapshot: VersionSnapshot): Omit<VersionSnapshot, 'contentPath'> {
+  const { contentPath, ...publicSnapshot } = snapshot;
+  void contentPath;
+  return publicSnapshot;
+}
+
+async function publicVersionSnapshots(vaultDir: string, assetId: string): Promise<Array<Omit<VersionSnapshot, 'contentPath'>>> {
+  return (await listVersionSnapshots(vaultDir, assetId)).map(toPublicVersionSnapshot);
+}
+
 export async function registerVaultRoutes(app: FastifyInstance, config: AppConfig): Promise<void> {
   app.get('/api/vault/library', async (request) => {
     const query = libraryQuerySchema.parse(request.query);
@@ -140,6 +170,70 @@ export async function registerVaultRoutes(app: FastifyInstance, config: AppConfi
       vaultDir: config.vaultDir,
       assetId: params.assetId,
     });
+  });
+
+  app.get('/api/vault/assets/:assetId/versions', async (request) => {
+    const params = assetParamsSchema.parse(request.params);
+
+    return {
+      snapshots: await publicVersionSnapshots(config.vaultDir, params.assetId),
+    };
+  });
+
+  app.post('/api/vault/assets/:assetId/versions/snapshot', async (request, reply) => {
+    const params = assetParamsSchema.parse(request.params);
+    const body = versionSnapshotBodySchema.parse(request.body ?? {});
+    const source = await readVaultAssetSource({
+      vaultDir: config.vaultDir,
+      assetId: params.assetId,
+    });
+
+    await assertExistingFileInsideVault(config.vaultDir, source.sourcePath);
+
+    const snapshot = toPublicVersionSnapshot(
+      await createVersionSnapshot({
+        vaultDir: config.vaultDir,
+        assetId: params.assetId,
+        sourcePath: source.sourcePath,
+        reason: body.reason,
+      }),
+    );
+
+    return reply.code(201).send(snapshot);
+  });
+
+  app.get('/api/vault/assets/:assetId/versions/diff', async (request) => {
+    const params = assetParamsSchema.parse(request.params);
+    const query = versionDiffQuerySchema.parse(request.query);
+
+    return diffVersionSnapshots({
+      vaultDir: config.vaultDir,
+      assetId: params.assetId,
+      fromSnapshotId: query.from,
+      toSnapshotId: query.to,
+    });
+  });
+
+  app.post('/api/vault/assets/:assetId/versions/rollback', async (request) => {
+    const params = assetParamsSchema.parse(request.params);
+    const body = versionRollbackBodySchema.parse(request.body);
+    const source = await readVaultAssetSource({
+      vaultDir: config.vaultDir,
+      assetId: params.assetId,
+    });
+
+    await assertExistingFileInsideVault(config.vaultDir, source.sourcePath);
+
+    return {
+      assetId: params.assetId,
+      snapshotId: body.snapshotId,
+      ...(await rollbackToSnapshot({
+        vaultDir: config.vaultDir,
+        assetId: params.assetId,
+        snapshotId: body.snapshotId,
+        targetPath: source.sourcePath,
+      })),
+    };
   });
 
   app.post('/api/vault/assets/:assetId/write-review', async (request) => {

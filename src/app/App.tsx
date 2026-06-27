@@ -13,6 +13,8 @@ import type {
   SafeAiStatus,
   VaultAssetSourceResponse,
   VaultLibraryResponse,
+  VaultVersionDiff,
+  VaultVersionSnapshot,
   VaultWriteDecision,
   VaultWriteReview,
 } from '../shared/types';
@@ -32,13 +34,19 @@ export function App() {
   const [vaultWriteBusy, setVaultWriteBusy] = useState(false);
   const [vaultWriteMessage, setVaultWriteMessage] = useState('');
   const [vaultWriteDecisionKey, setVaultWriteDecisionKey] = useState(0);
+  const [vaultVersions, setVaultVersions] = useState<VaultVersionSnapshot[]>();
+  const [vaultVersionDiff, setVaultVersionDiff] = useState<VaultVersionDiff>();
+  const [vaultVersionBusy, setVaultVersionBusy] = useState(false);
+  const [vaultVersionMessage, setVaultVersionMessage] = useState('');
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [thumbnailMessage, setThumbnailMessage] = useState('');
   const [aiResult, setAiResult] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const vaultReviewRequestIdRef = useRef(0);
+  const vaultVersionRequestIdRef = useRef(0);
   const activeVaultPreviewIdRef = useRef<string | undefined>(undefined);
+  const requestedVaultPreviewIdRef = useRef<string | undefined>(undefined);
 
   const activeNoteId = activeNote?.id;
   const statusLine = useMemo(() => {
@@ -171,18 +179,119 @@ export function App() {
   }
 
   async function openVaultItem(itemId: string): Promise<void> {
-    vaultReviewRequestIdRef.current += 1;
+    const requestId = vaultReviewRequestIdRef.current + 1;
+    const versionRequestId = vaultVersionRequestIdRef.current + 1;
+    vaultReviewRequestIdRef.current = requestId;
+    vaultVersionRequestIdRef.current = versionRequestId;
+    requestedVaultPreviewIdRef.current = itemId;
     setVaultPreviewBusy(true);
     setVaultWriteReview(undefined);
     setVaultWriteMessage('');
+    setVaultVersions(undefined);
+    setVaultVersionDiff(undefined);
+    setVaultVersionBusy(true);
+    setVaultVersionMessage('Loading versions');
     setError('');
 
     try {
-      setVaultPreview(await apiClient.getVaultAssetSource(itemId));
+      const preview = await apiClient.getVaultAssetSource(itemId);
+      if (vaultReviewRequestIdRef.current !== requestId) {
+        return;
+      }
+      setVaultPreview(preview);
+
+      try {
+        const versions = await apiClient.listVaultVersions(itemId);
+        if (vaultReviewRequestIdRef.current !== requestId || vaultVersionRequestIdRef.current !== versionRequestId) {
+          return;
+        }
+        setVaultVersions(versions.snapshots);
+        setVaultVersionMessage(versions.snapshots.length > 0 ? 'Version history ready' : 'No snapshots yet');
+      } catch {
+        if (vaultReviewRequestIdRef.current !== requestId || vaultVersionRequestIdRef.current !== versionRequestId) {
+          return;
+        }
+        setVaultVersions([]);
+        setVaultVersionMessage('Version history unavailable');
+      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '预览打开失败');
+      if (vaultReviewRequestIdRef.current === requestId) {
+        setError(caught instanceof Error ? caught.message : '预览打开失败');
+      }
     } finally {
-      setVaultPreviewBusy(false);
+      if (vaultReviewRequestIdRef.current === requestId) {
+        setVaultPreviewBusy(false);
+        setVaultVersionBusy(false);
+      }
+    }
+  }
+
+  async function compareLatestVaultVersions(): Promise<void> {
+    if (!vaultPreview || !vaultVersions || vaultVersions.length < 2) {
+      return;
+    }
+
+    const from = vaultVersions[vaultVersions.length - 2];
+    const to = vaultVersions[vaultVersions.length - 1];
+    const assetId = vaultPreview.assetId;
+    const versionRequestId = vaultVersionRequestIdRef.current + 1;
+    vaultVersionRequestIdRef.current = versionRequestId;
+    setVaultVersionBusy(true);
+    setVaultVersionMessage('Comparing versions');
+    setError('');
+
+    try {
+      const diff = await apiClient.diffVaultVersions(assetId, from.snapshotId, to.snapshotId);
+      if (vaultVersionRequestIdRef.current !== versionRequestId || requestedVaultPreviewIdRef.current !== assetId) {
+        return;
+      }
+      setVaultVersionDiff(diff);
+      setVaultVersionMessage('Diff ready');
+    } catch (caught) {
+      if (vaultVersionRequestIdRef.current !== versionRequestId || requestedVaultPreviewIdRef.current !== assetId) {
+        return;
+      }
+      setError(caught instanceof Error ? caught.message : '版本对比失败');
+      setVaultVersionMessage('Diff failed');
+    } finally {
+      if (vaultVersionRequestIdRef.current === versionRequestId && requestedVaultPreviewIdRef.current === assetId) {
+        setVaultVersionBusy(false);
+      }
+    }
+  }
+
+  async function rollbackVaultVersion(snapshotId: string): Promise<void> {
+    if (!vaultPreview) {
+      return;
+    }
+
+    const assetId = vaultPreview.assetId;
+    const versionRequestId = vaultVersionRequestIdRef.current + 1;
+    vaultVersionRequestIdRef.current = versionRequestId;
+    setVaultVersionBusy(true);
+    setVaultVersionMessage('Rolling back');
+    setError('');
+
+    try {
+      await apiClient.rollbackVaultVersion(assetId, snapshotId);
+      const [preview, versions] = await Promise.all([apiClient.getVaultAssetSource(assetId), apiClient.listVaultVersions(assetId)]);
+      if (vaultVersionRequestIdRef.current !== versionRequestId || requestedVaultPreviewIdRef.current !== assetId) {
+        return;
+      }
+      setVaultPreview(preview);
+      setVaultVersions(versions.snapshots);
+      setVaultVersionDiff(undefined);
+      setVaultVersionMessage('Rollback complete');
+    } catch (caught) {
+      if (vaultVersionRequestIdRef.current !== versionRequestId || requestedVaultPreviewIdRef.current !== assetId) {
+        return;
+      }
+      setError(caught instanceof Error ? caught.message : '版本回滚失败');
+      setVaultVersionMessage('Rollback failed');
+    } finally {
+      if (vaultVersionRequestIdRef.current === versionRequestId && requestedVaultPreviewIdRef.current === assetId) {
+        setVaultVersionBusy(false);
+      }
     }
   }
 
@@ -277,8 +386,14 @@ export function App() {
           writeBusy={vaultWriteBusy}
           writeMessage={vaultWriteMessage || undefined}
           writeDecisionKey={vaultWriteDecisionKey}
+          versionSnapshots={vaultVersions}
+          versionDiff={vaultVersionDiff}
+          versionBusy={vaultVersionBusy}
+          versionMessage={vaultVersionMessage || undefined}
           onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
+          onCompareLatestVersions={() => void compareLatestVaultVersions()}
+          onRollbackSnapshot={(snapshotId) => void rollbackVaultVersion(snapshotId)}
           onReviewEdit={(editedHtml) => void reviewVaultEdit(editedHtml)}
           onCancelWrite={() => void applyVaultDecision({ action: 'cancel' })}
           onSaveAs={() => {

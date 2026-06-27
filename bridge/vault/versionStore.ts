@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export interface VersionSnapshot {
@@ -52,6 +52,7 @@ export interface VersionDiff {
 }
 
 function versionDir(vaultDir: string, assetId: string): string {
+  assertSafeAssetId(assetId);
   return path.join(vaultDir, '.htmlvault', 'versions', assetId);
 }
 
@@ -61,6 +62,21 @@ function snapshotIndexPath(vaultDir: string, assetId: string): string {
 
 function contentHash(content: string): string {
   return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function httpError(message: string, statusCode: number): Error & { statusCode: number } {
+  return Object.assign(new Error(message), { statusCode });
+}
+
+function assertSafeAssetId(assetId: string): void {
+  if (!/^asset_[A-Za-z0-9_-]+$/.test(assetId)) {
+    throw httpError('Invalid asset id', 400);
+  }
+}
+
+function isInside(parentPath: string, childPath: string, allowEqual = false): boolean {
+  const relative = path.relative(parentPath, childPath);
+  return (allowEqual && relative === '') || Boolean(relative && !relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 function snapshotIdFor(content: string, reason: string): string {
@@ -203,17 +219,29 @@ async function findSnapshot(vaultDir: string, assetId: string, snapshotId: strin
   const snapshot = (await listVersionSnapshots(vaultDir, assetId)).find((item) => item.snapshotId === snapshotId);
 
   if (!snapshot) {
-    throw new Error(`Snapshot not found: ${snapshotId}`);
+    throw httpError(`Snapshot not found: ${snapshotId}`, 404);
   }
 
   return snapshot;
 }
 
+async function readSnapshotContent(vaultDir: string, assetId: string, snapshot: VersionSnapshot): Promise<string> {
+  const [versionDirRealPath, contentRealPath] = await Promise.all([realpath(versionDir(vaultDir, assetId)), realpath(snapshot.contentPath)]);
+
+  if (!isInside(versionDirRealPath, contentRealPath)) {
+    throw httpError('Snapshot content path is outside the asset version directory', 400);
+  }
+
+  return readFile(contentRealPath, 'utf8');
+}
+
 export async function diffVersionSnapshots(options: DiffSnapshotsOptions): Promise<VersionDiff> {
   const fromSnapshot = await findSnapshot(options.vaultDir, options.assetId, options.fromSnapshotId);
   const toSnapshot = await findSnapshot(options.vaultDir, options.assetId, options.toSnapshotId);
-  const from = await readFile(fromSnapshot.contentPath, 'utf8');
-  const to = await readFile(toSnapshot.contentPath, 'utf8');
+  const [from, to] = await Promise.all([
+    readSnapshotContent(options.vaultDir, options.assetId, fromSnapshot),
+    readSnapshotContent(options.vaultDir, options.assetId, toSnapshot),
+  ]);
 
   return {
     source: lineDiff(from, to),
@@ -224,7 +252,7 @@ export async function diffVersionSnapshots(options: DiffSnapshotsOptions): Promi
 
 export async function rollbackToSnapshot(options: RollbackOptions): Promise<{ restoredHash: string }> {
   const snapshot = await findSnapshot(options.vaultDir, options.assetId, options.snapshotId);
-  const content = await readFile(snapshot.contentPath, 'utf8');
+  const content = await readSnapshotContent(options.vaultDir, options.assetId, snapshot);
 
   await writeFile(options.targetPath, content, 'utf8');
 

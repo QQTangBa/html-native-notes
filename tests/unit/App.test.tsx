@@ -517,4 +517,251 @@ describe('App workspace', () => {
     expect(screen.queryByRole('region', { name: 'Source Guard review' })).not.toBeInTheDocument();
     expect(screen.getByTitle('Vault HTML preview')).toHaveAttribute('srcdoc', '<html><body><h1>Revenue Preview</h1></body></html>');
   });
+
+  it('loads Vault versions, compares the latest snapshots, and rolls back a selected snapshot', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/market.html',
+          relativeSourcePath: 'imports/ai/market.html',
+          folderPath: 'imports/ai',
+          tags: ['market', 'ai'],
+          summary: 'Agent generated market map',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'ready',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports/ai', itemCount: 1 }],
+      availableFilters: {
+        tags: ['ai', 'market'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+    const snapshots = [
+      {
+        snapshotId: 'snap_base',
+        assetId: 'asset_market',
+        reason: 'baseline',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        contentHash: 'sha256:base',
+      },
+      {
+        snapshotId: 'snap_external',
+        assetId: 'asset_market',
+        reason: 'external-agent-edit',
+        createdAt: '2026-06-27T00:05:00.000Z',
+        contentHash: 'sha256:external',
+      },
+    ];
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/vault/assets/asset_market/source') {
+        return jsonResponse({
+          assetId: 'asset_market',
+          title: 'Agent Market Map',
+          sourcePath: '/Vault/imports/ai/market.html',
+          sourceHashMatches: true,
+          html: '<html><body><h1>Agent Preview</h1><p>Beta</p></body></html>',
+        });
+      }
+
+      if (url === '/api/vault/assets/asset_market/versions') {
+        return jsonResponse({ snapshots });
+      }
+
+      if (url === '/api/vault/assets/asset_market/versions/diff?from=snap_base&to=snap_external') {
+        return jsonResponse({
+          source: { added: ['<p>Beta</p>'], removed: ['<p>Alpha</p>'] },
+          content: { added: ['Beta'], removed: ['Alpha'] },
+          domSummary: { addedTags: ['section'], removedTags: [], changedTitle: { from: 'V1', to: 'V2' } },
+        });
+      }
+
+      if (url === '/api/vault/assets/asset_market/versions/rollback' && method === 'POST') {
+        expect(JSON.parse(String(init?.body))).toEqual({ snapshotId: 'snap_base' });
+        return jsonResponse({ assetId: 'asset_market', snapshotId: 'snap_base', restoredHash: 'sha256:base' });
+      }
+
+      if (url === '/api/notes' && method === 'GET') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview Agent Market Map' }));
+
+    expect(await screen.findByRole('region', { name: 'Version timeline' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Compare latest versions' }));
+    expect(await screen.findByText('+<p>Beta</p>')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rollback to baseline' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/vault/assets/asset_market/versions/rollback',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/vault/assets/asset_market/source');
+  });
+
+  it('ignores a late version diff after the user starts opening another preview asset', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/market.html',
+          relativeSourcePath: 'imports/ai/market.html',
+          folderPath: 'imports/ai',
+          tags: ['market', 'ai'],
+          summary: 'Agent generated market map',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'ready',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+        {
+          id: 'asset_revenue',
+          kind: 'html-note',
+          title: 'Revenue Dashboard',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/revenue.html',
+          relativeSourcePath: 'imports/ai/revenue.html',
+          folderPath: 'imports/ai',
+          tags: ['finance'],
+          summary: 'Revenue report',
+          updatedAt: '2026-06-27T00:10:00.000Z',
+          thumbnail: {
+            status: 'ready',
+            path: '/Vault/.htmlvault/thumbnails/asset_revenue.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports/ai', itemCount: 2 }],
+      availableFilters: {
+        tags: ['ai', 'finance', 'market'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+    const marketSnapshots = [
+      {
+        snapshotId: 'snap_base',
+        assetId: 'asset_market',
+        reason: 'baseline',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        contentHash: 'sha256:base',
+      },
+      {
+        snapshotId: 'snap_external',
+        assetId: 'asset_market',
+        reason: 'external-agent-edit',
+        createdAt: '2026-06-27T00:05:00.000Z',
+        contentHash: 'sha256:external',
+      },
+    ];
+    const lateDiff = deferred<Response>();
+    const delayedRevenueSource = deferred<Response>();
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
+      }
+
+      if (url === '/api/vault/assets/asset_market/source') {
+        return jsonResponse({
+          assetId: 'asset_market',
+          title: 'Agent Market Map',
+          sourcePath: '/Vault/imports/ai/market.html',
+          sourceHashMatches: true,
+          html: '<html><body><h1>Agent Preview</h1><p>Beta</p></body></html>',
+        });
+      }
+
+      if (url === '/api/vault/assets/asset_revenue/source') {
+        return delayedRevenueSource.promise;
+      }
+
+      if (url === '/api/vault/assets/asset_market/versions') {
+        return jsonResponse({ snapshots: marketSnapshots });
+      }
+
+      if (url === '/api/vault/assets/asset_revenue/versions') {
+        return jsonResponse({ snapshots: [] });
+      }
+
+      if (url === '/api/vault/assets/asset_market/versions/diff?from=snap_base&to=snap_external') {
+        return lateDiff.promise;
+      }
+
+      if (url === '/api/notes') {
+        return jsonResponse([]);
+      }
+
+      if (url === '/api/config/ai/status') {
+        return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      return jsonResponse({ error: { code: 'NOT_FOUND', message: url } }, { status: 404 });
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview Agent Market Map' }));
+    expect(await screen.findByRole('region', { name: 'Version timeline' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Compare latest versions' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview Revenue Dashboard' }));
+
+    lateDiff.resolve(
+      jsonResponse({
+        source: { added: ['<p>Beta</p>'], removed: ['<p>Alpha</p>'] },
+        content: { added: ['Beta'], removed: ['Alpha'] },
+        domSummary: { addedTags: ['section'], removedTags: [], changedTitle: { from: 'V1', to: 'V2' } },
+      }),
+    );
+    delayedRevenueSource.resolve(
+      jsonResponse({
+        assetId: 'asset_revenue',
+        title: 'Revenue Dashboard',
+        sourcePath: '/Vault/imports/ai/revenue.html',
+        sourceHashMatches: true,
+        html: '<html><body><h1>Revenue Preview</h1></body></html>',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Vault HTML preview')).toHaveAttribute('srcdoc', '<html><body><h1>Revenue Preview</h1></body></html>');
+    });
+    expect(screen.queryByText('+<p>Beta</p>')).not.toBeInTheDocument();
+  });
 });

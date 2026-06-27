@@ -391,4 +391,77 @@ describe('local API', () => {
       .expect(400);
     await expect(access(path.join(outsideDir, 'escaped-copy.html'))).rejects.toThrow();
   });
+
+  it('lists, diffs, snapshots, and rolls back Vault asset versions through the local API', async () => {
+    const vaultDir = path.join(tempDir, 'vault');
+    const aiDir = path.join(vaultDir, 'imports', 'ai');
+    const htmlPath = path.join(aiDir, 'api-versioned.html');
+    const firstHtml = '<!doctype html><title>V1</title><main><h1>Versioned</h1><p>Alpha</p></main>';
+    const secondHtml = '<!doctype html><title>V2</title><main><h1>Versioned</h1><p>Beta</p><section>New</section></main>';
+    await mkdir(aiDir, { recursive: true });
+    await writeFile(htmlPath, firstHtml, 'utf8');
+    const intake = await intakeBridgeRequestToVault({
+      vaultDir,
+      request: {
+        requestId: 'req_api_versions',
+        type: 'registerHtmlAsset',
+        createdAt: '2026-06-27T00:00:00.000Z',
+        sourceAgent: 'codex',
+        sourcePath: htmlPath,
+        sourceHash: sha256(firstHtml),
+        title: 'API Versioned',
+      },
+    });
+
+    const baseline = await request(app.server).get(`/api/vault/assets/${intake.asset.id}/versions`).expect(200);
+    expect(baseline.body.snapshots).toHaveLength(1);
+    expect(baseline.body.snapshots[0]).toMatchObject({
+      assetId: intake.asset.id,
+      reason: 'baseline',
+      contentHash: sha256(firstHtml),
+    });
+    expect(baseline.body.snapshots[0]).not.toHaveProperty('contentPath');
+
+    await writeFile(htmlPath, secondHtml, 'utf8');
+    const snapshot = await request(app.server)
+      .post(`/api/vault/assets/${intake.asset.id}/versions/snapshot`)
+      .send({ reason: 'external-agent-edit' })
+      .expect(201);
+    expect(snapshot.body).toMatchObject({
+      assetId: intake.asset.id,
+      reason: 'external-agent-edit',
+      contentHash: sha256(secondHtml),
+    });
+
+    const versions = await request(app.server).get(`/api/vault/assets/${intake.asset.id}/versions`).expect(200);
+    expect(versions.body.snapshots.map((item: { reason: string }) => item.reason)).toEqual(['baseline', 'external-agent-edit']);
+
+    const diff = await request(app.server)
+      .get(`/api/vault/assets/${intake.asset.id}/versions/diff`)
+      .query({
+        from: baseline.body.snapshots[0].snapshotId,
+        to: snapshot.body.snapshotId,
+      })
+      .expect(200);
+    expect(diff.body.source.added).toContain('<p>Beta</p>');
+    expect(diff.body.content.added).toContain('Beta');
+    expect(diff.body.domSummary.addedTags).toContain('section');
+    expect(diff.body.domSummary.changedTitle).toEqual({ from: 'V1', to: 'V2' });
+
+    const rollback = await request(app.server)
+      .post(`/api/vault/assets/${intake.asset.id}/versions/rollback`)
+      .send({ snapshotId: baseline.body.snapshots[0].snapshotId })
+      .expect(200);
+    expect(rollback.body).toMatchObject({
+      assetId: intake.asset.id,
+      snapshotId: baseline.body.snapshots[0].snapshotId,
+      restoredHash: sha256(firstHtml),
+    });
+    expect(await readFile(htmlPath, 'utf8')).toBe(firstHtml);
+  });
+
+  it('rejects unsafe Vault version asset IDs before reading version files', async () => {
+    await request(app.server).get('/api/vault/assets/..%2Foutside/versions').expect(400);
+    await request(app.server).get('/api/vault/assets/..%2Foutside/versions/diff?from=snap_a&to=snap_b').expect(400);
+  });
 });

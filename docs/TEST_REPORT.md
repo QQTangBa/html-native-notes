@@ -209,6 +209,16 @@ npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx test
 
 Result: PASS. 26 tests. This proves the current preview-source edit flow from three angles: the local API creates a review without changing source files, applies cancel/save-as/write-back decisions from server-recomputed review data, rejects symlink escapes, rejects save-as overwrite, and ignores fabricated review redirection; the VaultHome component exposes an editable HTML draft, a Source Guard diff region, explicit decision buttons, and stale-draft reset on preview switch; the App shell calls the review API, submits the cancel decision, and drops late reviews from previously active assets. This is not yet direct text editing inside the rendered iframe.
 
+Vault Version Engine API and UI evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/integration/api.test.ts tests/unit/VaultHome.test.tsx tests/unit/App.test.tsx
+```
+
+Result: PASS. 35 focused tests after review fixes. The added version tests prove the local API can list baseline snapshots, create an explicit `external-agent-edit` snapshot, diff two snapshots with source/content/DOM summaries, and roll back a registered Vault source to a selected snapshot. They also prove the VaultHome preview pane renders a compact Version timeline, Compare latest versions action, rollback buttons, and source/content/DOM diff regions; the App shell loads versions after preview open, calls the latest-version diff endpoint, posts rollback decisions, and refreshes preview source after rollback. Review follow-up tests prove unsafe encoded asset IDs are rejected, tampered snapshot `contentPath` values outside `.htmlvault/versions/<assetId>/` are rejected before reads, renderer-facing snapshots do not expose `contentPath`, and late version diff responses are ignored after the user starts opening another preview asset. This still does not prove automatic watcher-created snapshots, branch/recover, screenshot hints, or native Tauri desktop launch.
+
 Runtime VaultHome browser evidence:
 
 Date: 2026-06-27
@@ -253,12 +263,10 @@ Result: PASS. The local VaultHome page opened `data/vault/imports/ai/codex-gener
 Latest full non-Rust validation:
 
 ```bash
-npm run typecheck
-npm run test
-npm run lint
-npm run test:bridge
-npm run build
+npm run verify
 ```
+
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 22 test files and 97 tests, then Vite built `dist/index.html`, `dist/assets/index-D2NzwLvW.css`, and `dist/assets/index-BlvhswOV.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

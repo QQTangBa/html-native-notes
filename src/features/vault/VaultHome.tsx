@@ -1,6 +1,20 @@
-import { Eye, FileText, Folder, Grid2X2, List, Pencil, RefreshCw, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import {
+  Eye,
+  FileText,
+  Folder,
+  GitCompare,
+  Grid2X2,
+  History,
+  List,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  ShieldCheck,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import type { VaultWriteReview } from '../../shared/types';
+import type { VaultVersionDiff, VaultVersionSnapshot, VaultWriteReview } from '../../shared/types';
 
 export interface VaultHomeItem {
   id: string;
@@ -28,10 +42,16 @@ export interface VaultHomeProps {
   writeBusy?: boolean;
   writeMessage?: string;
   writeDecisionKey?: number;
+  versionSnapshots?: VaultVersionSnapshot[];
+  versionDiff?: VaultVersionDiff;
+  versionBusy?: boolean;
+  versionMessage?: string;
   thumbnailBusy?: boolean;
   thumbnailMessage?: string;
   onOpenItem?: (itemId: string) => void;
   onGenerateThumbnails?: () => void;
+  onCompareLatestVersions?: () => void;
+  onRollbackSnapshot?: (snapshotId: string) => void;
   onReviewEdit?: (editedHtml: string) => void;
   onCancelWrite?: () => void;
   onSaveAs?: () => void;
@@ -79,10 +99,16 @@ export function VaultHome({
   writeBusy = false,
   writeMessage,
   writeDecisionKey = 0,
+  versionSnapshots,
+  versionDiff,
+  versionBusy = false,
+  versionMessage,
   thumbnailBusy = false,
   thumbnailMessage,
   onOpenItem,
   onGenerateThumbnails,
+  onCompareLatestVersions,
+  onRollbackSnapshot,
   onReviewEdit,
   onCancelWrite,
   onSaveAs,
@@ -139,6 +165,8 @@ export function VaultHome({
   const thumbnailButtonLabel = thumbnailBusy ? 'Rendering thumbnails' : `Generate ${pendingThumbnailLabel(pendingThumbnailCount)}`;
   const thumbnailStatusText = thumbnailMessage ?? (pendingThumbnailCount > 0 ? pendingThumbnailLabel(pendingThumbnailCount) : 'Thumbnails ready');
   const diffLines = writeReview?.diff ? writeReview.diff.split('\n') : [];
+  const hasVersionTimeline = Boolean(versionSnapshots || versionMessage || versionBusy);
+  const canCompareVersions = Boolean(onCompareLatestVersions && versionSnapshots && versionSnapshots.length >= 2 && !versionBusy);
 
   return (
     <section className="vault-home" aria-label="Vault home">
@@ -359,7 +387,110 @@ export function VaultHome({
                   ) : null}
                 </div>
               ) : (
-                <iframe className="vault-preview-frame" title="Vault HTML preview" srcDoc={previewHtml} sandbox="allow-same-origin" />
+                <>
+                  <iframe className="vault-preview-frame" title="Vault HTML preview" srcDoc={previewHtml} sandbox="allow-same-origin" />
+                  {hasVersionTimeline ? (
+                    <section className="vault-version-panel" role="region" aria-label="Version timeline">
+                      <div className="vault-version-head">
+                        <div>
+                          <p className="eyebrow">Versions</p>
+                          <strong>{versionSnapshots?.length ?? 0} snapshots</strong>
+                        </div>
+                        <button
+                          type="button"
+                          className="vault-preview-tool"
+                          aria-label="Compare latest versions"
+                          disabled={!canCompareVersions}
+                          onClick={onCompareLatestVersions}
+                        >
+                          <GitCompare size={14} aria-hidden="true" />
+                          <span>Compare</span>
+                        </button>
+                      </div>
+                      <div className="vault-version-list">
+                        {versionSnapshots?.length ? (
+                          versionSnapshots.map((snapshot) => (
+                            <div className="vault-version-row" key={snapshot.snapshotId}>
+                              <History size={14} aria-hidden="true" />
+                              <div>
+                                <strong>{snapshot.reason}</strong>
+                                <span>
+                                  {formatTime(snapshot.createdAt)} · {snapshot.contentHash.slice(0, 18)}
+                                </span>
+                              </div>
+                              {onRollbackSnapshot ? (
+                                <button
+                                  type="button"
+                                  className="vault-version-rollback"
+                                  aria-label={`Rollback to ${snapshot.reason}`}
+                                  disabled={versionBusy}
+                                  onClick={() => onRollbackSnapshot(snapshot.snapshotId)}
+                                >
+                                  <RotateCcw size={13} aria-hidden="true" />
+                                </button>
+                              ) : null}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="vault-version-empty">No snapshots yet</p>
+                        )}
+                      </div>
+                      {versionMessage ? <p className="vault-version-message">{versionMessage}</p> : null}
+                    </section>
+                  ) : null}
+                  {versionDiff ? (
+                    <section className="vault-version-diff" role="region" aria-label="Version diff">
+                      <div className="vault-version-diff-grid">
+                        <div>
+                          <strong>Source</strong>
+                          <pre>
+                            {versionDiff.source.removed.map((line) => (
+                              <code key={`source-remove-${line}`} data-diff="remove">
+                                -{line}
+                              </code>
+                            ))}
+                            {versionDiff.source.added.map((line) => (
+                              <code key={`source-add-${line}`} data-diff="add">
+                                +{line}
+                              </code>
+                            ))}
+                          </pre>
+                        </div>
+                        <div>
+                          <strong>Content</strong>
+                          <pre>
+                            {versionDiff.content.removed.map((line) => (
+                              <code key={`content-remove-${line}`} data-diff="remove">
+                                -{line}
+                              </code>
+                            ))}
+                            {versionDiff.content.added.map((line) => (
+                              <code key={`content-add-${line}`} data-diff="add">
+                                +{line}
+                              </code>
+                            ))}
+                          </pre>
+                        </div>
+                        <div>
+                          <strong>DOM</strong>
+                          <div className="vault-dom-summary">
+                            {versionDiff.domSummary.changedTitle ? (
+                              <span>
+                                {versionDiff.domSummary.changedTitle.from} -&gt; {versionDiff.domSummary.changedTitle.to}
+                              </span>
+                            ) : null}
+                            {versionDiff.domSummary.addedTags.map((tagName) => (
+                              <span key={`added-${tagName}`}>{tagName}</span>
+                            ))}
+                            {versionDiff.domSummary.removedTags.map((tagName) => (
+                              <span key={`removed-${tagName}`}>-{tagName}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  ) : null}
+                </>
               )}
             </aside>
           ) : null}

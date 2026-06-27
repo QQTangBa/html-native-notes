@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -108,5 +108,48 @@ describe('Vault version store', () => {
 
     expect(rollback.restoredHash).toBe(first.contentHash);
     expect(await readFile(managedPath, 'utf8')).toContain('<p>Alpha</p>');
+  });
+
+  it('rejects unsafe asset IDs and snapshot content paths before reading version files', async () => {
+    await expect(
+      createVersionSnapshot({
+        vaultDir,
+        assetId: '../outside',
+        sourcePath: managedPath,
+        reason: 'baseline',
+      }),
+    ).rejects.toThrow('Invalid asset id');
+
+    const safe = await createVersionSnapshot({
+      vaultDir,
+      assetId: 'asset_test',
+      sourcePath: managedPath,
+      reason: 'baseline',
+    });
+    const outsidePath = path.join(tempDir, 'outside.html');
+    await writeFile(outsidePath, '<!doctype html><title>Outside</title><p>Secret</p>', 'utf8');
+    await mkdir(path.join(vaultDir, '.htmlvault', 'versions', 'asset_test'), { recursive: true });
+    await writeFile(
+      path.join(vaultDir, '.htmlvault', 'versions', 'asset_test', 'snapshots.json'),
+      `${JSON.stringify([
+        safe,
+        {
+          ...safe,
+          snapshotId: 'snap_tampered',
+          reason: 'tampered',
+          contentPath: outsidePath,
+        },
+      ])}\n`,
+      'utf8',
+    );
+
+    await expect(
+      diffVersionSnapshots({
+        vaultDir,
+        assetId: 'asset_test',
+        fromSnapshotId: safe.snapshotId,
+        toSnapshotId: 'snap_tampered',
+      }),
+    ).rejects.toThrow('Snapshot content path is outside the asset version directory');
   });
 });
