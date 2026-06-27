@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/app/App';
+import type { VaultLibraryResponse } from '../../src/shared/types';
 
 const note = {
   id: 'note_abc',
@@ -13,6 +14,8 @@ const note = {
   archived: false,
 };
 
+let vaultLibrary: VaultLibraryResponse;
+
 function jsonResponse(body: unknown, init?: ResponseInit): Response {
   return new Response(JSON.stringify(body), {
     status: init?.status ?? 200,
@@ -21,6 +24,15 @@ function jsonResponse(body: unknown, init?: ResponseInit): Response {
 }
 
 beforeEach(() => {
+  vaultLibrary = {
+    items: [],
+    folders: [],
+    availableFilters: {
+      tags: [],
+      sourceAgents: [],
+      kinds: [],
+    },
+  };
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -33,6 +45,10 @@ beforeEach(() => {
 
       if (url === '/api/config/ai/status') {
         return jsonResponse({ configured: false, baseUrlSet: false });
+      }
+
+      if (url === '/api/vault/library') {
+        return jsonResponse(vaultLibrary);
       }
 
       if (url === '/api/notes' && method === 'POST') {
@@ -89,5 +105,40 @@ describe('App workspace', () => {
       const preview = screen.getByTitle('HTML preview') as HTMLIFrameElement;
       expect(preview.srcdoc).toContain('Preview text');
     });
+  });
+
+  it('loads Vault assets into the desktop Vault home', async () => {
+    vaultLibrary = {
+      items: [
+        {
+          id: 'asset_market',
+          kind: 'html-note',
+          title: 'Agent Market Map',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/ai/market.html',
+          relativeSourcePath: 'imports/ai/market.html',
+          folderPath: 'imports/ai',
+          tags: ['market', 'ai'],
+          summary: 'Agent generated market map',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'pending',
+            path: '/Vault/.htmlvault/thumbnails/asset_market.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports/ai', itemCount: 1 }],
+      availableFilters: {
+        tags: ['ai', 'market'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+
+    render(<App />);
+
+    expect(await screen.findByText('Agent Market Map')).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Search Vault' })).toBeInTheDocument();
   });
 });

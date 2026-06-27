@@ -73,6 +73,19 @@ textarea {
     #f3f0e7;
 }
 
+.desktop-vault-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 34px;
+  gap: 10px;
+  padding: 10px;
+  background: #0e1114;
+}
+
+.desktop-vault-shell .vault-home {
+  min-height: 0;
+}
+
 .panel {
   min-width: 0;
   min-height: 0;

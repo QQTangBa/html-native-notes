@@ -164,6 +164,16 @@ npm run test -- tests/integration/api.test.ts
 
 Result: PASS. 5 tests. The added Vault test proves `/api/vault/library` can read the configured local Vault directory, return AI-generated HTML already registered through bridge intake, and honor query/tag/source-agent filters. It does not yet prove Tauri command wiring or user-selected Vault persistence.
 
+App Vault loading evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/App.test.tsx
+```
+
+Result: PASS. 4 tests. The added App test proves the renderer calls the Vault Library API and shows VaultHome with an agent-generated HTML asset when the configured Vault has items. It does not yet prove native Tauri launch, real user-selected Vault loading, or visual screenshot QA.
+
 Latest full non-Rust validation:
 
 ```bash
@@ -173,7 +183,7 @@ npm run lint
 npm run test:bridge
 ```
 
-Result: PASS. Full test run: 21 files, 73 tests. Bridge test run: 12 files, 42 tests.
+Result: PASS. Full test run: 21 files, 74 tests. Bridge test run: 12 files, 42 tests.
 
 During validation, running `npm run test` and `npm run test:bridge` concurrently exposed a shared fixed-port conflict in `tests/integration/bridge/serviceRuntime.test.ts`. The test now allocates an available local port per run, and the concurrent validation pair passes.
 

@@ -4,8 +4,9 @@ import { HtmlEditor } from '../features/editor/HtmlEditor';
 import { NoteLibrary } from '../features/notes/NoteLibrary';
 import { PreviewPane } from '../features/preview/PreviewPane';
 import { SettingsPanel } from '../features/settings/SettingsPanel';
+import { VaultHome } from '../features/vault/VaultHome';
 import { apiClient } from '../shared/api/client';
-import type { AiAction, NoteMeta, NoteRecord, SafeAiStatus } from '../shared/types';
+import type { AiAction, NoteMeta, NoteRecord, SafeAiStatus, VaultLibraryResponse } from '../shared/types';
 
 const starterHtml = '<!doctype html><html><body><article><h1>新 HTML 笔记</h1><p>开始写你的内容。</p></article></body></html>';
 
@@ -15,6 +16,7 @@ export function App() {
   const [newTitle, setNewTitle] = useState('新 HTML 笔记');
   const [source, setSource] = useState(starterHtml);
   const [aiStatus, setAiStatus] = useState<SafeAiStatus>();
+  const [vaultLibrary, setVaultLibrary] = useState<VaultLibraryResponse>();
   const [aiResult, setAiResult] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -34,6 +36,7 @@ export function App() {
 
   useEffect(() => {
     void refresh();
+    void apiClient.listVaultLibrary().then(setVaultLibrary).catch(() => setVaultLibrary(undefined));
     void apiClient.aiStatus().then(setAiStatus).catch(() => setAiStatus({ configured: false, baseUrlSet: false }));
   }, []);
 
@@ -126,6 +129,15 @@ export function App() {
 
     setSource((current) => `${current}\n${aiResult}`);
     setAiResult('');
+  }
+
+  if (vaultLibrary?.items.length) {
+    return (
+      <main className="desktop-vault-shell" data-testid="workspace-shell">
+        <VaultHome items={vaultLibrary.items} />
+        <div className={error ? 'status-bar error' : 'status-bar'}>{statusLine}</div>
+      </main>
+    );
   }
 
   return (
