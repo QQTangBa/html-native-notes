@@ -72,6 +72,20 @@ Writonyx 的第二条产品假设是：
 
 这个项目未来会围绕三个方向继续发展。
 
+#### 下一期重点：Agent 可调用知识库
+
+下一期我们会把 Writonyx 从“管理 AI 生成文档的本地 Vault”推进到“可被 AI Agent 直接调用的知识资产层”。
+
+这个方向会借鉴 Ai 好记这类闭源互联网产品的精华：笔记不只是被人打开阅读，也应该能被 Codex、Claude Code、OpenClaw、Cursor 等 Agent 按权限检索、读取、总结和复用。但 Writonyx 的差异在于，它的核心资产不是传统纯文本笔记，而是 AI 时代大量出现的 HTML 页面、Markdown 文档、本地 dashboard、项目报告和可发布网页。
+
+下一期计划包含：
+
+- **Writonyx Skills / Agent Connector**：提供可一键接入 Agent 工具的技能包，让 Agent 能用自然语言搜索 Vault、读取文档摘要、获取大纲、调取渲染文本，并把新生成的 HTML/Markdown 注册进 Vault。
+- **Local Personal API**：开源版优先提供本地个人 API，而不是云端强绑定开放平台。用户可以在本机生成访问 token，让自己的 Agent 或脚本调用 Vault。
+- **细粒度权限 Scope**：至少区分 `vault:list`、`asset:read-summary`、`asset:read-rendered`、`asset:read-source`、`asset:search`、`asset:register`、`asset:export`、`asset:write-review`、`asset:write-apply` 等权限。
+- **只读先行，写入受控**：第一阶段优先开放查询、读取、摘要、注册；涉及修改源文件的能力必须经过 Source Guard，以 diff review、另存副本、确认写回的方式完成。
+- **Agent 场景模板**：沉淀项目复盘、周报/月报、学习计划、内容创作、跨文档追问、单篇快速回顾等高频模板，让 Writonyx 的 Vault 可以直接进入真实 AI 工作流。
+
 1. **成为 HTML-native 笔记编辑器**
 
    - 更完整的所见即所得 HTML 编辑。
@@ -101,6 +115,11 @@ Writonyx 的第二条产品假设是：
 
 Writonyx 当前按开源模式开发，但它天然适合存在一个闭源/商业封装版本。
 
+参照系上，Writonyx 会分成两条线看：
+
+- **开源生态对标 Obsidian**：本地优先、用户拥有文件、目录树/Vault 心智、可扩展插件生态、适合开发者和重度知识工作者长期使用。
+- **闭源互联网产品参考 Ai 好记这类 Agent-ready 笔记平台**：把笔记能力开放给 AI Agent，提供 Skill、API、权限、云同步、托管 AI 和自动化工作流，让笔记从静态记录变成可调用知识资产。
+
 原因很简单：HTML-first 笔记软件比传统 Markdown 笔记软件更接近网页、知识库和可分享报告。它天然适合接入：
 
 - 自动云同步
@@ -108,6 +127,8 @@ Writonyx 当前按开源模式开发，但它天然适合存在一个闭源/商�
 - 托管发布
 - 团队协作
 - 权限控制
+- 云端开放 API
+- 托管 Agent Skills / Connectors
 - 托管 AI 模型
 - 无需用户自行配置 API Key 的 AI 功能
 - 面向企业或专业用户的模板、报告流和 Agent 文档管理
@@ -291,6 +312,20 @@ The current open-source version focuses on local-first, testable, document-takeo
 
 ### Roadmap
 
+#### Next Focus: Agent-Callable Knowledge Base
+
+The next product phase will move Writonyx from a local Vault for AI-generated documents into an agent-callable knowledge asset layer.
+
+This direction borrows the strongest idea from closed-source internet products such as Ai Haoji: notes should not only be opened and read by humans; they should also be searchable, readable, summarizable, and reusable by Agents such as Codex, Claude Code, OpenClaw, Cursor, and other AI workflows. Writonyx differs by treating AI-era HTML pages, Markdown documents, local dashboards, project reports, and publishable web documents as first-class assets, not only traditional text notes.
+
+Planned next-phase capabilities include:
+
+- **Writonyx Skills / Agent Connector**: one-click Agent integration packages so Agents can search the Vault, read summaries, fetch outlines, access rendered text, and register newly generated HTML/Markdown documents.
+- **Local Personal API**: the open-source edition should start with a local API instead of a cloud-only open platform. Users can generate local access tokens for their own Agents and scripts.
+- **Fine-grained permission scopes**: expected scopes include `vault:list`, `asset:read-summary`, `asset:read-rendered`, `asset:read-source`, `asset:search`, `asset:register`, `asset:export`, `asset:write-review`, and `asset:write-apply`.
+- **Read-only first, controlled writes later**: the first phase should prioritize search, read, summarize, and register flows. Any source modification must pass through Source Guard with diff review, save-as-copy, and explicit write-back confirmation.
+- **Agent workflow templates**: project retrospectives, weekly/monthly reports, study plans, content drafting, cross-document Q&A, and single-document quick review templates that let the Vault participate in real AI work.
+
 1. **Become an HTML-native note editor**
 
    - richer WYSIWYG HTML editing
@@ -320,6 +355,11 @@ The current open-source version focuses on local-first, testable, document-takeo
 
 Writonyx is open source first, but it naturally supports a future closed-source/commercial wrapper.
 
+Writonyx uses two different benchmark lines:
+
+- **Open-source ecosystem benchmark: Obsidian**. Local-first ownership, user-controlled files, Vault/tree mental model, extensibility, and long-term trust for developers and serious knowledge workers.
+- **Closed-source internet product reference: Ai Haoji-style Agent-ready note platforms**. Notes become callable knowledge assets through Skills, APIs, permissions, cloud sync, managed AI, and automated workflows.
+
 Because HTML-first notes are closer to web pages, reports, and shareable knowledge assets than traditional Markdown notes, the product naturally fits:
 
 - automatic cloud sync
@@ -327,6 +367,8 @@ Because HTML-first notes are closer to web pages, reports, and shareable knowled
 - hosted publishing
 - team collaboration
 - permissions
+- cloud open APIs
+- managed Agent Skills / Connectors
 - managed AI models
 - AI features that do not require users to configure their own API keys
 - professional templates, report workflows, and AI Agent document management
