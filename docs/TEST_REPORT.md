@@ -174,6 +174,21 @@ npm run test -- tests/unit/App.test.tsx
 
 Result: PASS. 4 tests. The added App test proves the renderer calls the Vault Library API and shows VaultHome with an agent-generated HTML asset when the configured Vault has items. It does not yet prove native Tauri launch, real user-selected Vault loading, or visual screenshot QA.
 
+Runtime VaultHome browser evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npx tsx --eval "<generate data/vault/imports/ai/codex-generated-market.html and intake into data/vault/.htmlvault/manifest.json>"
+npm run dev
+curl -s "http://127.0.0.1:5178/api/vault/library?q=codex"
+node --input-type=module "<open http://127.0.0.1:5178 with Playwright and screenshot>"
+```
+
+Result: PASS. A runtime AI-generated HTML file at `data/vault/imports/ai/codex-generated-market.html` appears in the Vault Library API and in the rendered VaultHome page. Screenshot saved locally at `test-results/desktop-launch/vault-home-runtime-html.png`. This proves the current web-renderer path can read a generated HTML file from the local Vault and display it; it still does not prove native Tauri `.app` launch because Rust is not installed.
+
 Latest full non-Rust validation:
 
 ```bash

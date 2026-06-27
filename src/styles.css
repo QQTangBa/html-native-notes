@@ -584,18 +584,20 @@ code {
 }
 
 .vault-item-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
 }
 
 .vault-item h3 {
+  display: -webkit-box;
   overflow: hidden;
   color: #f0f5ec;
   font-size: 15px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .vault-item time,
