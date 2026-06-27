@@ -57,7 +57,11 @@ export function getSafeAiStatus(config: AppConfig): SafeAiStatus {
   return {
     configured: baseUrlSet && Boolean(model) && Boolean(config.ai.apiKey),
     baseUrlSet,
+    ...(baseUrlSet ? { baseUrl: config.ai.baseUrl } : {}),
     ...(model ? { model } : {}),
+    apiKeyConfigured: Boolean(config.ai.apiKey),
+    temperature: config.ai.temperature,
+    maxTokens: config.ai.maxTokens,
   };
 }
 

@@ -129,7 +129,11 @@ describe('local API', () => {
     expect(response.body).toEqual({
       configured: true,
       baseUrlSet: true,
+      baseUrl: 'https://api.deepseek.com',
       model: 'deepseek-v4-flash',
+      apiKeyConfigured: true,
+      temperature: 0.2,
+      maxTokens: 2048,
     });
     expect(JSON.stringify(response.body)).not.toContain('sk-test-hidden');
   });

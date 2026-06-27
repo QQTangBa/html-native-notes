@@ -590,6 +590,34 @@ Implementation files:
 
 This starts F14/A17 in the main App surface. PDF export, provider-backed publish/static hosting, zipped package generation, native file-save dialogs, and native desktop verification remain pending.
 
+### 7.12 Current BYOK Settings Visibility Contract
+
+The current non-Rust app server exposes AI configuration readiness without returning secrets:
+
+- `GET /api/config/ai/status`
+
+Safe status response:
+
+```ts
+interface SafeAiStatus {
+  configured: boolean;
+  baseUrlSet: boolean;
+  baseUrl?: string;
+  model?: string;
+  apiKeyConfigured?: boolean;
+  temperature?: number;
+  maxTokens?: number;
+}
+```
+
+Implementation files:
+
+- `src/server/config.ts`: loads `.env.local`/process env and returns a safe status object with no API key value.
+- `src/server/routes/config.ts`: exposes the safe AI status endpoint.
+- `src/features/settings/SettingsPanel.tsx`: renders provider URL, model, temperature, token cap, and whether a key is stored.
+
+This improves F12 visibility. In-app editing/persistence of AI provider settings and native secure storage remain pending; current configuration remains `.env.local` or process environment based.
+
 ## 8. Data Flows
 
 ### 8.1 Agent HTML Enters Vault

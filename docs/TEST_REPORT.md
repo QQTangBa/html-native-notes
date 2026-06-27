@@ -149,6 +149,16 @@ npm run test -- tests/integration/bridge/exporter.test.ts tests/integration/api.
 
 Result: PASS. 44 focused tests. The added export tests prove a registered Vault HTML asset can be exported to `.htmlvault/exports/<assetId>/latest/index.html`, local relative image/stylesheet assets are copied into the package, external resources are recorded as skipped, `manifest.json` is written, source hash remains unchanged, a readable Markdown copy can be generated, `POST /api/export/:assetId/package` and `POST /api/export/:assetId/markdown` return export metadata, and Vault HTML note cards render package/Markdown export actions plus the latest output path. This does not yet prove PDF export, zipped package inspection, provider upload, public link generation, native save dialogs, or native desktop verification.
 
+BYOK Settings Visibility evidence:
+
+Date: 2026-06-27
+
+```bash
+npm run test -- tests/unit/config.test.ts tests/integration/api.test.ts tests/unit/SettingsPanel.test.tsx
+```
+
+Result: PASS. 21 focused tests. The added settings tests prove safe AI status includes base URL, model, temperature, max tokens, and key-present flag while excluding the API key value; the local API returns the expanded safe status; and the SettingsPanel renders provider details without exposing secrets. This does not yet prove in-app persistence, native secure storage, or live provider smoke from the Settings UI.
+
 Markdown import contract evidence:
 
 Date: 2026-06-27
@@ -316,7 +326,7 @@ Latest full non-Rust validation:
 npm run verify
 ```
 
-Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 25 test files and 114 tests, then Vite built `dist/index.html`, `dist/assets/index-DA8ykOlz.css`, and `dist/assets/index-D2AqxvRn.js`.
+Result: PASS on 2026-06-27. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 26 test files and 115 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-B6nZ8ThR.js`.
 
 Result: PASS. Full test run: 22 files, 91 tests. Bridge test run: 13 files, 44 tests. Production build generated `dist/index.html`, `dist/assets/index-D95uuEEX.css`, and `dist/assets/index-B-FiAvMB.js`.
 

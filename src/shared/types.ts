@@ -26,7 +26,11 @@ export interface AiRuntimeConfig {
 export interface SafeAiStatus {
   configured: boolean;
   baseUrlSet: boolean;
+  baseUrl?: string;
   model?: string;
+  apiKeyConfigured?: boolean;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface AppConfig {

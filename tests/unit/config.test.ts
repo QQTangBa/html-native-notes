@@ -25,7 +25,11 @@ describe('server config', () => {
     expect(getSafeAiStatus(config)).toEqual({
       configured: true,
       baseUrlSet: true,
+      baseUrl: 'https://api.deepseek.com',
       model: 'deepseek-v4-flash',
+      apiKeyConfigured: true,
+      temperature: 0.3,
+      maxTokens: 1024,
     });
     expect(JSON.stringify(getSafeAiStatus(config))).not.toContain('sk-secret-value');
   });
