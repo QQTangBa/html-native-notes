@@ -6,7 +6,7 @@ import { NoteLibrary } from '../features/notes/NoteLibrary';
 import { PreviewPane } from '../features/preview/PreviewPane';
 import { SettingsPanel } from '../features/settings/SettingsPanel';
 import { VaultHome } from '../features/vault/VaultHome';
-import { apiClient } from '../shared/api/client';
+import { desktopBridge } from '../shared/desktopBridge';
 import type {
   AiAction,
   DiaryOrganizationResponse,
@@ -78,7 +78,7 @@ export function App() {
   useEffect(() => {
     void refresh();
     void refreshVaultLibrary();
-    void apiClient.aiStatus().then(setAiStatus).catch(() => setAiStatus({ configured: false, baseUrlSet: false }));
+    void desktopBridge.aiStatus().then(setAiStatus).catch(() => setAiStatus({ configured: false, baseUrlSet: false }));
   }, []);
 
   useEffect(() => {
@@ -86,11 +86,11 @@ export function App() {
   }, [vaultPreview?.assetId]);
 
   async function refresh(): Promise<void> {
-    setNotes(await apiClient.listNotes());
+    setNotes(await desktopBridge.listNotes());
   }
 
   async function refreshVaultLibrary(): Promise<void> {
-    await apiClient.listVaultLibrary().then(setVaultLibrary).catch(() => setVaultLibrary(undefined));
+    await desktopBridge.listVaultLibrary().then(setVaultLibrary).catch(() => setVaultLibrary(undefined));
   }
 
   async function runTask(task: () => Promise<void>): Promise<void> {
@@ -107,7 +107,7 @@ export function App() {
 
   async function openNote(id: string): Promise<void> {
     await runTask(async () => {
-      const note = await apiClient.getNote(id);
+      const note = await desktopBridge.getNote(id);
       setActiveNote(note);
       setSource(note.content);
     });
@@ -117,7 +117,7 @@ export function App() {
     await runTask(async () => {
       const title = newTitle.trim() || '新 HTML 笔记';
       const content = starterHtml.replace('新 HTML 笔记', title);
-      const note = await apiClient.createNote({
+      const note = await desktopBridge.createNote({
         title,
         content,
       });
@@ -133,7 +133,7 @@ export function App() {
     }
 
     await runTask(async () => {
-      const updated = await apiClient.saveNoteContent(activeNoteId, source);
+      const updated = await desktopBridge.saveNoteContent(activeNoteId, source);
       setActiveNote({ ...activeNote!, ...updated, content: source });
       await refresh();
     });
@@ -145,7 +145,7 @@ export function App() {
     }
 
     await runTask(async () => {
-      const copy = await apiClient.duplicateNote(activeNoteId);
+      const copy = await desktopBridge.duplicateNote(activeNoteId);
       await refresh();
       await openNote(copy.id);
     });
@@ -157,7 +157,7 @@ export function App() {
     }
 
     await runTask(async () => {
-      await apiClient.deleteNote(activeNoteId);
+      await desktopBridge.deleteNote(activeNoteId);
       setActiveNote(undefined);
       setSource(starterHtml);
       await refresh();
@@ -166,7 +166,7 @@ export function App() {
 
   async function runAi(action: AiAction): Promise<void> {
     await runTask(async () => {
-      const response = await apiClient.runAiAction({ action, content: source });
+      const response = await desktopBridge.runAiAction({ action, content: source });
       setAiResult(response.result);
     });
   }
@@ -176,7 +176,7 @@ export function App() {
     setError('');
 
     try {
-      setDiaryResult(await apiClient.organizeDiary({ originalText: source }));
+      setDiaryResult(await desktopBridge.organizeDiary({ originalText: source }));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '日记整理失败');
     } finally {
@@ -190,7 +190,7 @@ export function App() {
     setError('');
 
     try {
-      const result = await apiClient.generateVaultThumbnails();
+      const result = await desktopBridge.generateVaultThumbnails();
       await refreshVaultLibrary();
       setThumbnailMessage(
         result.generatedCount > 0
@@ -221,14 +221,14 @@ export function App() {
     setError('');
 
     try {
-      const preview = await apiClient.getVaultAssetSource(itemId);
+      const preview = await desktopBridge.getVaultAssetSource(itemId);
       if (vaultReviewRequestIdRef.current !== requestId) {
         return;
       }
       setVaultPreview(preview);
 
       try {
-        const versions = await apiClient.listVaultVersions(itemId);
+        const versions = await desktopBridge.listVaultVersions(itemId);
         if (vaultReviewRequestIdRef.current !== requestId || vaultVersionRequestIdRef.current !== versionRequestId) {
           return;
         }
@@ -268,7 +268,7 @@ export function App() {
     setError('');
 
     try {
-      const diff = await apiClient.diffVaultVersions(assetId, from.snapshotId, to.snapshotId);
+      const diff = await desktopBridge.diffVaultVersions(assetId, from.snapshotId, to.snapshotId);
       if (vaultVersionRequestIdRef.current !== versionRequestId || requestedVaultPreviewIdRef.current !== assetId) {
         return;
       }
@@ -300,8 +300,8 @@ export function App() {
     setError('');
 
     try {
-      await apiClient.rollbackVaultVersion(assetId, snapshotId);
-      const [preview, versions] = await Promise.all([apiClient.getVaultAssetSource(assetId), apiClient.listVaultVersions(assetId)]);
+      await desktopBridge.rollbackVaultVersion(assetId, snapshotId);
+      const [preview, versions] = await Promise.all([desktopBridge.getVaultAssetSource(assetId), desktopBridge.listVaultVersions(assetId)]);
       if (vaultVersionRequestIdRef.current !== versionRequestId || requestedVaultPreviewIdRef.current !== assetId) {
         return;
       }
@@ -345,7 +345,7 @@ export function App() {
     setError('');
 
     try {
-      const report = await apiClient.scanVaultAssetIntegrity(assetId);
+      const report = await desktopBridge.scanVaultAssetIntegrity(assetId);
       setVaultAssetReports((current) => ({ ...current, [assetId]: report }));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '资源完整性扫描失败');
@@ -381,7 +381,7 @@ export function App() {
     setError('');
 
     try {
-      const review = await apiClient.reviewVaultAssetWrite(preview.assetId, editedHtml);
+      const review = await desktopBridge.reviewVaultAssetWrite(preview.assetId, editedHtml);
       if (vaultReviewRequestIdRef.current !== requestId || activeVaultPreviewIdRef.current !== preview.assetId) {
         return;
       }
@@ -415,7 +415,7 @@ export function App() {
     setError('');
 
     try {
-      const result = await apiClient.applyVaultWriteDecision(assetId, editedHtml, decision);
+      const result = await desktopBridge.applyVaultWriteDecision(assetId, editedHtml, decision);
       setVaultWriteMessage(
         result.action === 'cancel'
           ? 'Write cancelled'
@@ -475,12 +475,12 @@ export function App() {
           exportBusyIds={vaultExportBusyIds}
           onOpenItem={(itemId) => void openVaultItem(itemId)}
           onGenerateThumbnails={() => void generateVaultThumbnails()}
-          onServiceHealth={(itemId) => void runVaultServiceAction(itemId, apiClient.checkVaultService, '服务状态检查失败')}
-          onServiceStart={(itemId) => void runVaultServiceAction(itemId, apiClient.startVaultService, '服务启动失败')}
-          onServiceStop={(itemId) => void runVaultServiceAction(itemId, apiClient.stopVaultService, '服务停止失败')}
+          onServiceHealth={(itemId) => void runVaultServiceAction(itemId, desktopBridge.checkVaultService, '服务状态检查失败')}
+          onServiceStart={(itemId) => void runVaultServiceAction(itemId, desktopBridge.startVaultService, '服务启动失败')}
+          onServiceStop={(itemId) => void runVaultServiceAction(itemId, desktopBridge.stopVaultService, '服务停止失败')}
           onScanAssetIntegrity={(itemId) => void scanVaultAssetIntegrity(itemId)}
-          onExportPackage={(itemId) => void runVaultExportAction(itemId, apiClient.exportVaultPackage, '导出静态包失败')}
-          onExportMarkdown={(itemId) => void runVaultExportAction(itemId, apiClient.exportVaultMarkdown, '导出 Markdown 失败')}
+          onExportPackage={(itemId) => void runVaultExportAction(itemId, desktopBridge.exportVaultPackage, '导出静态包失败')}
+          onExportMarkdown={(itemId) => void runVaultExportAction(itemId, desktopBridge.exportVaultMarkdown, '导出 Markdown 失败')}
           onCompareLatestVersions={() => void compareLatestVaultVersions()}
           onRollbackSnapshot={(snapshotId) => void rollbackVaultVersion(snapshotId)}
           onReviewEdit={(editedHtml) => void reviewVaultEdit(editedHtml)}

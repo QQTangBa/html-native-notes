@@ -207,6 +207,48 @@ describe('App workspace', () => {
     expect(screen.getByRole('searchbox', { name: 'Search Vault' })).toBeInTheDocument();
   });
 
+  it('loads Vault assets through the desktop bridge when Tauri commands are available', async () => {
+    const desktopVaultLibrary: VaultLibraryResponse = {
+      items: [
+        {
+          id: 'asset_desktop',
+          kind: 'html-note',
+          title: 'Desktop Bridge Note',
+          source: 'bridge',
+          sourceAgent: 'codex',
+          sourcePath: '/Vault/imports/desktop.html',
+          relativeSourcePath: 'imports/desktop.html',
+          folderPath: 'imports',
+          tags: ['desktop'],
+          summary: 'Loaded through Tauri invoke',
+          updatedAt: '2026-06-27T00:00:00.000Z',
+          thumbnail: {
+            status: 'pending',
+            path: '/Vault/.htmlvault/thumbnails/asset_desktop.png',
+          },
+        },
+      ],
+      folders: [{ path: 'imports', itemCount: 1 }],
+      availableFilters: {
+        tags: ['desktop'],
+        sourceAgents: ['codex'],
+        kinds: ['html-note'],
+      },
+    };
+    const invoke = vi.fn(async (command: string) => {
+      if (command === 'vault_list_library') {
+        return desktopVaultLibrary;
+      }
+      throw new Error(`unknown command ${command}`);
+    });
+    vi.stubGlobal('__TAURI__', { core: { invoke } });
+
+    render(<App />);
+
+    expect(await screen.findByText('Desktop Bridge Note')).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('vault_list_library', { filters: {} });
+  });
+
   it('generates pending Vault thumbnails from the desktop toolbar and refreshes the library', async () => {
     vaultLibrary = {
       items: [

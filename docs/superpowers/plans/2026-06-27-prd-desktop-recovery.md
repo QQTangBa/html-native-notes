@@ -75,19 +75,19 @@ git commit -m "docs: record tauri environment readiness"
 - Modify: `src/app/App.tsx`
 - Test: `tests/unit/desktopBridge.test.ts`
 
-- [ ] **Step 1: Write failing bridge test**
+- [x] **Step 1: Write failing bridge test**
 
 Test that `desktopBridge.listVaultLibrary()` calls `window.__TAURI__.core.invoke("vault_list_library")` when available and falls back to `apiClient.listVaultLibrary()` otherwise.
 
-- [ ] **Step 2: Implement bridge**
+- [x] **Step 2: Implement bridge**
 
 Expose typed methods mirroring current `apiClient`: library, preview, thumbnails, source guard, versions, services, assets, exports, diary, AI status.
 
-- [ ] **Step 3: Wire App**
+- [x] **Step 3: Wire App**
 
 Replace direct app-level `apiClient` calls with `desktopBridge`. Keep individual API client methods for web fallback.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run:
 
@@ -96,12 +96,14 @@ npm run test -- tests/unit/desktopBridge.test.ts tests/unit/App.test.tsx
 npm run typecheck
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/shared/desktopBridge.ts src/app/App.tsx tests/unit/desktopBridge.test.ts
 git commit -m "feat: add renderer desktop bridge boundary"
 ```
+
+Checkpoint evidence: `desktopBridge` now maps renderer operations to explicit Tauri command names, falls back to HTTP when `__TAURI__` is unavailable, and falls back on missing-command errors from the transitional Tauri shell. `App` now uses `desktopBridge` instead of importing `apiClient` directly.
 
 ## Task 3: Native Vault Core Commands
 

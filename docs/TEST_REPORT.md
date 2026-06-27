@@ -28,11 +28,19 @@ npm run test -- tests/unit/desktopScaffold.test.ts
 
 Result: PASS. 4 tests. This proves the desktop scaffold contract exists; it does not prove the desktop app builds or launches.
 
+Desktop bridge boundary evidence:
+
 ```bash
-npm run typecheck
+npm run test -- tests/unit/desktopBridge.test.ts tests/unit/App.test.tsx
 ```
 
-Result: PASS.
+Result: PASS. 2 files, 20 tests. This proves the renderer has a `desktopBridge` boundary that maps Vault, preview, version, service, asset, export, Source Guard, note, AI, and diary operations to explicit Tauri command names when `globalThis.__TAURI__.core.invoke` is available. It also proves the bridge falls back to the HTTP API in web/dev mode and when the current transitional Tauri shell reports a missing command, and that `App` loads Vault items through this bridge instead of importing `apiClient` directly. It does not prove the Rust commands exist yet.
+
+```bash
+npm run verify
+```
+
+Result: PASS on 2026-06-27 after the desktop bridge boundary change. This ran `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`. Vitest passed 27 test files and 121 tests, then Vite built `dist/index.html`, `dist/assets/index-CBcxCvbQ.css`, and `dist/assets/index-gvqbd7-i.js`.
 
 ```bash
 npm run test

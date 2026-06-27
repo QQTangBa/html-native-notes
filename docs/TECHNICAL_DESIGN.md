@@ -685,7 +685,7 @@ Current TypeScript flow:
 
 ### 9.1 Tauri Commands
 
-Rust command boundary:
+Rust command boundary target:
 
 ```ts
 type TauriCommand =
@@ -711,6 +711,43 @@ type TauriCommand =
   | "publish_asset"
   | "config_get_safe"
   | "config_save_ai";
+```
+
+Current renderer bridge checkpoint:
+
+- `src/shared/desktopBridge.ts` is now the only app-level client imported by `src/app/App.tsx`.
+- The bridge calls `globalThis.__TAURI__.core.invoke` when available and falls back to the existing HTTP `apiClient` in web/dev mode.
+- During the transitional Tauri shell phase, missing/unregistered desktop command errors fall back to HTTP so the renderer can keep running while Rust commands are added one module at a time.
+- Real desktop command failures that are not missing-command errors are rethrown, so Source Guard, service runtime, export, AI, and version errors remain visible.
+
+Implemented renderer-to-command names:
+
+```ts
+type RendererDesktopCommand =
+  | "vault_list_library"
+  | "vault_generate_thumbnails"
+  | "vault_get_asset_source"
+  | "vault_list_versions"
+  | "vault_create_version_snapshot"
+  | "vault_diff_versions"
+  | "vault_rollback_version"
+  | "service_check_health"
+  | "service_start"
+  | "service_stop"
+  | "asset_scan_integrity"
+  | "export_static_package"
+  | "export_markdown"
+  | "source_guard_review_write"
+  | "source_guard_apply_write_decision"
+  | "note_list"
+  | "note_create"
+  | "note_get"
+  | "note_save_content"
+  | "note_duplicate"
+  | "note_delete"
+  | "ai_status"
+  | "ai_run_action"
+  | "diary_organize";
 ```
 
 ### 9.2 HTTP API
