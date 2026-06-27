@@ -1,5 +1,6 @@
 pub mod asset_scan;
 pub mod exporter;
+pub mod importer;
 pub mod inbox;
 pub mod notes;
 pub mod publish;

@@ -46,7 +46,7 @@ The current Tauri Rust side is only a shell command:
 | A5 | User can stop app-started local service and start it again. | TS runtime/API works. | Native desktop stop/restart evidence. |
 | A6 | Intake original HTML preserves content hash. | TS tests exist. | Native import/index/preview/thumbnail/scan/version-init hash proof. |
 | A7 | Any original write shows diff first and supports write back/save-as/cancel. | TS Source Guard UI exists. | Native desktop diff gate screenshots and file-hash proof. |
-| A8 | Import 100 old web/project dirs without modifying originals. | Missing. | Project-dir scanner fixture and before/after hash report. |
+| A8 | Import 100 old web/project dirs without modifying originals. | Partial native scanner source. | Full 100 old project-dir import, before/after hash report, desktop import UI, and launched app evidence. |
 | A9 | External agent edits create snapshots; user can diff and roll back. | Manual snapshot/diff/rollback exists. | Watcher-triggered external edit run and rollback proof. |
 | A10 | Two HTML versions show source diff, content diff, DOM summary, screenshot hint. | Source/content/DOM partial. | Screenshot hint/visual-change evidence in desktop UI. |
 | A11 | 300-1000 word diary generates two styles within 30 seconds and preserves original. | Mocked short-text flow only. | Timed DeepSeek/local provider smoke with long fixture and preserved original. |

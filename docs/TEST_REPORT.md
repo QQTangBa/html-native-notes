@@ -495,6 +495,19 @@ which rustc
 
 Result: PASS for source contract, environment still blocked for Cargo. `tests/unit/desktopNativePublish.test.ts` passed 3 tests covering Rust publish core source, `publish_static` command registration, static package handoff through the exporter, user-configured `PUBLISH_PROVIDER_MODE`, `PUBLISH_COMMAND`, `PUBLISH_COMMAND_ARGS`, and `PUBLISH_REQUIRED_ENV`, `HTML_NATIVE_NOTES_*` package env propagation, generic provider command failure text, and no provider output leakage in the source. `npm run test:desktop:contract` passed 10 files and 29 tests, now including the publish native command source contract. `cargo` and `rustc` were not found in PATH, so Cargo build and launched Tauri publish flow remain pending.
 
+Native desktop importer command source evidence:
+
+Date: 2026-06-27
+
+Commands:
+
+```bash
+npm run test -- tests/unit/desktopNativeImporter.test.ts
+npm run test:desktop:contract
+```
+
+Result: PASS. `tests/unit/desktopNativeImporter.test.ts` passed 4 tests covering Rust importer source for read-only existing project scans, `import_scan_candidates` command registration, HTML, Markdown, project, and service candidate markers, `package.json` and `index.html` detection, source hash reporting, no `fs::write` or `fs::copy` in the scanner core, and skip rules for `.git`, `.htmlvault`, `node_modules`, `dist`, `build`, and `target`. `npm run test:desktop:contract` passed 11 files and 33 tests, now including the importer native command source contract. This is source/contract evidence only; Cargo build, import confirmation, full 100 old project-dir hash proof, and launched Tauri import flow remain pending because Rust is not installed in PATH.
+
 Native desktop note command source evidence:
 
 Date: 2026-06-27

@@ -222,6 +222,8 @@ Tests must hash all source files before import, run import, assert sources uncha
 
 Checkpoint evidence: `scripts/generate-prd-fixtures.mjs` creates the deterministic fixture sets, and `tests/integration/fixtures/prdFixtures.test.ts` proves 30 Markdown notes convert without source mutation plus 70 importable HTML/project index files register into the current TS Vault library. The full 95/100 open-search-preview acceptance and native import wizard remain pending.
 
+Checkpoint evidence: Rust source now includes `src-tauri/src/core/importer.rs` and `src-tauri/src/commands/importer.rs` for native `import_scan_candidates`. The source covers read-only scanning, HTML/Markdown/project/service candidates, `index.html` and `package.json` detection, source hash reporting, and skip rules for heavy/generated folders. `npm run test:desktop:contract` covers this source/registration contract; Cargo verification, import confirmation, and launched Tauri import wizard remain pending until Rust is available.
+
 - [ ] **Step 3: Implement import wizard and native importer**
 
 Show candidates, templates, warnings, service detection, source hashes, and confirm import.

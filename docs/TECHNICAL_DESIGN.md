@@ -691,6 +691,8 @@ This improves F12 visibility. In-app editing/persistence of AI provider settings
 5. App writes only Vault metadata, profiles, thumbnails, version baselines, and copied generated Vault notes where the user explicitly chose conversion.
 6. Tests compare original hashes before/after.
 
+Current native source status: `src-tauri/src/core/importer.rs` and `src-tauri/src/commands/importer.rs` expose `import_scan_candidates`. The scanner canonicalizes the selected root, recursively walks it read-only, skips heavy/generated folders such as `.git`, `.htmlvault`, `node_modules`, `dist`, `build`, `target`, `.next`, and `.turbo`, detects HTML notes, Markdown notes, `index.html` projects, and `package.json` service candidates, and reports source hashes for import review. Import confirmation, Markdown conversion wiring, Vault manifest writes, and the desktop import wizard remain pending.
+
 ### 8.3 Markdown Editing Saved As HTML
 
 1. User opens an asset in editor.
