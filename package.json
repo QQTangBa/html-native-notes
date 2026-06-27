@@ -1,7 +1,7 @@
 {
   "name": "html-native-notes",
   "version": "0.0.2",
-  "description": "Local-first HTML-native note editor with user-configured AI actions.",
+  "description": "Writonyx: local-first HTML-native note editor with user-configured AI actions.",
   "type": "module",
   "private": false,
   "license": "MIT",

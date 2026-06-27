@@ -1,10 +1,10 @@
-# HTML Native Notes
+# Writonyx - 下一个时代的笔记软件
 
 默认中文说明。For English, see [English Version](#english).
 
 ## 中文
 
-**HTML Native Notes** 是一个面向 AI 时代的 HTML 原生笔记软件。它的长期目标不是再做一个 Markdown 编辑器，而是做下一代以 HTML 文档为核心的知识管理、创作和发布工作台。
+**Writonyx** 是一个面向 AI 时代的 HTML 原生笔记软件。它的长期目标不是再做一个 Markdown 编辑器，而是做下一代以 HTML 文档为核心的知识管理、创作和发布工作台。
 
 > 当前版本：`0.0.2`
 > 当前状态：开发者自用、自测、完善 BUG 中。还没有到正式可发版、可面向普通用户稳定分发的版本。
@@ -28,7 +28,7 @@ Markdown 仍然有价值，但它正在被更复杂的 HTML 文档挤压。AI �
 
 但以前的笔记软件几乎都是 Markdown-first。它们擅长编辑 `.md` 文件，却没有真正把 HTML 当作一等公民。我们想做的是一个 **HTML-first / HTML-native 的核心笔记软件**，让用户默认看到渲染后的页面，而不是被迫面对 HTML 源码。
 
-这就是 HTML Native Notes 的第一条产品假设：
+这就是 Writonyx 的第一条产品假设：
 
 **AI 时代会出现一个以 HTML 为核心的 killer note app。我们想把它做出来。**
 
@@ -45,7 +45,7 @@ Markdown 仍然有价值，但它正在被更复杂的 HTML 文档挤压。AI �
 
 但这些文件往往散落在项目目录、临时输出目录、聊天上下文或下载文件夹里。它们没有统一的入口，没有优雅的目录级管理，也没有可靠的预览、搜索、版本、接管和发布流程。
 
-HTML Native Notes 的第二条产品假设是：
+Writonyx 的第二条产品假设是：
 
 **AI Agent 生成的 HTML 和 Markdown 文档，会成为一个新的知识资产入口。用户需要一个专门的 app 来接管、整理、预览、编辑和发布这些资产。**
 
@@ -99,7 +99,7 @@ HTML Native Notes 的第二条产品假设是：
 
 ### 商业化方向
 
-HTML Native Notes 当前按开源模式开发，但它天然适合存在一个闭源/商业封装版本。
+Writonyx 当前按开源模式开发，但它天然适合存在一个闭源/商业封装版本。
 
 原因很简单：HTML-first 笔记软件比传统 Markdown 笔记软件更接近网页、知识库和可分享报告。它天然适合接入：
 
@@ -183,7 +183,7 @@ npm run tauri:build
 macOS app 构建产物位于：
 
 ```text
-src-tauri/target/release/bundle/macos/HTML Native Notes.app
+src-tauri/target/release/bundle/macos/Writonyx.app
 ```
 
 开源仓库只上传源码、文档、配置模板和测试，不上传打包产物。
@@ -225,7 +225,9 @@ tests/              Unit, integration, fixtures, and desktop contract tests
 
 ## English
 
-**HTML Native Notes** is an HTML-native note app for the AI era. The long-term goal is not to build yet another Markdown editor. The goal is to build the next core workspace for HTML documents, AI-generated reports, local dashboards, and publishable knowledge assets.
+# Writonyx - The Note-Taking App for the Next Era
+
+**Writonyx** is an HTML-native note app for the AI era. The long-term goal is not to build yet another Markdown editor. The goal is to build the next core workspace for HTML documents, AI-generated reports, local dashboards, and publishable knowledge assets.
 
 > Current version: `0.0.2`
 > Current status: developer self-use, self-testing, and active bug fixing. This is not yet a formal stable release for general users.
@@ -249,7 +251,7 @@ Markdown is still useful, but it is no longer enough for many AI-era documents. 
 
 Most existing note apps are Markdown-first. They are good at editing `.md`, but they do not treat HTML as a first-class document format.
 
-HTML Native Notes starts from a different assumption:
+Writonyx starts from a different assumption:
 
 **The AI era needs an HTML-first killer note app. We want to build it.**
 
@@ -266,7 +268,7 @@ People are already using Codex, Claude Code, Cursor, Devin-like tools, and many 
 
 But those files are scattered across project folders, temporary outputs, chat contexts, and downloads. There is no elegant app that can take over those generated HTML/Markdown assets, organize them into a directory-level Vault, preview them, version them, edit them, and eventually publish them.
 
-HTML Native Notes starts with this market entry point:
+Writonyx starts with this market entry point:
 
 **Take over AI-generated HTML and Markdown documents first, then evolve into the next-generation HTML-native note system.**
 
@@ -316,7 +318,7 @@ The current open-source version focuses on local-first, testable, document-takeo
 
 ### Commercial Direction
 
-HTML Native Notes is open source first, but it naturally supports a future closed-source/commercial wrapper.
+Writonyx is open source first, but it naturally supports a future closed-source/commercial wrapper.
 
 Because HTML-first notes are closer to web pages, reports, and shareable knowledge assets than traditional Markdown notes, the product naturally fits:
 
@@ -398,7 +400,7 @@ npm run tauri:build
 The macOS app is generated under:
 
 ```text
-src-tauri/target/release/bundle/macos/HTML Native Notes.app
+src-tauri/target/release/bundle/macos/Writonyx.app
 ```
 
 Build artifacts are not intended to be committed to the open-source repository.

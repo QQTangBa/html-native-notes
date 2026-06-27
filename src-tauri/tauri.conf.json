@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "HTML Native Notes",
+  "productName": "Writonyx",
   "version": "0.1.0",
   "identifier": "com.htmlvault.html-native-notes",
   "build": {
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "HTML Native Notes",
+        "title": "Writonyx",
         "width": 1280,
         "height": 840,
         "minWidth": 980,
